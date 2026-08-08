@@ -11,7 +11,7 @@ export default defineConfig((ctx) => {
     // app boot file (/src/boot)
     // --> boot files are part of "main.js"
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
-    boot: ['i18n'],
+    boot: ['supabase', 'i18n'],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#css
     css: ['app.scss'],
@@ -46,7 +46,10 @@ export default defineConfig((ctx) => {
 
       // publicPath: '/',
       // define: {},
-      // defineEnv: {}
+      env: {
+        // https://v2.quasar.dev/quasar-cli-vite/handling-process-env#adding-a-client-side-env-file
+        clientPrefix: 'VITE_',
+      },
       // ignorePublicFolder: true,
       // minify: false,
       // distDir
@@ -82,6 +85,23 @@ export default defineConfig((ctx) => {
           { server: false },
         ],
       ],
+      extendViteConf(viteConf) {
+        viteConf.resolve = viteConf.resolve || {}
+        viteConf.resolve.alias = {
+          ...viteConf.resolve.alias,
+          src: '/src',
+          // Mockovi SAMO za web build — native (Capacitor) mora koristiti prave plugine,
+          // inače requestPermissions vraća 'denied' i push/badge nikad ne prorade
+          ...(ctx.mode.capacitor
+            ? {}
+            : {
+                '@capawesome/capacitor-badge': '/src/mocks/capacitor-badge.js',
+                '@capacitor/push-notifications': '/src/mocks/capacitor-push.js',
+                '@capacitor/app': '/src/mocks/capacitor-app.js',
+                '@capacitor/network': '/src/mocks/capacitor-network.js',
+              }),
+        }
+      },
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#devserver
@@ -92,7 +112,17 @@ export default defineConfig((ctx) => {
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework
     framework: {
-      config: {},
+      config: {
+        brand: {
+          primary: '#011C3A', // Nova Aarc tamnoplava
+          secondary: '#007BFF', // Plava iz gradijenta
+          accent: '#00D1FF', // Tirkizna ("Flow")
+          dark: '#1D1D1D',
+          positive: '#21BA45',
+          negative: '#C10015',
+          info: '#31CCEC',
+        },
+      },
 
       // iconSet: 'material-icons', // Quasar icon set
       // lang: 'en-US', // Quasar language pack
@@ -105,7 +135,7 @@ export default defineConfig((ctx) => {
       // directives: [],
 
       // Quasar plugins
-      plugins: [],
+      plugins: ['Notify', 'Dialog', 'Loading'],
     },
 
     // animations: 'all', // --- includes all animations
@@ -169,6 +199,8 @@ export default defineConfig((ctx) => {
     // https://v2.quasar.dev/quasar-cli-vite/developing-capacitor-apps/configuring-capacitor
     capacitor: {
       hideSplashscreen: true,
+      appName: 'aarcDev',
+      appId: 'com.vitka.collabapp',
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/developing-electron-apps/configuring-electron
@@ -199,7 +231,7 @@ export default defineConfig((ctx) => {
       builder: {
         // https://www.electron.build/configuration
 
-        appId: 'aarc',
+        appId: 'aarcDev',
       },
     },
 

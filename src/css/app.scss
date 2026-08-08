@@ -1,1 +1,543 @@
-// app global css
+.chat-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+// ==========================================
+// CSS Varijable — Light Mode
+// ==========================================
+:root {
+  --aarc-bg: #f4f7fa;
+  --aarc-surface: #ffffff;
+  --aarc-surface2: #edf2f7;
+  --aarc-header: #011c3a;
+  --aarc-primary: #011c3a;
+  --aarc-accent: #00d1ff;
+  --aarc-secondary: #007bff;
+  --aarc-danger: #c10015;
+  --aarc-text: #1d2129;
+  --aarc-muted: #65676b;
+  --aarc-border: #e4e6eb;
+
+  --aarc-font-size: 16px;
+}
+
+// ==========================================
+// CSS Varijable — Dark Mode
+// ==========================================
+.dark-mode,
+body.body--dark {
+  --aarc-bg: #0b132b;
+  --aarc-surface: #1c2541;
+  --aarc-surface2: #243156;
+  --aarc-header: #0b132b;
+  --aarc-primary: #00d1ff;
+  --aarc-accent: #007bff;
+  --aarc-secondary: #5bc0be;
+  --aarc-danger: #ff5252;
+  --aarc-text: #f4f7fa;
+  --aarc-muted: #8e9bb0;
+  --aarc-border: #2a3656;
+}
+
+// ==========================================
+// Globalni elementi — Light + Dark
+// ==========================================
+body {
+  background-color: var(--aarc-bg) !important;
+  color: var(--aarc-text) !important;
+  font-size: var(--aarc-font-size) !important;
+}
+
+.q-header {
+  background-color: var(--aarc-header) !important;
+}
+
+.q-toolbar__title {
+  color: #ffffff;
+}
+
+.q-page {
+  background-color: var(--aarc-bg) !important;
+}
+
+.q-card {
+  background-color: var(--aarc-surface) !important;
+  border-color: var(--aarc-border) !important;
+}
+
+.q-separator {
+  background-color: var(--aarc-border) !important;
+  opacity: 1 !important;
+}
+
+.q-tabs {
+  background-color: var(--aarc-header) !important;
+  color: #ffffff !important;
+}
+
+.q-tab--active {
+  color: #ffffff !important;
+}
+
+.q-tab__indicator {
+  background: var(--aarc-accent) !important;
+}
+
+.q-badge--standard {
+  background-color: var(--aarc-danger) !important;
+}
+
+.q-field--focused .q-field__control {
+  border-color: var(--aarc-accent) !important;
+}
+
+.q-avatar {
+  background-color: var(--aarc-surface2) !important;
+  color: var(--aarc-primary) !important;
+}
+
+.q-btn--standard.bg-primary,
+.q-btn.bg-primary {
+  background-color: var(--aarc-primary) !important;
+}
+
+// ==========================================
+// Chat
+// ==========================================
+.msg-bubble {
+  background: var(--aarc-surface2) !important;
+}
+
+.msg-bubble-own {
+  background: #d4f6ff !important;
+  color: #011c3a !important;
+}
+
+// ==========================================
+// Dark Mode — elementi
+// ==========================================
+.dark-mode body,
+body.dark-mode,
+body.body--dark {
+  background-color: var(--aarc-bg) !important;
+  color: var(--aarc-text) !important;
+}
+
+.dark-mode .q-page,
+body.body--dark .q-page {
+  background-color: var(--aarc-bg) !important;
+}
+
+.dark-mode .q-card,
+body.body--dark .q-card {
+  background-color: var(--aarc-surface) !important;
+  border-color: var(--aarc-border) !important;
+}
+
+.dark-mode .q-card__section,
+body.body--dark .q-card__section {
+  color: var(--aarc-text) !important;
+}
+
+.dark-mode .q-card__actions,
+body.body--dark .q-card__actions {
+  background: var(--aarc-surface) !important;
+}
+
+.dark-mode .q-separator,
+body.body--dark .q-separator {
+  background: var(--aarc-border) !important;
+  opacity: 1 !important;
+}
+
+// Header i footer
+.dark-mode .q-footer,
+body.body--dark .q-footer {
+  background: var(--aarc-header) !important;
+}
+
+.dark-mode .q-toolbar__title,
+body.body--dark .q-toolbar__title {
+  color: #ffffff !important;
+}
+
+// Tabovi
+.dark-mode .q-tab-panels,
+.dark-mode .q-tab-panel,
+body.body--dark .q-tab-panels,
+body.body--dark .q-tab-panel {
+  background-color: var(--aarc-bg) !important;
+}
+
+.dark-mode .q-tab__label,
+body.body--dark .q-tab__label {
+  color: var(--aarc-muted) !important;
+}
+
+.dark-mode .q-tab--active .q-tab__label,
+body.body--dark .q-tab--active .q-tab__label {
+  color: var(--aarc-primary) !important;
+}
+
+// Tekst klase
+.dark-mode .q-item__label,
+.dark-mode .q-item__label--caption,
+.dark-mode .q-item,
+.dark-mode .q-list,
+.dark-mode .q-item__section--main,
+.dark-mode .text-grey-6,
+.dark-mode .text-grey-5,
+.dark-mode .text-caption,
+.dark-mode .text-body2,
+.dark-mode .text-subtitle2,
+.dark-mode .text-subtitle1,
+.dark-mode .text-h6,
+.dark-mode .ellipsis-2-lines,
+.dark-mode .text-weight-medium,
+body.body--dark .q-item__label,
+body.body--dark .q-item__label--caption,
+body.body--dark .q-item,
+body.body--dark .q-list,
+body.body--dark .q-item__section--main,
+body.body--dark .text-grey-6,
+body.body--dark .text-grey-5,
+body.body--dark .text-caption,
+body.body--dark .text-body2,
+body.body--dark .text-subtitle2,
+body.body--dark .text-subtitle1,
+body.body--dark .text-h6,
+body.body--dark .ellipsis-2-lines,
+body.body--dark .text-weight-medium {
+  color: var(--aarc-text) !important;
+}
+
+// Input / Field
+.dark-mode .q-field__control,
+body.body--dark .q-field__control {
+  background: var(--aarc-surface2) !important;
+}
+
+.dark-mode .q-field__native,
+.dark-mode .q-field__input,
+.dark-mode textarea,
+body.body--dark .q-field__native,
+body.body--dark .q-field__input,
+body.body--dark textarea {
+  color: var(--aarc-text) !important;
+  background: transparent !important;
+}
+
+.dark-mode .q-field__label,
+body.body--dark .q-field__label {
+  color: var(--aarc-muted) !important;
+}
+
+.dark-mode .q-field__suffix,
+.dark-mode .q-field__prefix,
+body.body--dark .q-field__suffix,
+body.body--dark .q-field__prefix {
+  color: var(--aarc-text) !important;
+}
+
+.dark-mode ::placeholder,
+body.body--dark ::placeholder {
+  color: var(--aarc-muted) !important;
+  opacity: 0.7;
+}
+
+// Select
+.dark-mode .q-select .q-field__native,
+.dark-mode .q-select__dropdown-icon,
+body.body--dark .q-select .q-field__native,
+body.body--dark .q-select__dropdown-icon {
+  color: var(--aarc-text) !important;
+}
+
+// Menu / List
+.dark-mode .q-menu,
+.dark-mode .q-list--bordered,
+body.body--dark .q-menu,
+body.body--dark .q-list--bordered {
+  background-color: var(--aarc-surface) !important;
+  color: var(--aarc-text) !important;
+}
+
+.dark-mode .q-item:hover,
+body.body--dark .q-item:hover {
+  background-color: var(--aarc-surface2) !important;
+}
+
+// Drawer
+.dark-mode .q-drawer,
+body.body--dark .q-drawer {
+  background-color: var(--aarc-surface) !important;
+  color: var(--aarc-text) !important;
+}
+
+// Dialog
+.dark-mode .q-dialog__inner .q-card,
+body.body--dark .q-dialog__inner .q-card {
+  background: var(--aarc-surface) !important;
+  color: var(--aarc-text) !important;
+}
+
+// Badge
+.dark-mode .q-badge,
+body.body--dark .q-badge {
+  color: #ffffff !important;
+}
+
+.dark-mode .q-badge--outline,
+body.body--dark .q-badge--outline {
+  color: var(--aarc-text) !important;
+  border-color: var(--aarc-border) !important;
+}
+
+// Gumbi
+.dark-mode .q-btn--outline,
+body.body--dark .q-btn--outline {
+  color: var(--aarc-text) !important;
+  border-color: var(--aarc-border) !important;
+}
+
+// Btn toggle (jezik)
+.dark-mode .q-btn-toggle .q-btn,
+body.body--dark .q-btn-toggle .q-btn {
+  color: var(--aarc-text) !important;
+  border-color: var(--aarc-border) !important;
+}
+
+// Toggle
+.dark-mode .q-toggle__label,
+body.body--dark .q-toggle__label {
+  color: var(--aarc-text) !important;
+}
+
+.dark-mode .q-toggle__inner,
+body.body--dark .q-toggle__inner {
+  background: transparent !important;
+}
+
+.dark-mode .q-toggle__track,
+body.body--dark .q-toggle__track {
+  opacity: 1 !important;
+}
+
+.dark-mode .q-toggle__inner--falsy .q-toggle__track,
+body.body--dark .q-toggle__inner--falsy .q-toggle__track {
+  background: var(--aarc-border) !important;
+}
+
+.dark-mode .q-toggle__inner--truthy .q-toggle__track,
+body.body--dark .q-toggle__inner--truthy .q-toggle__track {
+  background: var(--aarc-accent) !important;
+  border-radius: 99px !important;
+}
+
+.dark-mode .q-toggle__thumb,
+body.body--dark .q-toggle__thumb {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.dark-mode .q-toggle__thumb::before,
+body.body--dark .q-toggle__thumb::before {
+  background: #ffffff !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+
+// Checkbox
+.dark-mode .q-checkbox__bg,
+body.body--dark .q-checkbox__bg {
+  border-color: var(--aarc-border) !important;
+}
+
+// Linear progress
+.dark-mode .q-linear-progress__track,
+body.body--dark .q-linear-progress__track {
+  background: var(--aarc-border) !important;
+}
+
+// Skeleton
+.dark-mode .q-skeleton,
+body.body--dark .q-skeleton {
+  background: var(--aarc-surface2) !important;
+}
+
+// Spinner
+.dark-mode .q-spinner,
+body.body--dark .q-spinner {
+  color: var(--aarc-primary) !important;
+}
+
+// Tooltip
+.dark-mode .q-tooltip,
+body.body--dark .q-tooltip {
+  background: var(--aarc-surface2) !important;
+  color: var(--aarc-text) !important;
+}
+
+// Notify
+.dark-mode .q-notification,
+body.body--dark .q-notification {
+  background: var(--aarc-surface) !important;
+  color: var(--aarc-text) !important;
+}
+
+// Chip
+.dark-mode .q-chip,
+body.body--dark .q-chip {
+  background: var(--aarc-surface2) !important;
+  color: var(--aarc-text) !important;
+}
+
+// Chat
+.dark-mode .msg-bubble,
+body.body--dark .msg-bubble {
+  background: var(--aarc-surface2) !important;
+  color: var(--aarc-text) !important;
+}
+
+.dark-mode .msg-bubble-own,
+body.body--dark .msg-bubble-own {
+  background: #004b66 !important;
+  color: #ffffff !important;
+}
+
+.dark-mode .msg-meta,
+body.body--dark .msg-meta {
+  color: var(--aarc-muted) !important;
+}
+
+// Home stranica
+.dark-mode .project-card-h,
+body.body--dark .project-card-h {
+  background: var(--aarc-surface) !important;
+  border-color: var(--aarc-border) !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark-mode .card-title,
+.dark-mode .greeting-text,
+.dark-mode .section-label,
+.dark-mode .home-greeting,
+.dark-mode .home-section-label,
+body.body--dark .card-title,
+body.body--dark .greeting-text,
+body.body--dark .section-label,
+body.body--dark .home-greeting,
+body.body--dark .home-section-label {
+  color: var(--aarc-text) !important;
+}
+
+.dark-mode .card-desc,
+.dark-mode .member-name,
+body.body--dark .card-desc,
+body.body--dark .member-name {
+  color: var(--aarc-muted) !important;
+}
+
+.dark-mode .page-bg,
+.dark-mode .home-page,
+body.body--dark .page-bg,
+body.body--dark .home-page {
+  background: var(--aarc-bg) !important;
+}
+
+// Select opcije u dropdown meniju
+.dark-mode .q-select__dialog .q-item,
+.dark-mode .q-virtual-scroll__content .q-item,
+body.body--dark .q-select__dialog .q-item,
+body.body--dark .q-virtual-scroll__content .q-item {
+  color: var(--aarc-text) !important;
+  background: var(--aarc-surface) !important;
+}
+
+.dark-mode .q-virtual-scroll__content,
+body.body--dark .q-virtual-scroll__content {
+  background: var(--aarc-surface) !important;
+}
+
+// Expansion item
+.dark-mode .q-expansion-item__content,
+.dark-mode .q-expansion-item__header,
+body.body--dark .q-expansion-item__content,
+body.body--dark .q-expansion-item__header {
+  background: var(--aarc-surface) !important;
+  color: var(--aarc-text) !important;
+}
+
+.dark-mode .q-expansion-item,
+body.body--dark .q-expansion-item {
+  background: var(--aarc-surface) !important;
+}
+
+// Input outlined u dark modu
+.dark-mode .q-field--outlined .q-field__control,
+body.body--dark .q-field--outlined .q-field__control {
+  background: var(--aarc-surface2) !important;
+}
+
+.dark-mode .q-field--outlined .q-field__control:before,
+body.body--dark .q-field--outlined .q-field__control:before {
+  border-color: var(--aarc-border) !important;
+}
+
+// Negative/danger tekst u dark modu
+.dark-mode .text-negative,
+body.body--dark .text-negative {
+  color: #ff6b6b !important;
+}
+
+// Negative gumbi u dark modu
+.dark-mode .q-btn.text-negative,
+body.body--dark .q-btn.text-negative {
+  color: #ff6b6b !important;
+}
+
+// iOS safe area za drawer
+.q-drawer .q-header .q-toolbar {
+  padding-top: max(env(safe-area-inset-top), 12px) !important;
+}
+
+// Font size classes
+
+.q-item__label,
+.q-field__native,
+.msg-body,
+.text-body2,
+.card-title {
+  font-size: var(--aarc-font-size) !important;
+}
+
+// Edit mode u dark temi
+.dark-mode .q-field--outlined.q-field--focused .q-field__control,
+body.body--dark .q-field--outlined.q-field--focused .q-field__control {
+  border-color: var(--aarc-accent) !important;
+}
+
+// Date separator u chatu
+.date-separator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.date-separator-line {
+  flex: 1;
+  height: 1px;
+  background: var(--aarc-border);
+}
+
+.date-separator-label {
+  font-size: 11px;
+  color: var(--aarc-muted);
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--aarc-surface2);
+}

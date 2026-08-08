@@ -1,38 +1,57 @@
-import { defineRouter } from '#q-app'
-import {
-  createMemoryHistory,
-  createRouter,
-  createWebHashHistory,
-  createWebHistory,
-} from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
+import { useAuthStore } from 'src/stores/auth'
 
-import routes from './routes.js'
+const routes = [
+  {
+    path: '/login',
+    component: () => import('src/pages/LoginPage.vue'),
+    meta: { public: true },
+  },
+  {
+    path: '/',
+    component: () => import('src/layouts/MainLayout.vue'),
+    meta: { auth: true },
+    children: [
+      {
+        path: '',
+        component: () => import('src/pages/ProjectsPage.vue'),
+      },
+      {
+        path: '/settings',
+        component: () => import('src/pages/SettingsPage.vue'),
+      },
+      {
+        path: '/profile',
+        component: () => import('src/pages/ProfilePage.vue'),
+        meta: { auth: true },
+      },
+      {
+        path: '/project/:id',
+        component: () => import('src/pages/ProjectPage.vue'),
+        children: [
+          { path: '', redirect: (to) => `/project/${to.params.id}/ideas` },
+          { path: 'ideas', component: () => import('src/pages/IdeasPage.vue') },
+          { path: 'bugs', component: () => import('src/pages/BugsPage.vue') },
+          { path: 'tbi', component: () => import('src/pages/TbiPage.vue') },
+          { path: 'chat', component: () => import('src/pages/ChatPage.vue') },
+        ],
+      },
+    ],
+  },
+]
 
-/*
- * If not building with SSR mode, you can
- * directly export the Router instantiation;
- *
- * The function below can be async too; either use
- * async/await or return a Promise which resolves
- * with the Router instance.
- */
-
-export default defineRouter((/* { store, ssrContext } */) => {
-  const createHistory = import.meta.env.QUASAR_SERVER
-    ? createMemoryHistory
-    : import.meta.env.QUASAR_VUE_ROUTER_MODE === 'history'
-      ? createWebHistory
-      : createWebHashHistory
-
-  const Router = createRouter({
-    scrollBehavior: () => ({ left: 0, top: 0 }),
-    routes,
-
-    // Leave this as is and make changes in quasar.conf.js instead!
-    // quasar.conf.js -> build -> vueRouterMode
-    // quasar.conf.js -> build -> publicPath
-    history: createHistory(import.meta.env.QUASAR_VUE_ROUTER_BASE),
-  })
-
-  return Router
+const router = createRouter({
+  history: createWebHashHistory(),
+  routes,
 })
+
+router.beforeEach(async (to) => {
+  const auth = useAuthStore()
+  if (auth.user === null && !to.meta.public) {
+    await auth.init()
+  }
+  if (!auth.user && !to.meta.public) return '/login'
+  if (auth.user && to.path === '/login') return '/'
+})
+
+export default router

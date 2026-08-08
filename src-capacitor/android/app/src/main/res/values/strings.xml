@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">aarcDev</string>
+    <string name="title_activity_main">aarc</string>
+    <string name="package_name">com.vitka.collabapp</string>
+    <string name="custom_url_scheme">com.vitka.collabapp</string>
+</resources>

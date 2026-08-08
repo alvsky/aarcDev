@@ -1,9 +1,9 @@
 {
-  "name": "aarc",
+  "name": "aarcdev",
   "version": "0.0.1",
-  "description": "A Quasar Project",
-  "productName": "aarc - Development collaboration app",
-  "author": "alvsky <alvsky@gmail.com>",
+  "description": "Development collaboration app",
+  "productName": "aarcDev",
+  "author": "alvsky <vitkadesign@gmail.com>",
   "type": "module",
   "private": true,
   "scripts": {
@@ -14,26 +14,32 @@
     "postinstall": "quasar prepare --silent"
   },
   "dependencies": {
-    "vue-i18n": "^11.3.0",
-    "pinia": "^3.0.1",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/cli": "^8.4.2",
+    "@capacitor/core": "^8.4.2",
+    "@capacitor/push-notifications": "^8.1.2",
     "@quasar/extras": "^2.0.0",
+    "@supabase/supabase-js": "^2.110.7",
+    "localforage": "^1.10.0",
+    "pinia": "^3.0.1",
     "quasar": "^2.21.1",
     "vue": "^3.5.22",
+    "vue-i18n": "^11.3.0",
     "vue-router": "^5.0.6"
   },
   "devDependencies": {
-    "@intlify/unplugin-vue-i18n": "^11.0.0",
     "@eslint/js": "^9.39.4",
+    "@intlify/unplugin-vue-i18n": "^11.0.0",
+    "@quasar/app-vite": "^3.0.0",
+    "@vue/eslint-config-prettier": "^10.2.0",
+    "autoprefixer": "^10.4.27",
     "eslint": "^9.39.4",
     "eslint-plugin-vue": "^10.8.0",
     "globals": "^17.4.0",
-    "vite-plugin-checker": "^0.12.0",
-    "vue-eslint-parser": "^10.4.0",
-    "@vue/eslint-config-prettier": "^10.2.0",
+    "postcss": "^8.5.8",
     "prettier": "^3.8.1",
-    "@quasar/app-vite": "^3.0.0",
-    "autoprefixer": "^10.4.27",
-    "postcss": "^8.5.8"
+    "vite-plugin-checker": "^0.12.0",
+    "vue-eslint-parser": "^10.4.0"
   },
   "keywords": [
     "quasar",

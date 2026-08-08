@@ -5,6 +5,9 @@ node_modules
 # .env files
 .env*
 
+# Supabase local CLI state
+supabase/.temp
+
 # Quasar core related directories
 .quasar
 /dist
