@@ -182,7 +182,10 @@
             <q-item-section>{{ $t('chat.retry') }}</q-item-section>
           </q-item>
           <q-separator v-if="activeActionMsg.failed" />
-          <q-item clickable @click="(chatStore.removeOutboxItem(activeActionMsg.id), closeActions())">
+          <q-item
+            clickable
+            @click="(chatStore.removeOutboxItem(activeActionMsg.id), closeActions())"
+          >
             <q-item-section side><q-icon name="delete" color="negative" /></q-item-section>
             <q-item-section class="text-negative">{{ $t('common.delete') }}</q-item-section>
           </q-item>

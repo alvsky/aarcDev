@@ -18,9 +18,7 @@
       <MessageInput
         :project-id="projectId"
         :channel="channel"
-        :idea-id="ideaId"
-        :bug-id="bugId"
-        :tbi-id="tbiId"
+        :item-id="itemId"
         :reply-to="replyTarget"
         @cancel-reply="clearReply"
       />
@@ -38,12 +36,7 @@ import MessageInput from './MessageInput.vue'
 const props = defineProps({
   projectId: { type: String, required: true },
   channel: { type: String, default: 'main' },
-  ideaId: { type: String, default: null },
-  bugId: { type: String, default: null },
-  tbiId: { type: String, default: null },
-  // TBI thread spaja poruke izvorne ideje/buga s vlastitima pa smije nametnuti svoj
-  // popis; ostali ga ne šalju i panel sam čita thread iz storea.
-  messages: { type: Array, default: null },
+  itemId: { type: String, default: null },
 })
 
 defineEmits(['scrolled-to-bottom'])
@@ -55,14 +48,12 @@ const listRef = ref(null)
 const threadIds = computed(() => ({
   projectId: props.projectId,
   channel: props.channel,
-  ideaId: props.ideaId,
-  bugId: props.bugId,
-  tbiId: props.tbiId,
+  itemId: props.itemId,
 }))
 
-const shownMessages = computed(() =>
-  props.messages ? props.messages : chatStore.threadMessages(chatStore.threadKey(threadIds.value)),
-)
+// Nema više spajanja dvaju threadova: stavka ima jedan thread, pa panel uvijek
+// čita iz storea (prije je TBI morao nametati vlastiti spojeni popis).
+const shownMessages = computed(() => chatStore.threadMessages(chatStore.threadKey(threadIds.value)))
 
 function onDelete(id) {
   chatStore.deleteMessage(id, threadIds.value)

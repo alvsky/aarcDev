@@ -179,8 +179,7 @@ import AppHeader from 'src/components/shared/AppHeader.vue'
 import UserAvatar from 'src/components/shared/UserAvatar.vue'
 import { useAuthStore } from 'src/stores/auth'
 import { useProjectsStore } from 'src/stores/projects'
-import { useIdeasStore } from 'src/stores/ideas'
-import { useBugsStore } from 'src/stores/bugs'
+import { useItemsStore } from 'src/stores/items'
 import { useImageUpload } from 'src/composables/useImageUpload'
 import { discardReplacedScreenshot } from 'src/utils/screenshots'
 import { removeCachedImage } from 'src/utils/imageCache'
@@ -191,8 +190,7 @@ const $q = useQuasar()
 const { t } = useI18n()
 const authStore = useAuthStore()
 const projectsStore = useProjectsStore()
-const ideasStore = useIdeasStore()
-const bugsStore = useBugsStore()
+const itemsStore = useItemsStore()
 const { uploadImage } = useImageUpload()
 
 const savingProfile = ref(false)
@@ -210,8 +208,8 @@ onMounted(() => {
 
 const stats = computed(() => ({
   projects: projectsStore.projects.length,
-  ideas: ideasStore.ideas.length,
-  bugs: bugsStore.bugs.length,
+  ideas: itemsStore.items.filter((i) => i.kind === 'idea').length,
+  bugs: itemsStore.items.filter((i) => i.kind === 'bug').length,
 }))
 
 const memberRole = (project) => {

@@ -158,10 +158,7 @@ export const useAuthStore = defineStore('auth', {
       // veličinu (npr. avatar), ne samo font-size teksta — calc() ne dijeli dvije
       // dužine, pa CSS treba gotov broj.
       const scales = { small: 0.875, medium: 1, large: 1.125, xlarge: 1.25 }
-      document.documentElement.style.setProperty(
-        '--aarc-font-scale',
-        scales[this.fontSize] ?? 1,
-      )
+      document.documentElement.style.setProperty('--aarc-font-scale', scales[this.fontSize] ?? 1)
     },
   },
 })

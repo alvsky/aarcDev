@@ -6,39 +6,39 @@
       </template>
       <template #tabs>
         <q-tabs v-model="tab" align="justify" dense indicator-color="white" active-color="white">
-        <q-tab name="chat" icon="forum">
-          <div class="row items-center q-gutter-xs">
-            <span>{{ $t('nav.chat') }}</span>
-            <q-badge v-if="chatUnread > 0" color="negative" floating rounded>
-              {{ chatUnread }}
-            </q-badge>
-          </div>
-        </q-tab>
-        <q-tab name="bugs" icon="bug_report">
-          <div class="row items-center q-gutter-xs">
-            <span>{{ $t('nav.bugs') }}</span>
-            <q-badge v-if="notifStore.newBugs(projectId) > 0" color="negative" floating rounded>
-              {{ notifStore.newBugs(projectId) }}
-            </q-badge>
-          </div>
-        </q-tab>
-        <q-tab name="ideas" icon="lightbulb">
-          <div class="row items-center q-gutter-xs">
-            <span>{{ $t('nav.ideas') }}</span>
-            <q-badge v-if="notifStore.newIdeas(projectId) > 0" color="negative" floating rounded>
-              {{ notifStore.newIdeas(projectId) }}
-            </q-badge>
-          </div>
-        </q-tab>
+          <q-tab name="chat" icon="forum">
+            <div class="row items-center q-gutter-xs">
+              <span>{{ $t('nav.chat') }}</span>
+              <q-badge v-if="chatUnread > 0" color="negative" floating rounded>
+                {{ chatUnread }}
+              </q-badge>
+            </div>
+          </q-tab>
+          <q-tab name="bugs" icon="bug_report">
+            <div class="row items-center q-gutter-xs">
+              <span>{{ $t('nav.bugs') }}</span>
+              <q-badge v-if="notifStore.newBugs(projectId) > 0" color="negative" floating rounded>
+                {{ notifStore.newBugs(projectId) }}
+              </q-badge>
+            </div>
+          </q-tab>
+          <q-tab name="ideas" icon="lightbulb">
+            <div class="row items-center q-gutter-xs">
+              <span>{{ $t('nav.ideas') }}</span>
+              <q-badge v-if="notifStore.newIdeas(projectId) > 0" color="negative" floating rounded>
+                {{ notifStore.newIdeas(projectId) }}
+              </q-badge>
+            </div>
+          </q-tab>
 
-        <q-tab name="tbi" icon="checklist">
-          <div class="row items-center q-gutter-xs">
-            <span>{{ $t('nav.tbi') }}</span>
-            <q-badge v-if="notifStore.newTbi(projectId) > 0" color="negative" floating rounded>
-              {{ notifStore.newTbi(projectId) }}
-            </q-badge>
-          </div>
-        </q-tab>
+          <q-tab name="tbi" icon="checklist">
+            <div class="row items-center q-gutter-xs">
+              <span>{{ $t('nav.tbi') }}</span>
+              <q-badge v-if="notifStore.newTbi(projectId) > 0" color="negative" floating rounded>
+                {{ notifStore.newTbi(projectId) }}
+              </q-badge>
+            </div>
+          </q-tab>
         </q-tabs>
       </template>
     </AppHeader>
@@ -68,9 +68,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useProjectsStore } from 'src/stores/projects'
-import { useIdeasStore } from 'src/stores/ideas'
-import { useBugsStore } from 'src/stores/bugs'
-import { useTbiStore } from 'src/stores/tbi'
+import { useItemsStore } from 'src/stores/items'
 import { useChatStore } from 'src/stores/chat'
 import { useNotificationsStore } from 'src/stores/notifications'
 import { useRealtime } from 'src/composables/useRealtime'
@@ -96,9 +94,7 @@ watch(tab, async (newTab) => {
 const memberDialog = ref(false)
 
 const projectsStore = useProjectsStore()
-const ideasStore = useIdeasStore()
-const bugsStore = useBugsStore()
-const tbiStore = useTbiStore()
+const itemsStore = useItemsStore()
 const chatStore = useChatStore()
 let reactionsChannel = null
 const notifStore = useNotificationsStore()
@@ -117,17 +113,9 @@ const { setup, teardown } = useRealtime(projectId, {
     await chatStore.handleIncoming(p)
     await notifStore.fetchUnread()
   },
-  onIdea: async (p) => {
-    ideasStore.handleIncoming(p)
-    await notifStore.fetchUnread() // ← dodaj
-  },
-  onBug: async (p) => {
-    bugsStore.handleIncoming(p)
-    await notifStore.fetchUnread() // ← dodaj
-  },
-  onTbi: async (p) => {
-    tbiStore.handleIncoming(p)
-    await notifStore.fetchUnread() // ← dodaj
+  onItem: async (p) => {
+    itemsStore.handleIncoming(p)
+    await notifStore.fetchUnread()
   },
 })
 
@@ -149,9 +137,7 @@ const messagesUpdateChannel = supabase
 
 onMounted(async () => {
   await Promise.all([
-    ideasStore.fetchIdeas(projectId),
-    bugsStore.fetchBugs(projectId),
-    tbiStore.fetchItems(projectId),
+    itemsStore.fetchItems(projectId),
     notifStore.fetchUnread(),
     chatStore.fetchMessages({ projectId, channel: 'main' }),
   ])

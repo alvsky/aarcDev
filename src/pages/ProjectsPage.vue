@@ -181,19 +181,15 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useProjectsStore } from 'src/stores/projects'
 import { useNotificationsStore } from 'src/stores/notifications'
-import { useTbiStore } from 'src/stores/tbi'
 import { useAuthStore } from 'src/stores/auth'
 import { useRealtime } from 'src/composables/useRealtime'
 import AppHeader from 'src/components/shared/AppHeader.vue'
 import UserAvatar from 'src/components/shared/UserAvatar.vue'
 import { useOfflineGuard } from 'src/composables/useOfflineGuard'
 import ProjectDialog from 'src/components/shared/ProjectDialog.vue'
-import { useIdeasStore } from 'src/stores/ideas'
-import { useBugsStore } from 'src/stores/bugs'
+import { useItemsStore } from 'src/stores/items'
 
-const ideasStore = useIdeasStore()
-const bugsStore = useBugsStore()
-const tbiStore = useTbiStore()
+const itemsStore = useItemsStore()
 const $q = useQuasar()
 const { t } = useI18n()
 const projectsStore = useProjectsStore()
@@ -240,12 +236,11 @@ const allMembers = computed(() => {
 })
 
 const tbiProgress = (projectId) => {
-  const items = tbiStore.items.filter((i) => i.project_id === projectId)
+  const items = itemsStore.tbi(projectId)
   if (!items.length) return null
-  const done = items.filter((i) => i.status === 'done').length
+  const done = items.filter((i) => i.stage === 'done').length
   return { done, total: items.length, percent: done / items.length }
 }
-
 
 function openDialog(project = null) {
   activeProject.value = project ? { ...project } : null
@@ -271,15 +266,7 @@ onMounted(async () => {
   await projectsStore.fetchProjects()
 
   // Fetch za sve projekte
-  await Promise.all(
-    projectsStore.projects.map((p) =>
-      Promise.all([
-        ideasStore.fetchIdeas(p.id),
-        bugsStore.fetchBugs(p.id),
-        tbiStore.fetchItems(p.id),
-      ]),
-    ),
-  )
+  await Promise.all(projectsStore.projects.map((p) => itemsStore.fetchItems(p.id)))
 
   await notifStore.fetchUnread()
 

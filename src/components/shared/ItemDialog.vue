@@ -45,9 +45,10 @@
         <!-- Screenshot -->
         <ScreenshotUpload v-model="pendingImage" />
 
-        <!-- Priority — bug i tbi -->
+        <!-- Prioritet vrijedi za sve vrste, ne samo bugove (docs/item-model.md).
+             Faza se ne mijenja ovdje nego inline na kartici, jer prijelazi moraju
+             popuniti accepted_by/rejected_by stupce. -->
         <q-select
-          v-if="type !== 'idea'"
           v-model="form.priority"
           :label="$t('common.priority')"
           outlined
@@ -56,24 +57,12 @@
           emit-value
           map-options
         />
-
-        <!-- Status — samo edit mode. Bug status se mijenja inline na kartici. -->
-        <q-select
-          v-if="item?.id && type === 'tbi'"
-          v-model="form.status"
-          :label="$t('common.status')"
-          outlined
-          dense
-          :options="statusOptions"
-          emit-value
-          map-options
-        />
       </q-card-section>
 
       <q-card-actions align="right">
         <q-btn flat :label="$t('common.cancel')" v-close-popup />
         <q-btn
-          :color="type === 'bug' ? 'negative' : 'primary'"
+          :color="kind === 'bug' ? 'negative' : 'primary'"
           :label="$t('common.save')"
           :loading="saving"
           @click="save"
@@ -88,14 +77,12 @@ import { ref, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useImageUpload } from 'src/composables/useImageUpload'
-import { useIdeasStore } from 'src/stores/ideas'
-import { useBugsStore } from 'src/stores/bugs'
-import { useTbiStore } from 'src/stores/tbi'
+import { useItemsStore } from 'src/stores/items'
 import ScreenshotUpload from './ScreenshotUpload.vue'
 
 const props = defineProps({
   modelValue: { type: Boolean, required: true },
-  type: { type: String, required: true }, // 'idea' | 'bug' | 'tbi'
+  kind: { type: String, required: true }, // 'idea' | 'bug' | 'task'
   item: { type: Object, default: null },
   projectId: { type: String, required: true },
 })
@@ -103,9 +90,7 @@ const emit = defineEmits(['update:modelValue'])
 
 const $q = useQuasar()
 const { t } = useI18n()
-const ideasStore = useIdeasStore()
-const bugsStore = useBugsStore()
-const tbiStore = useTbiStore()
+const itemsStore = useItemsStore()
 const { uploadImage } = useImageUpload()
 
 const saving = ref(false)
@@ -116,15 +101,7 @@ const open = computed({
   set: (v) => emit('update:modelValue', v),
 })
 
-// Default form po tipu
-const defaultForm = () => {
-  if (props.type === 'idea') return { title: '', description: '' }
-  if (props.type === 'bug') return { title: '', description: '', priority: 'med', status: 'open' }
-  if (props.type === 'tbi') return { title: '', description: '', priority: 'med', status: 'tbi' }
-  return { title: '', description: '' }
-}
-
-const form = ref(defaultForm())
+const form = ref({ title: '', description: '', priority: 'med' })
 
 // Reset forme pri otvaranju
 watch(
@@ -134,63 +111,23 @@ watch(
       // Uvijek, i pri uređivanju: inače bi slika odabrana u prošlom otvaranju
       // dijaloga ostala visjeti i bila uploadana na sljedeću stavku.
       pendingImage.value = null
-      if (props.item) {
-        form.value = {
-          title: props.item.title ?? '',
-          description: props.item.description ?? '',
-          priority: props.item.priority ?? 'med',
-          status: props.item.status ?? (props.type === 'bug' ? 'open' : 'tbi'),
-        }
-      } else {
-        form.value = {
-          title: '',
-          description: '',
-          priority: 'med',
-          status: props.type === 'bug' ? 'open' : 'tbi',
-        }
+      form.value = {
+        title: props.item?.title ?? '',
+        description: props.item?.description ?? '',
+        priority: props.item?.priority ?? 'med',
       }
     }
   },
 )
 
-// Dinamičan naslov
 const dialogTitle = computed(() => {
   if (props.item?.id) return t('common.edit')
-  if (props.type === 'idea') return t('ideas.new')
-  if (props.type === 'bug') return t('bugs.new')
-  if (props.type === 'tbi') return t('tbi.new')
-  return t('common.edit')
+  return { idea: t('ideas.new'), bug: t('bugs.new'), task: t('tbi.new') }[props.kind]
 })
 
-// Priority opcije
-const priorityOptions = computed(() => {
-  const ns = props.type === 'bug' ? 'bugs' : 'tbi'
-  return [
-    { label: t(`${ns}.priority.low`), value: 'low' },
-    { label: t(`${ns}.priority.med`), value: 'med' },
-    { label: t(`${ns}.priority.high`), value: 'high' },
-  ]
-})
-
-// Status opcije po tipu
-const statusOptions = computed(() => {
-  if (props.type === 'bug') {
-    return [
-      { label: t('bugs.status.open'), value: 'open' },
-      { label: t('bugs.status.in_progress'), value: 'in_progress' },
-      { label: t('bugs.status.testing'), value: 'testing' },
-      { label: t('bugs.status.closed'), value: 'closed' },
-    ]
-  }
-  if (props.type === 'tbi') {
-    return [
-      { label: t('tbi.status.tbi'), value: 'tbi' },
-      { label: t('tbi.status.in_progress'), value: 'in_progress' },
-      { label: t('tbi.status.done'), value: 'done' },
-    ]
-  }
-  return []
-})
+const priorityOptions = computed(() =>
+  ['low', 'med', 'high'].map((p) => ({ label: t(`bugs.priority.${p}`), value: p })),
+)
 
 // Upload screenshot ako postoji. Vraća isti podatak u dva oblika: `create` prati
 // potpise create akcija (camelCase), `update` ide ravno u supabase .update() pa mora
@@ -217,60 +154,23 @@ async function save() {
   try {
     const screenshot = await uploadScreenshot()
 
-    if (props.type === 'idea') {
-      if (props.item?.id) {
-        await ideasStore.updateIdea(props.item.id, {
-          title: form.value.title,
-          description: form.value.description,
-          ...screenshot.update,
-        })
-      } else {
-        await ideasStore.createIdea({
-          projectId: props.projectId,
-          title: form.value.title,
-          description: form.value.description,
-          ...screenshot.create,
-        })
-      }
-    }
-
-    if (props.type === 'bug') {
-      if (props.item?.id) {
-        await bugsStore.updateBug(props.item.id, {
-          title: form.value.title,
-          description: form.value.description,
-          priority: form.value.priority,
-          ...screenshot.update,
-        })
-      } else {
-        await bugsStore.createBug({
-          projectId: props.projectId,
-          title: form.value.title,
-          description: form.value.description,
-          priority: form.value.priority,
-          ...screenshot.create,
-        })
-      }
-    }
-
-    if (props.type === 'tbi') {
-      if (props.item?.id) {
-        await tbiStore.updateItem(props.item.id, {
-          title: form.value.title,
-          description: form.value.description,
-          priority: form.value.priority,
-          status: form.value.status,
-          ...screenshot.update,
-        })
-      } else {
-        await tbiStore.createItem({
-          projectId: props.projectId,
-          title: form.value.title,
-          description: form.value.description,
-          priority: form.value.priority,
-          ...screenshot.create,
-        })
-      }
+    // Jedna putanja za sve vrste — prije tri gotovo iste grane.
+    if (props.item?.id) {
+      await itemsStore.updateItem(props.item.id, {
+        title: form.value.title,
+        description: form.value.description,
+        priority: form.value.priority,
+        ...screenshot.update,
+      })
+    } else {
+      await itemsStore.createItem({
+        projectId: props.projectId,
+        kind: props.kind,
+        title: form.value.title,
+        description: form.value.description,
+        priority: form.value.priority,
+        ...screenshot.create,
+      })
     }
 
     open.value = false

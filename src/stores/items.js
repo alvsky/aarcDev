@@ -12,7 +12,6 @@ import { discardReplacedScreenshot } from 'src/utils/screenshots'
 // bug je i u Bugovima i na TBI ploči). Brojanje je odvojeno od vidljivosti —
 // badge ide samo tamo gdje stavka traži pažnju, po fazi.
 
-const OPEN_STAGES = ['new', 'confirmed']
 // Aktivan rad — sve tri faze pripadaju TBI ploči.
 const ACTIVE_STAGES = ['accepted', 'in_progress', 'testing']
 const TERMINAL_STAGES = ['done', 'rejected']
@@ -27,19 +26,27 @@ export const useItemsStore = defineStore('items', {
   getters: {
     byProject: (state) => (projectId) => state.items.filter((i) => i.project_id === projectId),
 
-    // Lijevak — samo ono što još čeka odluku.
+    // Getteri vraćaju DOMENU kartice (što joj uopće pripada). Skrivanje
+    // zatvorenih je stvar filtra u sučelju, ne domene — inače bi stavka s
+    // nepročitanom porukom mogla postati nedohvatljiva.
+
+    // Lijevak: ideje koje nisu otišle na ploču.
     ideas: (state) => (projectId) =>
       state.items.filter(
-        (i) => i.project_id === projectId && i.kind === 'idea' && OPEN_STAGES.includes(i.stage),
+        (i) => i.project_id === projectId && i.kind === 'idea' && !ACTIVE_STAGES.includes(i.stage),
       ),
 
-    // Registar — sve faze, jer "je li ovo već prijavljeno?" je česta potreba.
+    // Registar: svi bugovi, sve faze — "je li ovo već prijavljeno?" je česta potreba.
     bugs: (state) => (projectId) =>
       state.items.filter((i) => i.project_id === projectId && i.kind === 'bug'),
 
-    // Radna ploča — sve u aktivnom radu, bez obzira na vrstu.
+    // Ploča: aktivan rad, plus ono što je kroz njega prošlo pa završilo.
     tbi: (state) => (projectId) =>
-      state.items.filter((i) => i.project_id === projectId && ACTIVE_STAGES.includes(i.stage)),
+      state.items.filter(
+        (i) =>
+          i.project_id === projectId &&
+          (ACTIVE_STAGES.includes(i.stage) || (TERMINAL_STAGES.includes(i.stage) && i.accepted_at)),
+      ),
 
     watching: (state) => (projectId) =>
       state.items.filter((i) => i.project_id === projectId && i.watching),

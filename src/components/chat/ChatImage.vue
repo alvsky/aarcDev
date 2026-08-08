@@ -2,13 +2,7 @@
   <div>
     <q-skeleton v-if="loading" type="rect" width="220px" height="140px" />
 
-    <img
-      v-else-if="imgSrc"
-      :src="imgSrc"
-      :alt="alt"
-      class="chat-img"
-      @click="lightbox = true"
-    />
+    <img v-else-if="imgSrc" :src="imgSrc" :alt="alt" class="chat-img" @click="lightbox = true" />
 
     <div v-else class="text-caption text-grey-5">[slika nedostupna]</div>
 

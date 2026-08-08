@@ -95,9 +95,7 @@ import { useNetwork } from 'src/composables/useNetwork'
 
 const props = defineProps({
   projectId: { type: String, required: true },
-  ideaId: { type: String, default: null },
-  bugId: { type: String, default: null },
-  tbiId: { type: String, default: null },
+  itemId: { type: String, default: null },
   channel: { type: String, default: 'main' },
   replyTo: { type: Object, default: null },
 })
@@ -176,9 +174,7 @@ async function send() {
 
     await chatStore.sendMessage({
       projectId: props.projectId,
-      ideaId: props.ideaId,
-      bugId: props.bugId,
-      tbiId: props.tbiId,
+      itemId: props.itemId,
       channel: props.channel,
       body: body.value.trim(),
       attachmentUrl,

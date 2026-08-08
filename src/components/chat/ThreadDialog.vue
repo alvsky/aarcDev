@@ -16,15 +16,7 @@
 
       <q-separator />
 
-      <ChatPanel
-        ref="panelRef"
-        class="col"
-        :project-id="projectId"
-        :idea-id="ideaId"
-        :bug-id="bugId"
-        :tbi-id="tbiId"
-        :messages="messages"
-      />
+      <ChatPanel ref="panelRef" class="col" :project-id="projectId" :item-id="itemId" />
     </q-card>
   </q-dialog>
 </template>
@@ -37,10 +29,7 @@ const props = defineProps({
   modelValue: { type: Boolean, required: true },
   title: { type: String, default: '' },
   projectId: { type: String, required: true },
-  ideaId: { type: String, default: null },
-  bugId: { type: String, default: null },
-  tbiId: { type: String, default: null },
-  messages: { type: Array, default: null },
+  itemId: { type: String, default: null },
 })
 
 const emit = defineEmits(['update:modelValue', 'close'])
