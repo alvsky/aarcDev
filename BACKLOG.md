@@ -136,6 +136,26 @@ L. Native / mobilno
 🟢 L2. TestFlight + Play internal track pipeline.
 🟢 L3. Finalizacija ikona/splash za obje platforme.
 🟢 L4. Provjeriti ponašanje badge-a kad je badge_enabled isključen za sve projekte.
+M. Model stavke — spajanje u jednu tablicu
+Model i obrazloženje: docs/item-model.md. Razlog: ideja i njezin TBI danas su dva retka s dva
+threada, iz čega izravno slijedi sedam zasebnih grešaka (uključujući badge koji se ne da
+očistiti). Radi se na grani, ne na main (vidi A3).
+
+✅ M1. Model: kind × stage, kartice kao pogledi, pravilo "jedna stavka — jedan badge",
+stupci autorstva, osobna oznaka "Pratim" (riješeno 2026-08-08, docs/item-model.md).
+✅ M2. Tablice items + item_user_state + privremena mapa, i prijenos podataka
+(migracije 20260808120000 i 20260808120100). Čisto aditivno — stare tablice netaknute.
+🔴 M3. messages.item_id umjesto tri nullable FK-a; prevezivanje poruka preko mape (spaja
+threadove spojenih parova). Usput otpada COALESCE unique indeks i prisila na
+upsert_message_read RPC (invarijanta 3 u CLAUDE.md).
+🔴 M4. Storovi: ideas/bugs/tbi → jedan items store. fetchUnread se bitno pojednostavljuje.
+🔴 M5. Sučelje: kartice filtriraju po kind/stage, radnje Prihvati/Odbij umjesto promoviraj,
+oznaka "Pratim" (oko) + filtar po njoj, sortiranje po priority.
+🔴 M6. Brisanje starih tablica (ideas, bugs, tbi_items, item_reads), viewa
+thread_message_counts i privremene mape. ⚠️ tek kad M3–M5 rade.
+🟠 M7. Uskladiti dokumentaciju nakon M6: CLAUDE.md invarijante 3, 4 i 8, docs/database.md,
+docs/workflows.md (tvrdi da lista ideja prikazuje i promovirane — kod to ne radi).
+
 Preporučeni redoslijed ako želiš vodilju
 Odmah, prije bilo čega: A1–A2 (git), zatim B1–B3 (RLS).
 Sljedeći sloj: C2 (atomarni createProject), D1–D3 (unread + kanali), E1–E3.
