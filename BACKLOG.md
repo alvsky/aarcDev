@@ -2,7 +2,7 @@ aarcDev — Backlog razrađen u samostalne točke
 Organizirano po temama, ne po mjesecima — svaka točka je samostalan zadatak koji možeš uzeti kad želiš. Oznake: 🔴 kritično, 🟠 važno, 🟢 kad stigneš. Gdje postoji ovisnost, piše "⚠️ nakon".
 
 A. Git i higijena projekta
-🔴 A1. Napraviti pravi inicijalni commit postojećeg stanja (sve što sad radi).
+✅ A1. Napraviti pravi inicijalni commit postojećeg stanja (riješeno 2026-08-08, commit c1d4857).
 🔴 A2. Postaviti remote repozitorij (GitHub) i push.
 🟠 A3. Dogovoriti granu-po-featureu workflow (main uvijek buildabilan).
 🟢 A4. Obrisati mrtve datoteke: ChatPage-copy.vue, LoginPage8.vue, BugCard-copy.vue, app-copy.scss, router/index-copy.js, example-store.js, IndexPage.vue, SecondPage.vue, src/i18n/en-US/. ⚠️ nakon A1 (da postoji povijest).
