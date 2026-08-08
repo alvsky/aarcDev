@@ -13,6 +13,8 @@ import { discardReplacedScreenshot } from 'src/utils/screenshots'
 // badge ide samo tamo gdje stavka traži pažnju, po fazi.
 
 const OPEN_STAGES = ['new', 'confirmed']
+// Aktivan rad — sve tri faze pripadaju TBI ploči.
+const ACTIVE_STAGES = ['accepted', 'in_progress', 'testing']
 const TERMINAL_STAGES = ['done', 'rejected']
 
 export const useItemsStore = defineStore('items', {
@@ -35,9 +37,9 @@ export const useItemsStore = defineStore('items', {
     bugs: (state) => (projectId) =>
       state.items.filter((i) => i.project_id === projectId && i.kind === 'bug'),
 
-    // Radna ploča — sve što je prihvaćeno, bez obzira na vrstu.
+    // Radna ploča — sve u aktivnom radu, bez obzira na vrstu.
     tbi: (state) => (projectId) =>
-      state.items.filter((i) => i.project_id === projectId && i.stage === 'accepted'),
+      state.items.filter((i) => i.project_id === projectId && ACTIVE_STAGES.includes(i.stage)),
 
     watching: (state) => (projectId) =>
       state.items.filter((i) => i.project_id === projectId && i.watching),

@@ -9,13 +9,17 @@ import { useBadge } from 'src/composables/useBadge'
 // Stavka smije biti vidljiva u dvije kartice (prihvaćeni bug je i u registru
 // bugova i na TBI ploči), ali se broji točno u JEDNOJ — onoj gdje traži pažnju.
 // Vidljivost i brojanje su namjerno odvojeni.
+// Aktivan rad — sve tri faze pripadaju TBI ploči.
+const ACTIVE_STAGES = ['accepted', 'in_progress', 'testing']
+const TERMINAL_STAGES = ['done', 'rejected']
+
 function tabForNewItem(item) {
   if (!item) return null
-  if (item.stage === 'accepted') return 'newTbi'
-  if (item.stage === 'done' || item.stage === 'rejected') return null
+  if (ACTIVE_STAGES.includes(item.stage)) return 'newTbi'
+  if (TERMINAL_STAGES.includes(item.stage)) return null
   if (item.kind === 'bug') return 'newBugs'
   if (item.kind === 'idea') return 'newIdeas'
-  return null // zadatak izvan 'accepted' nema svoju karticu
+  return null // zadatak izvan aktivnog rada nema svoju karticu
 }
 
 // Za NEPROČITANE PORUKE vrijedi drukčije pravilo nego za nove stavke: poruka je
@@ -27,7 +31,7 @@ function tabForNewItem(item) {
 // nepročitanih poruka, čak i ako je u fazi done/rejected.
 function tabForThread(item) {
   if (!item) return null
-  if (item.stage === 'accepted') return 'newTbi'
+  if (ACTIVE_STAGES.includes(item.stage)) return 'newTbi'
   if (item.kind === 'bug') return 'newBugs'
   if (item.kind === 'idea') return 'newIdeas'
   return 'newTbi'

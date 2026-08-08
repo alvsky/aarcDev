@@ -33,13 +33,21 @@ These are not seven bugs. They are one design decision, seen seven times.
 
 **`stage`** — where it is in the flow. This is what changes.
 
-|             |                                                         |
-| ----------- | ------------------------------------------------------- |
-| `new`       | filed, not yet triaged                                  |
-| `confirmed` | acknowledged, not yet scheduled                         |
-| `accepted`  | scheduled for implementation — this is what "TBI" means |
-| `done`      | completed                                               |
-| `rejected`  | decided against                                         |
+|               |                                 |
+| ------------- | ------------------------------- |
+| `new`         | filed, not yet triaged          |
+| `confirmed`   | acknowledged, not yet scheduled |
+| `accepted`    | scheduled, not started          |
+| `in_progress` | being worked on                 |
+| `testing`     | in verification                 |
+| `done`        | completed                       |
+| `rejected`    | decided against                 |
+
+`accepted`, `in_progress` and `testing` together are **active work** — all three belong on
+the TBI board. The middle two exist because the bug UI already used them
+(`open`/`in_progress`/`testing`/`closed`); collapsing them into a single `accepted` would have
+thrown away state the team actually tracks. The first cut of this document missed that, and
+the initial backfill flattened both into `new` before it was corrected.
 
 **Promotion is `stage: new → accepted`.** One update, one row, one thread. Nothing is copied,
 moved, or deleted — which is why defects 1–7 stop being possible rather than being fixed.
@@ -58,7 +66,7 @@ legitimately appear in two of them.
 | --------- | ---------------------------------------- | ------------------------------------ |
 | **Bugs**  | `kind='bug'` — **all stages**            | registry — the full defect history   |
 | **Ideas** | `kind='idea'` + stage `new`, `confirmed` | funnel — awaiting a decision         |
-| **TBI**   | `stage='accepted'` — **any kind**        | work board — what is being built now |
+| **TBI**   | active stages — **any kind**             | work board — what is being built now |
 
 The asymmetry is intentional. A registry wants history ("has this been reported before?"); a
 funnel wants only what still needs a decision. Both tabs offer filters to reveal the rest.
@@ -77,8 +85,15 @@ twice.
 > `stage`, not by `kind`.
 
 - stage `new` / `confirmed` → counts on Bugs or Ideas (per `kind`)
-- stage `accepted` → counts on TBI **only**, whatever the `kind`
+- any active stage → counts on TBI **only**, whatever the `kind`
 - stage `done` / `rejected` → counts nowhere
+
+One exception, found while implementing: the rule above is about **items**. An unread
+_message_ on a closed item is still a real signal, so message counts are attributed to the tab
+where that item can be **found** (bugs to the registry, ideas to Ideas, tasks to TBI) rather
+than dropped. Otherwise a number appears on the app icon that no tab can explain — exactly the
+defect this model exists to remove. Consequence for the UI: a tab's default filter must reveal
+an item that has unread messages, even in a terminal stage.
 
 So an accepted bug is still _visible_ under Bugs, but carries no badge there.
 
