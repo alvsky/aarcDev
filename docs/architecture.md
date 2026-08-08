@@ -37,14 +37,14 @@ handful of SQL functions (`is_member`, `is_owner`, `upsert_message_read`,
 
 ## Layers
 
-| Layer | Location | Role |
-|---|---|---|
-| Pages | `src/pages/` | Route targets and project tab panels |
-| Components | `src/components/{chat,bugs,ideas,tbi,shared}/` | Presentational + dialogs |
-| Stores | `src/stores/` | All data access, business rules, realtime merge logic |
-| Composables | `src/composables/` | Cross-cutting: realtime wiring, push, badge, image upload, date format |
-| Boot | `src/boot/` | Supabase client singleton, vue-i18n (en default, hr fallback) |
-| Native shell | `src-capacitor/` | Capacitor 8 iOS/Android projects, Firebase config |
+| Layer        | Location                                       | Role                                                                   |
+| ------------ | ---------------------------------------------- | ---------------------------------------------------------------------- |
+| Pages        | `src/pages/`                                   | Route targets and project tab panels                                   |
+| Components   | `src/components/{chat,bugs,ideas,tbi,shared}/` | Presentational + dialogs                                               |
+| Stores       | `src/stores/`                                  | All data access, business rules, realtime merge logic                  |
+| Composables  | `src/composables/`                             | Cross-cutting: realtime wiring, push, badge, image upload, date format |
+| Boot         | `src/boot/`                                    | Supabase client singleton, vue-i18n (en default, hr fallback)          |
+| Native shell | `src-capacitor/`                               | Capacitor 8 iOS/Android projects, Firebase config                      |
 
 ## Key data-flow patterns
 
@@ -152,8 +152,12 @@ often UPDATE) on ideas/bugs/tbi/messages/profiles is allowed for **any authentic
 True project scoping exists only on `projects` (members see their projects) and
 `project_members` (owners manage, members view), via the `is_member`/`is_owner` SQL helpers.
 Deletes are restricted to creators (plus members for TBI). Storage accesses use short-lived
-signed URLs (1 h). Tightening RLS to project scope is an open TODO — do not rely on RLS for
-project data isolation.
+signed URLs (1 h). Do not rely on RLS for project data isolation in the current code.
+
+**This is the dev-phase state and is being replaced.** The target model — organizations as the
+tenant boundary, org roles (owner/admin/member/guest), and a single `can_access_project()`
+chokepoint for every content policy — is specified in `docs/multi-tenancy.md`, with the
+migration sequenced in `BACKLOG.md` § B.
 
 ## Related docs
 

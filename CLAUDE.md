@@ -16,12 +16,13 @@ Before making changes, always read:
 
 ## Detailed docs — read the relevant one before working in that area
 
-| Doc                    | Contents                                                                                           |
-| ---------------------- | -------------------------------------------------------------------------------------------------- |
-| `docs/architecture.md` | Layers, data-flow patterns, routing quirk, push pipeline, security model                           |
-| `docs/database.md`     | All tables/relationships/RLS matrix/storage; schema source = `supabase/schema.sql` (authoritative) |
-| `docs/workflows.md`    | Promote/demote flows, chat rules, unread/notification mechanics, realtime wiring                   |
-| `docs/development.md`  | Setup, `.env`, scripts, Capacitor mocks, iOS FCM bridge, Supabase ops, conventions                 |
+| Doc                     | Contents                                                                                           |
+| ----------------------- | -------------------------------------------------------------------------------------------------- |
+| `docs/architecture.md`  | Layers, data-flow patterns, routing quirk, push pipeline, security model                           |
+| `docs/database.md`      | All tables/relationships/RLS matrix/storage; schema source = `supabase/schema.sql` (authoritative) |
+| `docs/workflows.md`     | Promote/demote flows, chat rules, unread/notification mechanics, realtime wiring                   |
+| `docs/development.md`   | Setup, `.env`, scripts, Capacitor mocks, iOS FCM bridge, Supabase ops, conventions                 |
+| `docs/multi-tenancy.md` | **Target** org/project tenancy + role model, RLS chokepoint, rationale, rejected alternatives      |
 
 ## Critical invariants (violating these breaks the app)
 
@@ -35,8 +36,12 @@ Before making changes, always read:
 4. **Single `messages` table.** Thread = exactly one of `idea_id`/`bug_id`/`tbi_id` set
    (`channel` null), or all null + `channel`. Chat store keys: `${projectId}:idea:${id}` etc.
    or `${projectId}:${channel}`.
-5. **RLS is permissive** — any authenticated user can read ideas/bugs/tbi/messages/profiles
-   across projects; scoping is client-side. Don't assume isolation; don't silently "fix".
+5. **RLS is permissive — but this is now legacy, not the goal.** Any authenticated user can
+   currently read ideas/bugs/tbi/messages/profiles across projects; scoping is client-side, so
+   **never rely on RLS for isolation in existing code**. As of 2026-08-08 the app is heading to
+   public distribution and the target model (orgs as tenants, roles, one `can_access_project`
+   chokepoint) is specified in `docs/multi-tenancy.md`, sequenced in BACKLOG § B. Tighten
+   policies _deliberately, as that migration_, never as a silent side effect of other work.
 6. **Multi-project store state** — merge with
    `[...state.filter(x => x.project_id !== pid), ...mapped]`, never blind-replace.
 7. All Supabase access goes through Pinia stores (`src/stores/`), never components directly.
@@ -73,9 +78,11 @@ Before making changes, always read:
 
 ## Known TODOs
 
-- Dead files: ChatPage-copy.vue, LoginPage8.vue (empty), BugCard-copy.vue, app-copy.scss,
-  router/index-copy.js, example-store.js, IndexPage/SecondPage.vue, src/i18n/en-US/.
+- Dead files: `LoginPage8.vue` (empty) is the last one — the rest were deleted 2026-08-08
+  (commit df0f18c).
 - Legacy `bug_reads`/`idea_reads` tables unused; `item_reads` has no FK (orphans on delete).
 - Debug console.logs in stores/pages; unfiltered realtime channels for message
-  updates/reactions; unused nested child routes; RLS tightening open; `fetchUnread()` won't
-  scale; Capacitor appName mismatch (`aarc` vs `aarcDev`); only one git commit exists.
+  updates/reactions; unused nested child routes; `fetchUnread()` won't scale; Capacitor
+  appName mismatch (`aarc` vs `aarcDev`).
+- **Multi-tenancy migration is the current priority** — see `docs/multi-tenancy.md` and
+  BACKLOG § B. Until it lands, RLS gives no isolation.

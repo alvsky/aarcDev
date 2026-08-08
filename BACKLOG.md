@@ -8,13 +8,70 @@ A. Git i higijena projekta
 ✅ A4. Obrisati mrtve datoteke (riješeno 2026-08-08, commit df0f18c): BugCard-copy.vue, app-copy.scss, router/index-copy.js, example-store.js, src/i18n/en-US/. IndexPage.vue i SecondPage.vue su već obrisani.
 🟢 A5. Ukloniti debug console.log iz storova i stranica (chat edit, project delete, demote, push flow, kompresija slika).
 
-B. Sigurnost (RLS i podaci)
-🔴 B1. Napisati popis ciljanih RLS pravila po tablici (spec, ne kod): ideje/bugovi/tbi/poruke → is_member(project_id) za SELECT/INSERT/UPDATE; profili → vidljivi samo sučlanovima.
-🔴 B2. Primijeniti nove RLS politike na staging pa na produkciju. ⚠️ nakon B1 i F2 (staging).
-🔴 B3. Verificirati da nakon RLS-a i dalje rade: manual profile joins, realtime eventi (realtime poštuje RLS!), thread_message_counts view, edge function (service role zaobilazi RLS — OK).
-🟠 B4. project_members: INSERT/UPDATE ograničiti na ownera (sad "anyone").
-🟠 B5. Server-side guard za brisanje računa (sole-owner provjera u delete_own_account() — sad je samo klijentski).
-🟢 B6. Pregledati Storage pravila za chat-attachments (tko smije upload/delete u tuđe puteve).
+B. Sigurnost — migracija na višenajamnost (RLS)
+Model i obrazloženje: docs/multi-tenancy.md. **Redoslijed nije proizvoljan** — backfill mora
+proći prije nego politike postanu stroge, inače si zaključaš vlastite podatke. Sve ide kao
+inkrementalne migracije (vidi C3), ne kao ručne izmjene u dashboardu.
+
+Priprema
+🔴 B1. Snimka baze prije početka. RLS promjene tiho lome realtime (realtime poštuje RLS) i nema
+ih se lako vratiti unatrag. ⚠️ vidi F2 — idealno na staging okolini prvo.
+🔴 B2. Auth postavke iz dashboarda u config.toml (sad ima 11 redaka, samo sekciju za edge
+funkciju) — inače okolina nije reproducibilna.
+
+Shema
+🔴 B3. Tablice organizations, org_members, invitations. RLS uključen, bez ijedne politike
+(zadano-zabranjeno).
+🔴 B4. projects: dodati org_id (zasad nullable) i visibility text default 'org'.
+🔴 B5. Backfill: jedna organizacija za postojeće podatke, svi postojeći korisnici kao članovi,
+ti kao owner. ⚠️ nakon B3, B4.
+🔴 B6. org_id → NOT NULL. ⚠️ nakon B5.
+
+Funkcije za prava
+🔴 B7. can_access_project(pid), is_org_member(oid), is_org_admin(oid), is_org_owner(oid) —
+sve s `stable` i `set search_path = public`. Indeksi: org_members(user_id, org_id),
+projects(org_id), project_members(user_id, project_id).
+🔴 B8. Popraviti i postojeće is_member/is_owner istim modifikatorima (sad su VOLATILE bez
+search_path — i performansni i sigurnosni problem).
+
+Politike
+🔴 B9. Sadržaj (ideas, bugs, tbi_items, messages, message_reactions) → svaka politika postaje
+can_access_project(project_id). Zamjenjuje sve USING (true).
+🔴 B10. projects INSERT → is_org_member(org_id). Sad je WITH CHECK (true), pa bi bilo tko mogao
+ubaciti projekt u tuđu organizaciju. Lako se previdi.
+🔴 B11. profiles SELECT → vlastiti redak ili suradnik iz iste organizacije. Sad je USING (true)
+= otvoren adresar e-mailova cijelog sustava.
+🔴 B12. org_members i project_members: pisanje zabranjeno svima. Sve kroz SECURITY DEFINER
+RPC-e: accept_invitation, set_member_role, remove_member — svaki provjerava ulogu
+pozivatelja. Zatvara sadašnju rupu (WITH CHECK (true) → svatko si doda članstvo i
+postavi role='owner').
+🔴 B13. Okidač: organizacija uvijek mora imati barem jednog ownera. Zadnji owner se ne može
+razvlastiti ni izaći. Server-side, ne klijentski (pouka iz B18).
+🔴 B14. upsert_message_read i get_unread_total: maknuti parametar p_user_id, koristiti
+auth.uid() iznutra. Sad su SECURITY DEFINER s korisnikovim ID-em iz poziva bez provjere.
+
+Posljedice modela
+🔴 B15. get_unread_total i edge funkcija (push-on-message, popis primatelja) rade INNER JOIN na
+project_members → s izračunatim pristupom članovi bez retka dobivaju nulu nepročitanih i
+nikakav push. Prepisati na LEFT JOIN s podrazumijevanim vrijednostima. ⚠️ veliko
+preklapanje s D1 — razmisliti o zajedničkoj izvedbi.
+🟠 B16. Storage: politike u migraciju (sad postoje samo u dashboardu, neverzionirane), putanja
+→ ${projectId}/${userId}/${uuid}.jpg, avatari u zasebnu kantu. Sadašnja putanja ne sadrži
+projekt pa je projektno ograničenje nemoguće napisati. ⚠️ postojeći objekti imaju stare
+putanje — treba odluka: migrirati ih ili podnijeti prekid na dev podacima.
+
+Provjera
+🔴 B17. Testovi izolacije: korisnik A ne vidi ništa iz organizacije korisnika B. Najvrjedniji
+test u projektu. ⚠️ vidi E1 (Vitest).
+🔴 B18. Regresija nakon zatezanja: manual profile joins, realtime događaji, thread_message_counts
+view, edge funkcija (service role zaobilazi RLS — OK), offline keš.
+🟠 B19. Server-side provjera zadnjeg vlasnika u delete_own_account() (sad samo klijentski).
+
+Sučelje (nakon što baza stoji)
+🟠 B20. Prebacivanje organizacije, upravljanje članovima i ulogama, prekidač vidljivosti
+projekta pri kreiranju/uređivanju.
+🟠 B21. Potvrda e-maila (G2) + pozivnice — **moraju ići zajedno**: bez potvrde e-maila se
+registriraš s tuđom adresom i preuzmeš tuđu pozivnicu.
 
 C. Baza — konzistentnost
 🟠 C1. CHECK constrainti za statusne kolone: bug status, tbi status, priority, role, source_type, item_type, channel, platform.
