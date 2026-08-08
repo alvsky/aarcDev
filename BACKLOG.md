@@ -3,7 +3,7 @@ Organizirano po temama, ne po mjesecima — svaka točka je samostalan zadatak k
 
 A. Git i higijena projekta
 ✅ A1. Napraviti pravi inicijalni commit postojećeg stanja (riješeno 2026-08-08, commit c1d4857).
-🔴 A2. Postaviti remote repozitorij (GitHub) i push.
+✅ A2. Postaviti remote repozitorij (GitHub) i push (riješeno 2026-08-08, https://github.com/alvsky/aarcDev).
 🟠 A3. Dogovoriti granu-po-featureu workflow (main uvijek buildabilan).
 🟢 A4. Obrisati mrtve datoteke: ChatPage-copy.vue, LoginPage8.vue, BugCard-copy.vue, app-copy.scss, router/index-copy.js, example-store.js, IndexPage.vue, SecondPage.vue, src/i18n/en-US/. ⚠️ nakon A1 (da postoji povijest).
 🟢 A5. Ukloniti debug console.log iz storova i stranica (chat edit, project delete, demote, push flow, kompresija slika).
