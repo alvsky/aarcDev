@@ -58,5 +58,11 @@
 
 <key>NSPhotoLibraryUsageDescription</key>
 <string>aarcDev treba pristup fotogaleriji za dodavanje slika u bugove i chat.</string>
+
+<!-- Obavezno iako ne koristimo Camera plugin: <input type="file" accept="image/*">
+     u WKWebView-u nudi "Snimi fotografiju", a iOS ubije proces ako ovaj ključ
+     nedostaje. To nije greška koju JavaScript može uhvatiti. -->
+<key>NSCameraUsageDescription</key>
+<string>aarcDev treba pristup kameri za snimanje fotografije profila i screenshotova.</string>
 </dict>
 </plist>
