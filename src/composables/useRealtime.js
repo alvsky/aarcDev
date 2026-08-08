@@ -8,9 +8,7 @@ export function useRealtime(projectId, handlers = {}) {
 
     const tables = [
       { table: 'messages', handler: handlers.onMessage },
-      { table: 'ideas', handler: handlers.onIdea },
-      { table: 'bugs', handler: handlers.onBug },
-      { table: 'tbi_items', handler: handlers.onTbi },
+      { table: 'items', handler: handlers.onItem },
     ]
 
     for (const { table, handler } of tables) {

@@ -27,21 +27,15 @@ export const useChatStore = defineStore('chat', {
   },
 
   actions: {
-    threadKey({ projectId, ideaId = null, bugId = null, tbiId = null, channel = 'main' }) {
-      if (ideaId) return `${projectId}:idea:${ideaId}`
-      if (bugId) return `${projectId}:bug:${bugId}`
-      if (tbiId) return `${projectId}:tbi:${tbiId}`
+    // Thread = jedna stavka (item_id) ili jedan kanal. Prije su bila tri odvojena
+    // id-a, pa je promovirana ideja imala dva threada — vidi docs/item-model.md.
+    threadKey({ projectId, itemId = null, channel = 'main' }) {
+      if (itemId) return `${projectId}:item:${itemId}`
       return `${projectId}:${channel}`
     },
 
-    async fetchMessages({
-      projectId,
-      ideaId = null,
-      bugId = null,
-      tbiId = null,
-      channel = 'main',
-    }) {
-      const key = this.threadKey({ projectId, ideaId, bugId, tbiId, channel })
+    async fetchMessages({ projectId, itemId = null, channel = 'main' }) {
+      const key = this.threadKey({ projectId, itemId, channel })
 
       let query = supabase
         .from('messages')
@@ -49,15 +43,8 @@ export const useChatStore = defineStore('chat', {
         .eq('project_id', projectId)
         .order('created_at', { ascending: true })
 
-      if (ideaId) query = query.eq('idea_id', ideaId)
-      else if (bugId) query = query.eq('bug_id', bugId)
-      else if (tbiId) query = query.eq('tbi_id', tbiId)
-      else
-        query = query
-          .is('idea_id', null)
-          .is('bug_id', null)
-          .is('tbi_id', null)
-          .eq('channel', channel)
+      if (itemId) query = query.eq('item_id', itemId)
+      else query = query.is('item_id', null).eq('channel', channel)
 
       const { data, error } = await query
       // Offline/mrežni pad: zadrži keširani thread umjesto bacanja greške
@@ -98,9 +85,7 @@ export const useChatStore = defineStore('chat', {
       const {
         projectId,
         body,
-        ideaId = null,
-        bugId = null,
-        tbiId = null,
+        itemId = null,
         channel = 'main',
         attachmentUrl = null,
         attachmentType = null,
@@ -119,10 +104,8 @@ export const useChatStore = defineStore('chat', {
         project_id: projectId,
         author_id: auth.user.id,
         body: body || '',
-        idea_id: ideaId,
-        bug_id: bugId,
-        tbi_id: tbiId,
-        channel: ideaId || bugId || tbiId ? null : channel,
+        item_id: itemId,
+        channel: itemId ? null : channel,
         attachment_url: attachmentUrl,
         attachment_type: attachmentType,
         attachment_name: attachmentName,
@@ -143,7 +126,7 @@ export const useChatStore = defineStore('chat', {
     queueMessage(payload) {
       const auth = useAuthStore()
       const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-      const { projectId, ideaId = null, bugId = null, tbiId = null, channel = 'main' } = payload
+      const { projectId, itemId = null, channel = 'main' } = payload
 
       this.outbox.push({
         tempId,
@@ -155,15 +138,13 @@ export const useChatStore = defineStore('chat', {
       })
 
       // Optimistična poruka u threadu (pending) — realtime echo je zamijeni nakon slanja
-      const key = this.threadKey({ projectId, ideaId, bugId, tbiId, channel })
+      const key = this.threadKey({ projectId, itemId, channel })
       if (!this.threads[key]) this.threads[key] = []
       this.threads[key].push({
         id: tempId,
         project_id: projectId,
-        idea_id: ideaId,
-        bug_id: bugId,
-        tbi_id: tbiId,
-        channel: ideaId || bugId || tbiId ? null : channel,
+        item_id: itemId,
+        channel: itemId ? null : channel,
         author_id: auth.user.id,
         body: payload.body || '',
         reply_to_id: payload.replyToId ?? null,
@@ -193,10 +174,8 @@ export const useChatStore = defineStore('chat', {
             project_id: item.projectId,
             author_id: auth.user.id,
             body: item.body || '',
-            idea_id: item.ideaId ?? null,
-            bug_id: item.bugId ?? null,
-            tbi_id: item.tbiId ?? null,
-            channel: item.ideaId || item.bugId || item.tbiId ? null : (item.channel ?? 'main'),
+            item_id: item.itemId ?? null,
+            channel: item.itemId ? null : (item.channel ?? 'main'),
             reply_to_id: item.replyToId ?? null,
           })
 
@@ -287,9 +266,7 @@ export const useChatStore = defineStore('chat', {
 
       const key = this.threadKey({
         projectId: msg.project_id,
-        ideaId: msg.idea_id,
-        bugId: msg.bug_id,
-        tbiId: msg.tbi_id,
+        itemId: msg.item_id,
         channel: msg.channel ?? 'main',
       })
 
