@@ -3,7 +3,7 @@
 aarcDev is a mobile-first collaboration app for small development teams. A **project** is the
 central unit; inside a project the team works across four tabs: **Chat** (channels `main` and
 `offtopic`), **Bugs**, **Ideas**, and **TBI** ("To Be Implemented" — the work backlog). Ideas
-and bugs can be promoted into TBI items, and every item carries its own chat thread.
+and bugs are accepted onto the TBI board by a stage change, and every item carries one chat thread.
 
 ## High-level shape
 
@@ -32,19 +32,19 @@ There is **no custom backend server**. The Vue/Quasar client talks directly to S
 
 All business logic lives in the **Pinia stores** (`src/stores/`). Components never call
 Supabase directly; they call store actions. Server-side logic is limited to RLS policies, a
-handful of SQL functions (`is_member`, `is_owner`, `upsert_message_read`,
+handful of SQL functions (`is_member`, `is_owner`, `can_access_project`,
 `delete_own_account`, `handle_new_user`), and one Edge Function for push notifications.
 
 ## Layers
 
-| Layer        | Location                                       | Role                                                                   |
-| ------------ | ---------------------------------------------- | ---------------------------------------------------------------------- |
-| Pages        | `src/pages/`                                   | Route targets and project tab panels                                   |
-| Components   | `src/components/{chat,bugs,ideas,tbi,shared}/` | Presentational + dialogs                                               |
-| Stores       | `src/stores/`                                  | All data access, business rules, realtime merge logic                  |
-| Composables  | `src/composables/`                             | Cross-cutting: realtime wiring, push, badge, image upload, date format |
-| Boot         | `src/boot/`                                    | Supabase client singleton, vue-i18n (en default, hr fallback)          |
-| Native shell | `src-capacitor/`                               | Capacitor 8 iOS/Android projects, Firebase config                      |
+| Layer        | Location                        | Role                                                                   |
+| ------------ | ------------------------------- | ---------------------------------------------------------------------- |
+| Pages        | `src/pages/`                    | Route targets and project tab panels                                   |
+| Components   | `src/components/{chat,shared}/` | Presentational + dialogs                                               |
+| Stores       | `src/stores/`                   | All data access, business rules, realtime merge logic                  |
+| Composables  | `src/composables/`              | Cross-cutting: realtime wiring, push, badge, image upload, date format |
+| Boot         | `src/boot/`                     | Supabase client singleton, vue-i18n (en default, hr fallback)          |
+| Native shell | `src-capacitor/`                | Capacitor 8 iOS/Android projects, Firebase config                      |
 
 ## Key data-flow patterns
 
@@ -59,9 +59,9 @@ query that needs author names must repeat this pattern.
 ### Realtime as the write-echo
 
 `useRealtime(projectId, handlers)` opens one Supabase channel per project subscribing to
-INSERT/UPDATE/DELETE on `messages`, `ideas`, `bugs`, and `tbi_items`, filtered by
-`project_id`. Each store exposes `handleIncoming({ event, payload })` that merges the event
-into local state (deduplicating by id).
+INSERT/UPDATE/DELETE on `messages` and `items`, filtered by `project_id`. Each store exposes
+`handleIncoming({ event, payload })` that merges the event into local state (deduplicating by
+id).
 
 Consequence: after a write such as `chatStore.sendMessage`, the store deliberately does
 **not** refetch — the realtime INSERT event is what appends the message locally. ProjectPage
@@ -70,24 +70,24 @@ additionally opens two unfiltered channels: message UPDATEs (edits) and `message
 
 ### Chat threading model
 
-A single `messages` table serves every conversation. Thread identity is determined by which
-column is set:
+A single `messages` table serves every conversation. Thread identity:
 
-- `idea_id` / `bug_id` / `tbi_id` set (exactly one) → item thread, `channel` is null
-- all three null → project channel chat, `channel` = `main` or `offtopic`
+- `item_id` set → that item's thread, `channel` is null
+- `item_id` null → project channel chat, `channel` = `main` or `offtopic`
 
-The chat store mirrors this with a `threads` dictionary keyed by
-`${projectId}:idea:${id}` / `:bug:` / `:tbi:` or `${projectId}:${channel}`
-(`chatStore.threadKey()`).
+The chat store mirrors this with a `threads` dictionary keyed by `${projectId}:item:${id}` or
+`${projectId}:${channel}` (`chatStore.threadKey()`).
+
+There used to be three parallel item columns, which meant a promoted idea owned two threads
+and the TBI screen had to merge them by hand. That is gone — see `docs/item-model.md`.
 
 ### Unread tracking (two mechanisms)
 
 1. **Per-thread message reads** — `message_reads` rows store `last_read_at` per user per
-   thread/channel. Written only via the `upsert_message_read` RPC (a COALESCE functional
-   unique index makes plain upserts fail to conflict). Marked when ChatPage loads a channel or
-   the user scrolls to bottom.
-2. **Per-item "NEW" flags** — `item_reads` (user, item, type) marks an idea/bug/TBI as seen;
-   stores compute `is_new` from it.
+   thread/channel, written with a plain `.upsert()` (the unique index is `NULLS NOT
+DISTINCT`). Marked when a channel or thread is opened.
+2. **Per-item "NEW" flags** — `item_user_state.read_at` marks an item as seen; stores compute
+   `is_new` from it. The same table carries `watching_at`, the personal "Pratim" marker.
 
 `notificationsStore.fetchUnread()` recomputes the whole unread picture **client-side**: it
 fetches all messages authored by others, all the user's reads, and all open items, honors the
@@ -105,23 +105,31 @@ child routes are declared: it renders its own `q-tabs` + keep-alive `q-tab-panel
 ChatPage/IdeasPage/BugsPage/TbiPage as plain components with a `projectId` prop. Tab switches
 do not change the URL. ProjectPage is also where realtime channels are set up and torn down.
 
-## Promotion workflows
+## Stage transitions
 
-- **Idea → TBI:** creates a `tbi_items` row (`source_type: 'idea'`, back-link `idea_id`) and
-  sets `idea.promoted = true`; the idea remains, listed as promoted. Demoting deletes the TBI
-  row and resets the flag.
-- **Bug → TBI:** creates a TBI row (`source_type: 'bug'`, copies priority) and sets the bug's
-  status to `promoted`. Bug lifecycle: `open → confirmed → promoted / closed`.
-- TBI items complete via `status: 'done'` + `completed_at`. A TBI card's message count
-  aggregates its own thread **plus** the linked idea's and bug's threads
-  (via the `thread_message_counts` view).
+There is no promotion in the copying sense. An item's `stage` changes and the tab filters do
+the rest — same row, same thread, same id.
+
+- **Accept:** `stage → accepted`, records `accepted_by`/`accepted_at`. The item leaves the
+  Ideas funnel and appears on the TBI board.
+- **Reject / Reopen:** `stage → rejected` or back to `new`. Nothing is deleted, so a rejected
+  item keeps its conversation and can come back.
+- **Done:** `stage → done` with `completed_by`/`completed_at`.
+
+Always through the store actions (`accept`/`reject`/`reopen`/`markDone`), never a raw update —
+the `*_by`/`*_at` columns are written alongside the stage.
+
+Message counts come from the `item_message_counts` view: one item, one thread, one number.
 
 ## Push notification pipeline
 
 ```
-messages INSERT
-  └─ DB webhook trigger ("push-on-message")
+messages INSERT ─┐   ("push-on-message")
+items    INSERT ─┤   ("push-on-item")
+                 └─ DB webhook trigger
        └─ Edge Function supabase/functions/push-on-message/
+            ├─ branch on payload.table; for items pick the
+            │  category from kind/stage, same rule as the badge
             ├─ load project name, author name
             ├─ members with badge_enabled = true (excluding author)
             ├─ their push_tokens

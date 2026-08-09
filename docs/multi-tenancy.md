@@ -20,7 +20,7 @@ organizations   (id, name, slug, plan)
 org_members     (org_id, user_id, role)      ← tenancy + permissions live here
 projects        (id, org_id NOT NULL, visibility)
 project_members (project_id, user_id, ...)   ← notification prefs + private-project access
-ideas / bugs / tbi_items / messages (project_id, ...)
+items / messages           (project_id, ...)   ← see docs/item-model.md
 ```
 
 `projects.visibility` is `'org'` (default — every org member) or `'private'` (only people

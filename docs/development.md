@@ -43,11 +43,11 @@ There is no test suite.
 `quasar.config.js` → `build.extendViteConf` aliases these **only for web builds**
 (`!ctx.mode.capacitor`):
 
-| Package | Aliased to |
-|---|---|
-| `@capacitor/push-notifications` | `src/mocks/capacitor-push.js` |
-| `@capacitor/app` | `src/mocks/capacitor-app.js` |
-| `@capawesome/capacitor-badge` | `src/mocks/capacitor-badge.js` |
+| Package                         | Aliased to                     |
+| ------------------------------- | ------------------------------ |
+| `@capacitor/push-notifications` | `src/mocks/capacitor-push.js`  |
+| `@capacitor/app`                | `src/mocks/capacitor-app.js`   |
+| `@capawesome/capacitor-badge`   | `src/mocks/capacitor-badge.js` |
 
 The mocks are no-ops (permissions return `denied`), letting web builds compile without the
 native plugins. **Native builds must never get the mocks** — that silently kills push and
@@ -85,9 +85,10 @@ Also in `extendViteConf`: the `src` → `/src` alias — imports use `src/...` p
 
   It's invoked by a DB webhook trigger on `messages` INSERT (defined in schema.sql), and uses
   `SUPABASE_SERVICE_ROLE_KEY` (auto-provided) to bypass RLS.
+
 - **Storage:** bucket `chat-attachments` must exist; access is via signed URLs, so the bucket
   stays private.
-- **Realtime:** `messages`, `ideas`, `bugs`, `tbi_items` need postgres_changes enabled;
+- **Realtime:** `messages` and `items` need postgres_changes enabled;
   `messages` requires `REPLICA IDENTITY FULL` (already in schema) for DELETE payloads.
 
 ## Conventions
@@ -96,7 +97,7 @@ Also in `extendViteConf`: the `src` → `/src` alias — imports use `src/...` p
   (composables may).
 - Manual profile joins everywhere — user FKs point at `auth.users`, so PostgREST
   `profiles(...)` embeds fail. Fetch profiles by id list and merge.
-- `message_reads` is written **only** via the `upsert_message_read` RPC.
+- `message_reads` is written with a plain `.upsert()`; the RPC that used to be required is gone.
 - After `sendMessage`, don't refetch — realtime echoes the insert.
 - i18n: all UI strings through `vue-i18n` (`src/i18n/en.js`, `hr.js`). Some code comments are
   Croatian.

@@ -42,8 +42,9 @@ projects(org_id), project_members(user_id, project_id).
 search_path — i performansni i sigurnosni problem).
 
 Politike
-🔴 B9. Sadržaj (ideas, bugs, tbi_items, messages, message_reactions) → svaka politika postaje
-can_access_project(project_id). Zamjenjuje sve USING (true).
+🔴 B9. Sadržaj (messages, message_reactions) → svaka politika postaje
+can_access_project(project_id). Zamjenjuje sve USING (true). items to već ima od M2, pa je
+ovo samo dovođenje ostatka na istu razinu.
 🔴 B10. projects INSERT → is_org_member(org_id). Sad je WITH CHECK (true), pa bi bilo tko mogao
 ubaciti projekt u tuđu organizaciju. Lako se previdi.
 🔴 B11. profiles SELECT → vlastiti redak ili suradnik iz iste organizacije. Sad je USING (true)
@@ -54,8 +55,9 @@ pozivatelja. Zatvara sadašnju rupu (WITH CHECK (true) → svatko si doda člans
 postavi role='owner').
 🔴 B13. Okidač: organizacija uvijek mora imati barem jednog ownera. Zadnji owner se ne može
 razvlastiti ni izaći. Server-side, ne klijentski (pouka iz B18).
-🔴 B14. upsert_message_read i get_unread_total: maknuti parametar p_user_id, koristiti
-auth.uid() iznutra. Sad su SECURITY DEFINER s korisnikovim ID-em iz poziva bez provjere.
+🟠 B14. get_unread_total: maknuti parametar p_user_id, koristiti auth.uid() iznutra — sad je
+SECURITY DEFINER s korisnikovim ID-em iz poziva bez provjere. (upsert_message_read je
+obrisan 2026-08-08 uz M3, pa je pola ovoga već zatvoreno.)
 
 Posljedice modela
 🔴 B15. get_unread_total i edge funkcija (push-on-message, popis primatelja) rade INNER JOIN na
@@ -70,8 +72,9 @@ putanje — treba odluka: migrirati ih ili podnijeti prekid na dev podacima.
 Provjera
 🔴 B17. Testovi izolacije: korisnik A ne vidi ništa iz organizacije korisnika B. Najvrjedniji
 test u projektu. ⚠️ vidi E1 (Vitest).
-🔴 B18. Regresija nakon zatezanja: manual profile joins, realtime događaji, thread_message_counts
-view, edge funkcija (service role zaobilazi RLS — OK), offline keš.
+🔴 B18. Regresija nakon zatezanja: manual profile joins, realtime događaji, item_message_counts
+view (security_invoker — mijenja se ponašanje kad politike postanu stroge!), edge funkcija
+(service role zaobilazi RLS — OK), offline keš.
 🟠 B19. Server-side provjera zadnjeg vlasnika u delete_own_account() (sad samo klijentski).
 
 Sučelje (nakon što baza stoji)
@@ -81,11 +84,11 @@ projekta pri kreiranju/uređivanju.
 registriraš s tuđom adresom i preuzmeš tuđu pozivnicu.
 
 C. Baza — konzistentnost
-🟠 C1. CHECK constrainti za statusne kolone: bug status, tbi status, priority, role, source_type, item_type, channel, platform.
+🟠 C1. CHECK constrainti za preostale statusne kolone: project_members.role, push_tokens.platform, messages.channel. (items.kind/stage/priority ih imaju od M2.)
 🟠 C2. Atomarni create_project(name, desc, color) SQL RPC (projekt + owner u jednoj transakciji); prilagoditi projectsStore.createProject. Uklanja race i "projekt bez ownera" scenarij.
 🟠 C3. Prijeći na inkrementalne migracije (svaka promjena = nova migracija; schema.sql ostaje kao dump referenca).
-🟢 C4. Drop legacy tablica bug_reads i idea_reads.
-🟢 C5. Čišćenje siročadi u item_reads (nema FK) — ili dodati trigger brisanja, ili periodički cleanup.
+✅ C4. Drop legacy tablica bug_reads i idea_reads (riješeno 2026-08-09 uz M6).
+✅ C5. Siročad u item_reads (riješeno 2026-08-09 uz M6 — tablicu je zamijenio item_user_state s pravim FK-om).
 ✅ C6. Brisanje screenshotova iz Storagea pri brisanju ideje/buga/TBI itema (riješeno 2026-08-05 — briše se i iz Storagea i iz lokalnog keša).
 
 D. Performanse i skalabilnost
@@ -96,11 +99,11 @@ D. Performanse i skalabilnost
 🟢 D5. Batch dohvat signed URL-ova za slike (sad jedan poziv po slici).
 
 E. Testovi i kvaliteta
-🟠 E1. Uvesti Vitest; prvi testovi za čistu logiku: threadKey(), unread agregacija, is_new pravila, promote/demote tranzicije.
+🟠 E1. Uvesti Vitest; prvi testovi za čistu logiku: threadKey(), unread agregacija i pravilo "jedna stavka jedan badge" (tabForNewItem/tabForThread), is_new pravila, prijelazi faza.
 🟠 E2. GitHub Actions: lint:check + testovi na svaki push. ⚠️ nakon A2, E1.
 🟠 E3. Ujednačen error handling: centralni wrapper oko store akcija + Quasar Notify za korisnika (sad greške uglavnom nestaju u konzoli). Konkretan primjer: `supabase.storage.from('chat-attachments').remove()` se poziva na više mjesta (brisanje buga/ideje/screenshota, uklanjanje avatara) i nigdje se ne provjerava vraćeni `error` — neuspjeh (npr. RLS odbije brisanje) prođe tiho, DB zapis se ažurira kao da je uspjelo, a objekt ostane sirotica u Storageu.
 🟢 E4. Error reporting u produkciji (Sentry ili sličan).
-🟢 E5. Playwright dim-test: login → kreiraj projekt → pošalji poruku → promote ideju.
+🟢 E5. Playwright dim-test: login → kreiraj projekt → pošalji poruku → prihvati ideju.
 
 F. Okoline i deploy
 🟠 F1. Ukloniti hardkodirani project ref iz webhook triggera (parametrizirati po okolini).
@@ -166,15 +169,15 @@ očistiti). Radi se na grani, ne na main (vidi A3).
 stupci autorstva, osobna oznaka "Pratim" (riješeno 2026-08-08, docs/item-model.md).
 ✅ M2. Tablice items + item_user_state + privremena mapa, i prijenos podataka
 (migracije 20260808120000 i 20260808120100). Čisto aditivno — stare tablice netaknute.
-🔴 M3. messages.item_id umjesto tri nullable FK-a; prevezivanje poruka preko mape (spaja
+✅ M3. (2026-08-08) messages.item_id umjesto tri nullable FK-a; prevezivanje poruka preko mape (spaja
 threadove spojenih parova). Usput otpada COALESCE unique indeks i prisila na
 upsert_message_read RPC (invarijanta 3 u CLAUDE.md).
-🔴 M4. Storovi: ideas/bugs/tbi → jedan items store. fetchUnread se bitno pojednostavljuje.
-🔴 M5. Sučelje: kartice filtriraju po kind/stage, radnje Prihvati/Odbij umjesto promoviraj,
+✅ M4. (2026-08-08) Storovi: ideas/bugs/tbi → jedan items store. fetchUnread se bitno pojednostavljuje.
+✅ M5. (2026-08-08) Sučelje: kartice filtriraju po kind/stage, radnje Prihvati/Odbij umjesto promoviraj,
 oznaka "Pratim" (oko) + filtar po njoj, sortiranje po priority.
-🔴 M6. Brisanje starih tablica (ideas, bugs, tbi_items, item_reads), viewa
+✅ M6. (2026-08-09) Brisanje starih tablica (ideas, bugs, tbi_items, item_reads), viewa
 thread_message_counts i privremene mape. ⚠️ tek kad M3–M5 rade.
-🟠 M7. Uskladiti dokumentaciju nakon M6: CLAUDE.md invarijante 3, 4 i 8, docs/database.md,
+✅ M7. (2026-08-09) Usklađena dokumentacija nakon M6: CLAUDE.md invarijante 3, 4 i 8, docs/database.md,
 docs/workflows.md (tvrdi da lista ideja prikazuje i promovirane — kod to ne radi).
 
 Preporučeni redoslijed ako želiš vodilju

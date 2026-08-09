@@ -16,39 +16,46 @@ How the app's domain flows work, end to end. Store actions referenced live in `s
   and the UI tells them to transfer ownership or delete those projects first. Otherwise calls
   the `delete_own_account()` RPC (deletes `auth.users`, cascades everywhere).
 
-## Ideas
+## Items (ideas, bugs, tasks)
 
-1. Anyone in the project creates an idea (title, description, optional screenshot).
-2. Ideas list splits into **active** (`promoted = false`) and **promoted**.
-3. **Promote to TBI** (`ideasStore.promoteToTbi`):
-   - creates a `tbi_items` row: `source_type: 'idea'`, `idea_id` back-link, copies
-     title/description, sets `promoted_at`
-   - sets `idea.promoted = true` — the idea row **remains** (its thread stays reachable)
-4. **Demote** (`demoteFromTbi`): deletes the TBI row, resets `idea.promoted = false`.
+All three live in one `items` table — see `docs/item-model.md` for why.
 
-## Bugs
+1. Anyone in the project creates an item: `kind` is `idea`, `bug` or `task`, optional
+   screenshot. A task is born `accepted` (nobody proposes work they are already doing);
+   ideas and bugs start at `new`.
+2. **Accept** (`itemsStore.accept`): `stage → accepted`, records `accepted_by`/`accepted_at`.
+   That is the whole promotion — one column, same row, same thread.
+3. **Reject** (`reject`) and **Reopen** (`reopen`) replace the old demote. Nothing is deleted,
+   so no conversation is ever lost.
+4. **Done** (`markDone`) records `completed_by`/`completed_at`; `markUndone` returns the item
+   to `accepted` if it was ever accepted, otherwise to `new`.
+5. `assign(id, userId)` sets `assignee_id`.
 
-1. Bug is reported with priority (`low`/`med`/`high`) and optional screenshot.
-2. Lifecycle (plain-text status, frontend convention): `open` → `confirmed` → `promoted`,
-   or `closed` at any point.
-3. **Promote to TBI** (`bugsStore.promoteToBug`): creates a TBI row (`source_type: 'bug'`,
-   `bug_id` back-link, **copies priority**), sets bug `status: 'promoted'` + `promoted_at`.
-   The bug row remains. There is no demote for bugs in the UI.
+Stage transitions must go through these actions rather than a raw `updateItem`, because the
+`*_by`/`*_at` columns are written alongside the stage.
 
-## TBI (To Be Implemented)
+Accepting is **optional for bugs**: a small fix can go `new → done` without ever reaching the
+board. For an idea, acceptance is a real decision and the step carries meaning.
 
-- Items arrive three ways: manually (`source_type: 'manual'`), promoted from an idea, or from
-  a bug. Back-links (`idea_id`/`bug_id`) are `SET NULL` — a TBI item survives source deletion.
-- `assignee_id` assigns a member (`assignUser`).
-- **Done:** `markDone` sets `status: 'done'` + `completed_at`; `markUndone` reverts to `tbi`.
-- A TBI card's message count = its own thread **+** linked idea's thread **+** linked bug's
-  thread (summed from the `thread_message_counts` view).
+### Which tab shows what
+
+| Tab   | Filter                                                       |
+| ----- | ------------------------------------------------------------ |
+| Ideas | `kind='idea'`, not in an active stage                        |
+| Bugs  | `kind='bug'`, every stage                                    |
+| TBI   | active stages (`accepted`/`in_progress`/`testing`), any kind |
+
+Tabs are saved filters, not containers, so an accepted bug appears in both Bugs and TBI. It
+carries a badge only on TBI — see the badge rule in `docs/item-model.md`.
+
+Store getters return each tab's whole domain; hiding closed items is done by the list panel,
+which never hides an item that is watched or has unread messages.
 
 ## Chat
 
 - **Channels:** every project has `main` and `offtopic` (hardcoded tab set in ChatPage).
-- **Item threads:** each idea/bug/TBI item has a thread (message rows with that item's id set
-  and `channel` null).
+- **Item threads:** each item has exactly one thread (`messages.item_id` set, `channel` null).
+  One item, one conversation — accepting or rejecting never moves or splits it.
 - **Send** (`chatStore.sendMessage`): insert only — the store does **not** refetch; the
   realtime INSERT event echoes the message back into `threads`. Don't "fix" this by refetching.
 - **Edit:** author only (RLS); sets `edited_at`. Delivered to others via an UPDATE
@@ -64,17 +71,21 @@ How the app's domain flows work, end to end. Store actions referenced live in `s
 
 Two independent mechanisms, both per-user:
 
-1. **Thread reads** (`message_reads`): a `last_read_at` watermark per thread/channel. Updated
-   via the `upsert_message_read` RPC when ChatPage loads a channel or the user scrolls to
-   bottom. A message is unread if newer than the watermark (or no watermark exists) and not
-   authored by the user.
-2. **Item "NEW" flags** (`item_reads`): an idea/bug/TBI is `is_new` until the user opens it
-   (`markItemRead`), unless they created it or it's done/closed.
+1. **Thread reads** (`message_reads`): a `last_read_at` watermark per thread/channel, written
+   by a plain `.upsert()` when a channel or thread is opened. A message is unread if newer
+   than the watermark (or no watermark exists) and not authored by the user.
+2. **Item "NEW" flags** (`item_user_state.read_at`): an item is `is_new` until the user opens
+   it (`itemsStore.markRead`), unless they created it or it is done/rejected.
 
 `notificationsStore.fetchUnread()` recomputes everything client-side and produces per project:
-`total`, per-channel counts, per-thread counts, and `newIdeas`/`newBugs`/`newTbi` tab counts
+`total`, per-channel counts, per-item counts, and `newIdeas`/`newBugs`/`newTbi` tab counts
 (thread unread counts fold into the tab counts but are not double-counted in `total`). It runs
 on project open, after every realtime event, and after each markRead.
+
+**Which tab a count lands on is decided by `stage`, not `kind`** — an accepted bug counts on
+TBI, not Bugs. Two rules, deliberately different: a _new item_ in a terminal stage counts
+nowhere, but an unread _message_ on a closed item is still real and is attributed to the tab
+where that item can be found.
 
 Per-member **`badge_enabled`** (project_members) turns off both unread counting and push for
 that project.
@@ -88,7 +99,8 @@ plugin). On app resume the badge is cleared and recomputed (`App.vue`).
 2. Function targets project members with `badge_enabled = true`, excluding the author; reads
    their `push_tokens`; sends FCM v1 messages (title = project name, body =
    `Author: first 80 chars` or "📎 Screenshot").
-3. Only **messages** trigger push — new ideas/bugs/TBI items do not.
+3. Item INSERT fires the same Edge Function via the `push-on-item` webhook; it branches on
+   `payload.table` and picks the category from `kind`/`stage`, matching the badge rule.
 4. Token registration on app start (`usePush().init()`):
    - **Android:** standard Capacitor `registration` listener → upsert `push_tokens`.
    - **iOS:** token arrives natively (`AppDelegate.swift`, FirebaseMessaging) and is bridged
@@ -96,11 +108,11 @@ plugin). On app resume the badge is cleared and recomputed (`App.vue`).
 
 ## Realtime wiring (per project screen)
 
-`ProjectPage.vue` on mount: parallel-fetch ideas/bugs/tbi/unread/main-channel messages, then
+`ProjectPage.vue` on mount: parallel-fetch items, unread and main-channel messages, then
 subscribe:
 
-- project-filtered channel (via `useRealtime`): INSERT/UPDATE/DELETE on
-  messages/ideas/bugs/tbi_items → each store's `handleIncoming` + `fetchUnread()`
+- project-filtered channel (via `useRealtime`): INSERT/UPDATE/DELETE on `messages` and
+  `items` → the store's `handleIncoming` + `fetchUnread()`
 - unfiltered channel for message UPDATEs (edits)
 - unfiltered channel for `message_reactions` (refetches reactions for the affected message)
 

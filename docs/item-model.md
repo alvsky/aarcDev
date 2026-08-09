@@ -1,13 +1,13 @@
 # aarcDev — Item model
 
-> **Status: target model, not yet implemented.** The live schema still has three separate
-> tables (`ideas`, `bugs`, `tbi_items`). Decided 2026-08-08. Once implemented,
+> **Status: implemented.** Decided and migrated 2026-08-08/09. `ideas`, `bugs`, `tbi_items`,
+> `item_reads` and the legacy `bug_reads`/`idea_reads` are gone.
 > `supabase/schema.sql` is authoritative for the _what_ — this file keeps the _why_.
 
-## The problem it replaces
+## The problem it replaced
 
-Today one logical thing can have **two rows**: an idea and, once promoted, a `tbi_items` row
-linked back to it. Each row owns a separate message thread. That single fact produced seven
+One logical thing used to have **two rows**: an idea and, once promoted, a `tbi_items` row
+linked back to it. Each row owned a separate message thread. That single fact produced seven
 distinct defects:
 
 1. A promoted idea is hidden from the Ideas list, but its thread is still counted → a badge

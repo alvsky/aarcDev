@@ -45,14 +45,14 @@ Registrira se u `src/stores/index.js` (`pinia.use(...)`). Za svaki store s
 
 Storovi i polja koja se perzistiraju:
 
-| Store | Polja | Napomena |
-|---|---|---|
-| projects | `projects` | |
-| ideas | `ideas` | |
-| bugs | `bugs` | |
-| tbi | `items` | |
-| chat | `threads` | najveći slice; v1 bez rezanja, kasnije zadnjih ~200 poruka po threadu |
-| notifications | `unread` | badge odmah točan pri otvaranju |
+| Store         | Polja      | Napomena                                                              |
+| ------------- | ---------- | --------------------------------------------------------------------- |
+| projects      | `projects` |                                                                       |
+| ideas         | `ideas`    |                                                                       |
+| bugs          | `bugs`     |                                                                       |
+| tbi           | `items`    |                                                                       |
+| chat          | `threads`  | najveći slice; v1 bez rezanja, kasnije zadnjih ~200 poruka po threadu |
+| notifications | `unread`   | badge odmah točan pri otvaranju                                       |
 
 Auth store se NE perzistira ovim mehanizmom (session već čuva supabase-js u localStorage;
 lang/darkMode/fontSize već imaju vlastiti localStorage).
@@ -69,6 +69,7 @@ promjena u storovima: dodati `persist` opciju — akcije se ne diraju.
 - Modul-scope singleton (kao `usePush` pending token) da svi potrošači dijele isto stanje
 
 UI (minimalno, v1):
+
 - `MainLayout.vue` / `ProjectPage.vue`: tanka traka "Nema veze — prikazujem spremljene
   podatke" kad je offline (i18n: `common.offline`)
 - `MessageInput.vue`: gumb za prilog (sliku) disabled offline (slike se ne queueaju u v1)

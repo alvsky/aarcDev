@@ -221,19 +221,30 @@ serve(async (req) => {
         body: `${author?.full_name}: ${record.body?.slice(0, 80) || '📎 Screenshot'}`,
         data: { projectId: record.project_id, channel: record.channel ?? 'main' },
       })
-    } else if (payload.table === 'ideas' || payload.table === 'bugs' || payload.table === 'tbi_items') {
+    } else if (payload.table === 'items') {
       const { data: author } = await supabase
         .from('profiles')
         .select('full_name')
         .eq('id', record.created_by)
         .single()
 
-      const labels: Record<string, { notifField: 'notif_ideas' | 'notif_bugs' | 'notif_tbi'; prefix: string; type: string }> = {
-        ideas:     { notifField: 'notif_ideas', prefix: 'Nova ideja',      type: 'idea' },
-        bugs:      { notifField: 'notif_bugs',  prefix: 'Novi bug',        type: 'bug' },
-        tbi_items: { notifField: 'notif_tbi',   prefix: 'Nova TODO stavka', type: 'tbi' },
+      // Ista pravila kao tabForNewItem u src/stores/notifications.js: kartica se
+      // bira po fazi, pa tek onda po vrsti. Zadatak se rađa prihvaćen, pa ide na
+      // TBI ploču a ne u lijevak ideja.
+      const ACTIVE_STAGES = ['accepted', 'in_progress', 'testing']
+      let notifField: 'notif_ideas' | 'notif_bugs' | 'notif_tbi'
+      let prefix: string
+
+      if (ACTIVE_STAGES.includes(record.stage)) {
+        notifField = 'notif_tbi'
+        prefix = 'Nova TODO stavka'
+      } else if (record.kind === 'bug') {
+        notifField = 'notif_bugs'
+        prefix = 'Novi bug'
+      } else {
+        notifField = 'notif_ideas'
+        prefix = 'Nova ideja'
       }
-      const { notifField, prefix, type } = labels[payload.table]
 
       await sendPushToMembers(supabase, fcmProjectId, accessToken, {
         projectId: record.project_id,
@@ -241,7 +252,7 @@ serve(async (req) => {
         notifField,
         title,
         body: `${author?.full_name}: ${prefix} — ${record.title}`,
-        data: { projectId: record.project_id, itemType: type, itemId: record.id },
+        data: { projectId: record.project_id, itemId: record.id, kind: record.kind },
       })
     } else {
       return new Response('unhandled table', { status: 200 })

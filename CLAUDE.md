@@ -2,8 +2,10 @@
 
 Mobile-first collaboration app for small dev teams. Each **project** has four tabs: **Chat**
 (channels `main`+`offtopic`), **Bugs**, **Ideas**, **TBI** ("To Be Implemented" backlog).
-Ideas/bugs promote into TBI items; every item has its own chat thread. Unread counts, app-icon
-badges, FCM push. UI/comments partly Croatian (i18n: `en` default, `hr` fallback).
+Those three item tabs are **filtered views over one `items` table** — accepting an idea moves
+it to the TBI board by changing one column, not by creating a second row. Every item has one
+chat thread. Unread counts, app-icon badges, FCM push. UI/comments partly Croatian (i18n: `en`
+default, `hr` fallback).
 
 Stack: Quasar 2 (app-vite) + Vue 3 + Pinia 3 + vue-router 5 (hash) + Supabase JS v2 +
 Capacitor 8 (iOS/Android). **pnpm**. No tests.
@@ -31,11 +33,14 @@ Before making changes, always read:
    profiles by id list, merge client-side. Every store does this.
 2. **Realtime is the write-echo.** After `chatStore.sendMessage`, do NOT refetch — the
    realtime INSERT populates the thread (dedup by id in `handleIncoming`).
-3. **`message_reads` writes only via the `upsert_message_read` RPC** — a COALESCE functional
-   unique index makes plain `.upsert()` fail to conflict.
-4. **Single `messages` table.** Thread = exactly one of `idea_id`/`bug_id`/`tbi_id` set
-   (`channel` null), or all null + `channel`. Chat store keys: `${projectId}:idea:${id}` etc.
-   or `${projectId}:${channel}`.
+3. **One `items` table** for ideas, bugs and tasks — `kind` (idea|bug|task) never changes,
+   `stage` (new|confirmed|accepted|in_progress|testing|done|rejected) does. Tabs are saved
+   **filters**, not containers, so one item may show in two tabs but counts toward exactly one
+   badge. Stage transitions go through store actions (`accept`/`reject`/`markDone`/`reopen`),
+   never a raw `update` — the `accepted_by`/`rejected_by`/`completed_by` columns depend on it.
+   See `docs/item-model.md`.
+4. **Single `messages` table.** Thread = `item_id` set (`channel` null), or `item_id` null +
+   `channel`. Chat store keys: `${projectId}:item:${id}` or `${projectId}:${channel}`.
 5. **RLS is permissive — but this is now legacy, not the goal.** Any authenticated user can
    currently read ideas/bugs/tbi/messages/profiles across projects; scoping is client-side, so
    **never rely on RLS for isolation in existing code**. As of 2026-08-08 the app is heading to
@@ -49,8 +54,9 @@ Before making changes, always read:
    `src/stores/persist-plugin.js`) — hydration fills only empty fields; fetch actions
    early-return offline to keep cached state; chat has an `outbox` queue with optimistic
    `pending` messages flushed on reconnect/resume/login (see docs/offline-first.md).
-8. Status/priority/role columns are plain text, **no CHECK constraints** — frontend
-   convention only (bug: open→confirmed→promoted/closed; tbi: tbi|done; priority low|med|high).
+8. **`items` constrains its own vocabulary** (`kind`/`stage`/`priority` have CHECK
+   constraints); everything else — `project_members.role`, `push_tokens.platform` — is still
+   plain text by frontend convention only.
 
 ## Quick facts
 
@@ -64,7 +70,10 @@ Before making changes, always read:
   (`useNetwork`). Don't hand-roll `q-toolbar` per page; use AppHeader.
 - `notificationsStore.fetchUnread()` recomputes all unread client-side after nearly every
   event; single source for all badges. Known bottleneck.
-- `project_members.badge_enabled` gates both unread counting and push, per user per project.
+- `project_members.badge_enabled` gates both unread counting and push, per user per project;
+  `notif_messages`/`notif_ideas`/`notif_bugs`/`notif_tbi` narrow it per category.
+- Push fires on message INSERT **and** item INSERT (two DB webhooks → the same
+  `push-on-message` Edge Function, which branches on `payload.table`).
 - Storage: one private bucket `chat-attachments` (`${userId}/${timestamp}.jpg`, client-side
   JPEG compression, 1-h signed URLs).
 - iOS FCM token arrives via AppDelegate.swift → `localStorage['fcmToken']` polling bridge
@@ -78,11 +87,11 @@ Before making changes, always read:
 
 ## Known TODOs
 
-- Dead files: `LoginPage8.vue` (empty) is the last one — the rest were deleted 2026-08-08
-  (commit df0f18c).
-- Legacy `bug_reads`/`idea_reads` tables unused; `item_reads` has no FK (orphans on delete).
+- Dead files: `LoginPage8.vue` (empty) is the last one.
 - Debug console.logs in stores/pages; unfiltered realtime channels for message
   updates/reactions; unused nested child routes; `fetchUnread()` won't scale; Capacitor
   appName mismatch (`aarc` vs `aarcDev`).
+- **Android push has never worked** — no `google-services.json`, so the Gradle build skips
+  the plugin and says so only at `logger.info`. BACKLOG L5.
 - **Multi-tenancy migration is the current priority** — see `docs/multi-tenancy.md` and
   BACKLOG § B. Until it lands, RLS gives no isolation.
