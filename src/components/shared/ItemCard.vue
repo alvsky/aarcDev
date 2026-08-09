@@ -9,8 +9,22 @@
     @update:model-value="(val) => val && onOpen()"
   >
     <template #header>
-      <q-item-section avatar>
-        <q-icon :name="stageIcon" :color="stageColor" size="20px" />
+      <!-- Stanje i praćenje uvijek na istom mjestu, neovisno o duljini naslova.
+           Oko je ujedno prekidač — bez otvaranja kartice. -->
+      <q-item-section avatar class="item-lead">
+        <div class="row items-center no-wrap">
+          <q-icon :name="stageIcon" :color="stageColor" size="22px" />
+          <div
+            class="watch-dot"
+            :class="{ 'watch-dot--on': item.watching }"
+            @click.stop="itemsStore.toggleWatch(item.id)"
+          >
+            <q-icon name="visibility" size="16px" />
+            <q-tooltip>
+              {{ item.watching ? $t('items.unwatch') : $t('items.watchHint') }}
+            </q-tooltip>
+          </div>
+        </div>
       </q-item-section>
 
       <q-item-section>
@@ -24,13 +38,6 @@
           >
             NEW
           </q-badge>
-          <q-icon
-            v-if="item.watching"
-            name="visibility"
-            size="14px"
-            color="primary"
-            class="q-ml-xs"
-          />
         </q-item-label>
         <q-item-label caption>
           <!-- Vrsta se prikazuje samo ondje gdje se miješaju (TBI ploča) -->
@@ -181,17 +188,6 @@
           <q-btn
             flat
             dense
-            :icon="item.watching ? 'visibility_off' : 'visibility'"
-            size="sm"
-            :color="item.watching ? 'primary' : undefined"
-            :label="item.watching ? $t('items.unwatch') : $t('items.watch')"
-            @click="itemsStore.toggleWatch(item.id)"
-          >
-            <q-tooltip>{{ $t('items.watchHint') }}</q-tooltip>
-          </q-btn>
-          <q-btn
-            flat
-            dense
             icon="edit"
             size="sm"
             :label="$t('common.edit')"
@@ -307,3 +303,40 @@ async function onOpen() {
   await itemsStore.markRead(props.item.id)
 }
 </script>
+
+<style scoped>
+/* Lijevi stupac drži dvije ikone, pa mu treba nešto više od Quasarove zadane širine. */
+.item-lead {
+  min-width: 62px;
+  padding-right: 8px;
+}
+
+/* Ugašeno stanje je namjerno prigušeno, ali zauzima prostor — tako ikona stanja
+   ostaje poravnata u svim redovima, a oko je uvijek na istom mjestu. */
+.watch-dot {
+  width: 26px;
+  height: 26px;
+  margin-left: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--aarc-muted);
+  opacity: 0.28;
+  cursor: pointer;
+  transition:
+    opacity 0.15s,
+    background 0.15s,
+    color 0.15s;
+}
+
+.watch-dot:hover {
+  opacity: 0.7;
+}
+
+.watch-dot--on {
+  background: var(--aarc-accent);
+  color: #fff;
+  opacity: 1;
+}
+</style>
