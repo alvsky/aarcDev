@@ -27,3 +27,7 @@ supabase/.temp
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Ručne snimke baze prije rizičnih migracija — sadrže sve podatke
+backup/
+*.dump.sql
