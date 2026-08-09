@@ -140,6 +140,20 @@ K. Chat — proširenja
 
 L. Native / mobilno
 🟠 L1. iOS FCM most: zamijeniti localStorage-polling pravim Capacitor bridge eventom ili notifikacijom iz nativnog koda; dodati retry. (Krhko: 30 s timeout.)
+🔴 L5. Android push NE RADI — nema google-services.json, pa build.gradle preskoči
+google-services plugin i samo zapiše logger.info koji se u normalnom buildu ne vidi.
+Provjeriti je li aplikacija com.vitka.collabapp uopće registrirana u Firebaseu, preuzeti
+konfiguraciju u src-capacitor/android/app/ i rebuildati. Napomena: .gitignore ima tu
+datoteku ZAKOMENTIRANU (redak 65) — nije ignorirana, samo nikad nije dodana. Kad se doda,
+ograničiti Android API ključ po package name + SHA-1 (isto obrazloženje kao B0).
+Usput ispraviti CLAUDE.md, koji tvrdi da Android push radi.
+🟠 L6. Provjeriti POST_NOTIFICATIONS na Androidu 13+ — manifest deklarira samo INTERNET;
+Capacitorov push plugin bi ga trebao ubaciti spajanjem manifesta, ali to se potvrđuje tek
+na uređaju. ⚠️ nakon L5 (bez FCM-a se ionako nema što prikazati).
+🟠 L7. Odvojiti aarcDev u vlastiti Firebase projekt. Sad dijeli projekt "sve-aplikacije" s
+aplikacijama iz 2019., pa servisni račun firebase-adminsdk (čiji JSON je u Supabase
+secrets) ima administratorska prava nad svime, ne samo nad aarcDev-om. Manji doseg,
+odvojene kvote, lakše predati dalje. ⚠️ prije javnog izlaska.
 🟢 L2. TestFlight + Play internal track pipeline.
 🟢 L3. Finalizacija ikona/splash za obje platforme.
 🟢 L4. Provjeriti ponašanje badge-a kad je badge_enabled isključen za sve projekte.
