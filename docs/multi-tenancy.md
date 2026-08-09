@@ -31,16 +31,38 @@ with an explicit `project_members` row).
 Org-level roles, granted top-down. There must always be **at least one owner** per
 organization; this is enforced by a database trigger, not by the client.
 
-| Action                             | owner | admin | member | guest |
-| ---------------------------------- | :---: | :---: | :----: | :---: |
-| Delete org, change plan/billing    |  ✅   |  ❌   |   ❌   |  ❌   |
-| Grant or revoke `owner`            |  ✅   |  ❌   |   ❌   |  ❌   |
-| Grant `admin` / `member` / `guest` |  ✅   |  ✅   |   ❌   |  ❌   |
-| Invite and remove members          |  ✅   |  ✅   |   ❌   |  ❌   |
-| Create a project                   |  ✅   |  ✅   |   ✅   |  ❌   |
-| Delete any project in the org      |  ✅   |  ✅   |   ❌   |  ❌   |
-| Access `visibility='org'` projects |  ✅   |  ✅   |   ✅   |  ❌   |
-| Access explicitly granted projects |  ✅   |  ✅   |   ✅   |  ✅   |
+| Action                                     | owner | admin |  member  | guest |
+| ------------------------------------------ | :---: | :---: | :------: | :---: |
+| Delete org, change plan/billing            |  ✅   |  ❌   |    ❌    |  ❌   |
+| Grant or revoke `owner`                    |  ✅   |  ❌   |    ❌    |  ❌   |
+| Grant `admin` / `member` / `guest`         |  ✅   |  ✅   |    ❌    |  ❌   |
+| Invite and remove members                  |  ✅   |  ✅   |    ❌    |  ❌   |
+| Rename the org                             |  ✅   |  ✅   |    ❌    |  ❌   |
+| See the org member directory               |  ✅   |  ✅   |    ✅    |  ❌   |
+| Create a project (**always born private**) |  ✅   |  ✅   |    ✅    |  ❌   |
+| Switch a project to `visibility='org'`     |  ✅   |  ✅   |    ❌    |  ❌   |
+| See **every** project in the org           |  ✅   |  ✅   |    ❌    |  ❌   |
+| Access `visibility='org'` projects         |  ✅   |  ✅   |    ✅    |  ❌   |
+| Access explicitly granted projects         |  ✅   |  ✅   |    ✅    |  ✅   |
+| Delete any project in the org              |  ✅   |  ✅   | own only |  ❌   |
+
+Two rows deserve the reasoning, because the obvious rule is the wrong one.
+
+**A member creates, an admin publishes.** Letting a member start a project imposes nothing on
+anyone; letting them make it org-wide puts it in everybody's list and everybody's badge count.
+Those are different decisions, so they get different permissions. The first is free, the second
+is an admin call.
+
+**Admins see every project, private ones included.** This is the line that stops the previous
+rule from backfiring. If members could only create private projects and private meant hidden,
+you would have handed every member the one place in the org their owner cannot see, cannot
+audit, and cannot clean up when they leave. So `private` here means _"not everyone, plus
+admins"_ — the same reading Jira, Linear and Notion use. Slack is the exception, and Slack
+sells a separate discovery-and-export product precisely because that turned out to be a
+problem rather than a feature.
+
+Hiding even the existence of a project from an admin would need two access levels (metadata vs
+content) instead of one. Not worth building until someone asks.
 
 `guest` is the external-collaborator case (agency freelancer on one client project). It costs
 one branch in `can_access_project` — implement it with the rest even if the UI ships later.
@@ -67,6 +89,7 @@ as $$
     where p.id = pid
       and (
         (p.visibility = 'org' and om.role <> 'guest')
+        or om.role in ('owner', 'admin')   -- admins see everything in their own org
         or exists (
           select 1 from project_members pm
           where pm.project_id = p.id and pm.user_id = auth.uid()
@@ -101,6 +124,58 @@ who has no account yet.
 
 ⚠️ **Invite-by-email requires verified email at signup.** Without it, anyone can register with
 someone else's address and claim their invitation. The two must ship together.
+
+## What this looks like on screen
+
+**One org at a time**, with a switcher — not every org merged into one list. Mixing badges
+from unrelated teams means you are never sure which context you are acting in. Slack, Linear
+and Notion all landed on the same answer. For the common case (one org) the switcher is just a
+title in the header.
+
+Home (`ProjectsPage`) changes in four places:
+
+```
+┌──────────────────────────────────────┐
+│ [avatar]   Acme d.o.o. ⌄        ⚙   │  1. header title = org switcher
+├──────────────────────────────────────┤
+│ Dobro jutro, Alan!                   │
+│                                      │
+│ Projekti                             │
+│ ┌─────────┐ ┌─────────┐             │
+│ │ ▇ Web   │ │ 🔒 API  │  →          │  2. lock = private project
+│ │ 3/8  ●2 │ │ 1/4     │             │
+│ └─────────┘ └─────────┘             │
+│                                      │
+│ Tim (6)                         →    │  3. org members, not a union
+└──────────────────────────────────────┘  4. the "Tim" footer tab finally
+   🏠 Projekti    👥 Tim    👤 Ja          leads somewhere (it is dead today)
+```
+
+Tapping the org name opens a sheet: org list, "Nova organizacija", "Postavke organizacije".
+The org screen (name, members with role chips, invitations, danger zone) stays **separate from
+personal Settings** — Settings is about you, the org screen is about the org.
+
+**A guest sees no Tim section and no Tim tab**, only their own projects. Hiding the member
+directory from external collaborators is the entire point of the role. Inside a project they
+still see that project's participants, which is fine — a guest is only ever on private
+projects, and those have a real member list.
+
+### Badges across orgs
+
+Scoping the whole screen to one org creates a way to miss things, so:
+
+- in-app badges → current org only
+- app-icon badge → sum across all orgs (otherwise notifications silently vanish)
+- a dot on the switcher when **another** org has something unread
+
+### First run
+
+On signup, check for a pending invitation matching the email. If one exists, the user lands in
+that org. If not, auto-create an org named after them, renameable.
+
+The alternative (Slack's "create or enter an invite code" screen) avoids stray one-person orgs
+but costs a step and an empty first screen. For a tool this size the stray-org risk is small
+and a dead first screen is worse.
 
 ## Decisions and rationale
 

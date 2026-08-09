@@ -29,7 +29,8 @@ funkciju) — inače okolina nije reproducibilna.
 Shema
 🔴 B3. Tablice organizations, org_members, invitations. RLS uključen, bez ijedne politike
 (zadano-zabranjeno).
-🔴 B4. projects: dodati org_id (zasad nullable) i visibility text default 'org'.
+🔴 B4. projects: dodati org_id (zasad nullable) i visibility text default 'org'. NOVI projekti
+se kreiraju kao 'private' — prebacivanje na 'org' je admin radnja (vidi matricu u docs).
 🔴 B5. Backfill: jedna organizacija za postojeće podatke, svi postojeći korisnici kao članovi,
 ti kao owner. ⚠️ nakon B3, B4.
 🔴 B6. org_id → NOT NULL. ⚠️ nakon B5.
@@ -38,6 +39,8 @@ Funkcije za prava
 🔴 B7. can_access_project(pid), is_org_member(oid), is_org_admin(oid), is_org_owner(oid) —
 sve s `stable` i `set search_path = public`. Indeksi: org_members(user_id, org_id),
 projects(org_id), project_members(user_id, project_id).
+⚠️ Funkcija ima granu `om.role in ('owner','admin')` — admini vide SVE projekte svoje
+organizacije, i privatne. Bez toga član može stvoriti projekt koji njegov vlasnik ne vidi.
 🔴 B8. Popraviti i postojeće is_member/is_owner istim modifikatorima (sad su VOLATILE bez
 search_path — i performansni i sigurnosni problem).
 
@@ -78,10 +81,23 @@ view (security_invoker — mijenja se ponašanje kad politike postanu stroge!), 
 🟠 B19. Server-side provjera zadnjeg vlasnika u delete_own_account() (sad samo klijentski).
 
 Sučelje (nakon što baza stoji)
-🟠 B20. Prebacivanje organizacije, upravljanje članovima i ulogama, prekidač vidljivosti
-projekta pri kreiranju/uređivanju.
-🟠 B21. Potvrda e-maila (G2) + pozivnice — **moraju ići zajedno**: bez potvrde e-maila se
-registriraš s tuđom adresom i preuzmeš tuđu pozivnicu.
+🟠 B20. Home i ekran organizacije — makro po specifikaciji u docs/multi-tenancy.md
+("What this looks like on screen"):
+
+- naziv organizacije kao prebacivač u zaglavlju + donji list (popis, nova, postavke)
+- lokot na kartici privatnog projekta
+- sekcija Tim = članovi organizacije (danas je unija svih projekata)
+- kartica "Tim" u podnožju konačno vodi na ekran organizacije (sad je mrtva)
+- gost NE vidi sekciju ni karticu Tim
+- prekidač vidljivosti projekta (samo admin/owner)
+  🟠 B22. Badge preko organizacija: u aplikaciji samo tekuća, na ikoni zbroj svih, točkica na
+  prebacivaču kad druga organizacija ima nepročitano. ⚠️ nakon B20.
+  🟠 B23. Prvi ulazak: ako postoji pozivnica na taj e-mail → ulazi u tu organizaciju, inače se
+  automatski stvori organizacija nazvana po korisniku. ⚠️ nakon B21 (pozivnice).
+  🟠 B24. projects DELETE politika: sad samo autor. Dodati admin/owner organizacije — inače se
+  ne može počistiti za članom koji je otišao.
+  🟠 B21. Potvrda e-maila (G2) + pozivnice — **moraju ići zajedno**: bez potvrde e-maila se
+  registriraš s tuđom adresom i preuzmeš tuđu pozivnicu.
 
 C. Baza — konzistentnost
 🟠 C1. CHECK constrainti za preostale statusne kolone: project_members.role, push_tokens.platform, messages.channel. (items.kind/stage/priority ih imaju od M2.)
