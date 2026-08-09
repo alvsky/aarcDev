@@ -23,8 +23,17 @@ project_members (project_id, user_id, ...)   ← notification prefs + private-pr
 items / messages           (project_id, ...)   ← see docs/item-model.md
 ```
 
-`projects.visibility` is `'org'` (default — every org member) or `'private'` (only people
-with an explicit `project_members` row).
+`projects.visibility` is `'org'` (every org member) or `'private'` (explicit members plus org
+admins). The **column** default is `'org'` so the backfill of existing projects is a no-op;
+the **app** creates new projects as `'private'`, and an admin promotes them.
+
+That split cannot be left to the client — a member can POST straight to PostgREST. Two
+server-side guards:
+
+- INSERT policy: `is_org_member(org_id) and (visibility = 'private' or is_org_admin(org_id))`
+- a BEFORE UPDATE trigger rejecting a `visibility` change unless the caller is an org admin.
+  A trigger rather than `WITH CHECK`, because the rule is about the _transition_ — a plain
+  check sees only the new row and would block a member from renaming an already-shared project.
 
 ## Roles
 

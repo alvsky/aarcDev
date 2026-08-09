@@ -48,8 +48,12 @@ Politike
 🔴 B9. Sadržaj (messages, message_reactions) → svaka politika postaje
 can_access_project(project_id). Zamjenjuje sve USING (true). items to već ima od M2, pa je
 ovo samo dovođenje ostatka na istu razinu.
-🔴 B10. projects INSERT → is_org_member(org_id). Sad je WITH CHECK (true), pa bi bilo tko mogao
-ubaciti projekt u tuđu organizaciju. Lako se previdi.
+🔴 B10. projects INSERT → is_org_member(org_id) AND (visibility='private' OR
+is_org_admin(org_id)). Sad je WITH CHECK (true), pa bi bilo tko mogao ubaciti projekt u tuđu
+organizaciju. Lako se previdi.
+🔴 B10b. Okidač BEFORE UPDATE na projects: promjena visibility samo za admina/ownera. Mora
+biti okidač, ne WITH CHECK — pravilo se tiče PRIJELAZA, a WITH CHECK vidi samo novi redak pa
+bi članu blokirao i obično preimenovanje već podijeljenog projekta.
 🔴 B11. profiles SELECT → vlastiti redak ili suradnik iz iste organizacije. Sad je USING (true)
 = otvoren adresar e-mailova cijelog sustava.
 🔴 B12. org_members i project_members: pisanje zabranjeno svima. Sve kroz SECURITY DEFINER
