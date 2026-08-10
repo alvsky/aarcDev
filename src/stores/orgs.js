@@ -109,11 +109,19 @@ export const useOrgsStore = defineStore('orgs', {
     },
 
     async renameOrg(orgId, name) {
-      const { error } = await supabase
+      // .select() je nužan: PostgREST na UPDATE koji RLS tiho odbije (0 pogođenih
+      // redaka) ne vraća error — samo praznu listu. Bez ovoga bi lokalno stanje
+      // pokazalo "uspjeh" dok baza ne bi promijenila ništa, a promjena bi
+      // nestala čim se store idući put napuni sa servera (fetchOrgs na Homeu).
+      const { data, error } = await supabase
         .from('organizations')
         .update({ name: name.trim() })
         .eq('id', orgId)
+        .select()
       if (error) throw error
+      if (!data?.length) {
+        throw new Error('Preimenovanje nije uspjelo — provjeri jesi li admin ove organizacije.')
+      }
       const org = this.orgs.find((o) => o.id === orgId)
       if (org) org.name = name.trim()
     },
