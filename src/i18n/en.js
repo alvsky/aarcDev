@@ -44,6 +44,13 @@ export default {
     noAccessTitle: "You don't have access",
     noAccessBody: "This project doesn't exist or you don't have access to it.",
     backHome: 'Back to projects',
+    orgVisibleInfo: 'Visible to the whole organization — every member has access to this project.',
+    pickMember: 'Pick an organization member',
+    noMoreMembers: 'Every organization member has already been added.',
+    makeProjectOwner: 'Make project owner',
+    makeProjectMember: 'Make member',
+    removeMemberTitle: 'Remove from project',
+    removeMemberConfirm: 'Remove "{name}" from this project?',
   },
   org: {
     title: 'Organization',

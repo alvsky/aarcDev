@@ -44,6 +44,13 @@ export default {
     noAccessTitle: 'Nemaš pristup',
     noAccessBody: 'Ovaj projekt ne postoji ili nemaš pristup njemu.',
     backHome: 'Natrag na projekte',
+    orgVisibleInfo: 'Vidljivo cijeloj organizaciji — svi članovi imaju pristup ovom projektu.',
+    pickMember: 'Odaberi člana organizacije',
+    noMoreMembers: 'Svi članovi organizacije su već dodani.',
+    makeProjectOwner: 'Postavi za vlasnika projekta',
+    makeProjectMember: 'Postavi za člana',
+    removeMemberTitle: 'Ukloni s projekta',
+    removeMemberConfirm: 'Ukloniti "{name}" s ovog projekta?',
   },
   org: {
     title: 'Organizacija',

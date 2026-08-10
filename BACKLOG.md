@@ -108,21 +108,21 @@ list: popis organizacija s bedžom nepročitanog, "Nova organizacija", "Postavke
   ✅ B20d. (2026-08-11) Avatari na kartici projekta i Tim sekcija sad koriste org roster za
   vidljivost 'org' (isto rješenje kao B20a), project_members samo za 'private'. Lokot iz istog
   prolaza.
-  🟠 B20b. Dvije posljedice B12 u MemberDialogu, obje tihe:
-
-* postavke obavijesti smiju se mijenjati samo na VLASTITOM retku (politika + column grant),
-  a sučelje ih još nudi na svakom članu → tuđi prekidač pada bez poruke
-* projectsStore.changeRole piše project_members.role, a UPDATE je grantom sužen na
-  badge_enabled + notif_\* → sada odbija. Treba RPC set_project_member_role uz provjeru
-  can_manage_project_members, po istom obrascu kao org uloge iz B12.
-  ⚠️ prije nego se dira MemberDialog.
-  🟠 B20e. Postavke obavijesti izvaditi iz MemberDialoga u postavke projekta. To je osobna
-  postavka za projekt, a ne svojstvo retka u popisu ljudi — danas se nudi na svakom članu,
-  što je i prije bilo pogrešno, a nakon B12 tuđe tiho padaju (vidi B20b).
-  🟠 B20c. projectsStore.addMember traži profil po e-mailu i ubacuje redak u project_members.
-  Nova politika to odbija ako osoba nije član organizacije — što je ispravno. Zamijeniti
-  odabirom iz adresara organizacije; pozivanje izvana ide kroz pozivnice (B21). Vjerojatno
-  najbolje riješiti zajedno s B20b/B20e — sve troje je MemberDialog.
+  ✅ B20b. (2026-08-12) Prilikom pregleda ispalo je da prekidač obavijesti nije bio bug —
+  već je bio ograničen na `v-if="member.user_id === authStore.user?.id"`, samo je backlog
+  zapis bio netočan. Pravi problem: projectsStore.changeRole je pisao project_members.role,
+  a UPDATE je grantom sužen na badge_enabled/notif\_\* (B12) → tiho odbijao. Zamijenjen
+  RPC-om set_project_member_role uz can_manage_project_members provjeru, isti obrazac kao
+  org uloge iz B12. Stari changeRole obrisan (bio je mrtav kod — nigdje pozvan).
+  ✅ B20e. (2026-08-12) Postavke obavijesti sad se prikazuju samo kad postoji
+  myMembership (stvarna pretplata), odvojeno od popisa članova — vrijede neovisno o
+  vidljivosti projekta.
+  ✅ B20c. (2026-08-12) addMember (po e-mailu) zamijenjen s addProjectMember(projectId,
+  userId): biranje iz adresara organizacije (orgsStore.members, uključujući goste — to je
+  jedini način da gost dobije pristup) umjesto upisivanja e-maila koji politika svejedno
+  odbija ako osoba nije član organizacije. Riješeno zajedno s B20b/B20e kroz cijeli
+  MemberDialog — dijalog sad razlikuje 'org' (samo objašnjenje + vlastite postavke, popis
+  je otkad B25 samo pretplata, ne pristup) od 'private' (stvaran popis + upravljanje).
   ✅ B21b. (2026-08-11) Stanje "nemaš pristup" na ProjectPage — loading spinner pa jasna
   poruka + povratak na Home, umjesto prazne stranice bez naslova.
   ✅ B22. (2026-08-11) Badge preko organizacija: točkica na prebacivaču kad druga organizacija

@@ -113,20 +113,18 @@ export const useProjectsStore = defineStore('projects', {
       await this.fetchProjects()
     },
 
-    async addMember(projectId, email) {
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email)
-        .single()
-      if (error || !profile) throw new Error('Korisnik nije pronađen')
-
-      const { error: memberError } = await supabase.from('project_members').insert({
-        project_id: projectId,
-        user_id: profile.id,
-        role: 'member',
-      })
-      if (memberError) throw memberError
+    // Zamjenjuje stari addMember(projectId, email): traženje po e-mailu je
+    // pretpostavljalo da svatko smije postati član bilo kojeg projekta, a
+    // project_members_insert (B12) to odbija ako osoba nije član ORGANIZACIJE
+    // tog projekta. Otkad postoji adresar (orgsStore.members), biranje po
+    // e-mailu je nepotrebno — biraš izravno iz ljudi koji već mogu biti
+    // pozvani (uključujući goste, namjerno: to je jedini način da gost uopće
+    // dobije pristup — eksplicitan redak na privatnom projektu).
+    async addProjectMember(projectId, userId, role = 'member') {
+      const { error } = await supabase
+        .from('project_members')
+        .insert({ project_id: projectId, user_id: userId, role })
+      if (error) throw error
       await this.fetchProjects()
     },
 
@@ -136,6 +134,20 @@ export const useProjectsStore = defineStore('projects', {
         .delete()
         .eq('project_id', projectId)
         .eq('user_id', userId)
+      if (error) throw error
+      await this.fetchProjects()
+    },
+
+    // set_member_role je za organizacije (B12); ovo je isti obrazac za ulogu na
+    // POJEDINOM projektu — direktan UPDATE ne prolazi otkad je project_members
+    // UPDATE grantom sužen na postavke obavijesti (B12), pa čak ni admin
+    // organizacije ne bi mogao izravno promijeniti tuđu ulogu.
+    async setProjectMemberRole(projectId, userId, role) {
+      const { error } = await supabase.rpc('set_project_member_role', {
+        p_project: projectId,
+        p_user: userId,
+        p_role: role,
+      })
       if (error) throw error
       await this.fetchProjects()
     },
@@ -178,16 +190,6 @@ export const useProjectsStore = defineStore('projects', {
       if (project) {
         project.project_members = project.project_members.filter((m) => m.user_id !== auth.user.id)
       }
-    },
-
-    async changeRole(projectId, userId, role) {
-      const { error } = await supabase
-        .from('project_members')
-        .update({ role })
-        .eq('project_id', projectId)
-        .eq('user_id', userId)
-      if (error) throw error
-      await this.fetchProjects()
     },
 
     handleIncoming({ event, payload }) {

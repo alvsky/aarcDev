@@ -9,120 +9,144 @@
 
       <q-separator size="0.5rem" />
 
-      <!-- Lista članova -->
-      <q-list separator>
-        <!-- U listi članova, pored svakog -->
-        <q-item v-for="member in members" :key="member.user_id">
-          <q-item-section avatar class="member-avatar-section">
-            <UserAvatar
-              :avatar-url="member.profiles?.avatar_url"
-              :full-name="member.profiles?.full_name"
-              :size="32"
-            />
-          </q-item-section>
+      <!-- Vidljivo cijeloj organizaciji: project_members ovdje više NIJE popis
+           pristupa (B25) nego samo pretplata, pa uređivati ga kao "članove"
+           zavarava (isti nalaz kao B20d). Popis se ne prikazuje — samo
+           objašnjenje i vlastite postavke obavijesti niže. -->
+      <q-card-section v-if="project?.visibility === 'org'" class="text-caption member-hint">
+        {{ $t('projects.orgVisibleInfo') }}
+      </q-card-section>
 
-          <q-item-section>
-            <q-item-label class="row items-center no-wrap q-gutter-xs">
-              <q-badge
-                :color="member.role === 'owner' ? 'primary' : 'grey-5'"
-                rounded
-                class="role-badge"
-              >
-                {{ member.role?.[0]?.toUpperCase() }}
-                <q-tooltip>{{ member.role }}</q-tooltip>
-              </q-badge>
-              <span class="member-name">{{ member.profiles?.full_name }}</span>
-            </q-item-label>
-            <q-item-label caption class="member-email">{{ member.profiles?.email }}</q-item-label>
-          </q-item-section>
+      <!-- Privatan projekt: project_members JEST pristup, popis je stvaran. -->
+      <template v-else>
+        <q-list separator>
+          <q-item v-for="member in members" :key="member.user_id">
+            <q-item-section avatar class="member-avatar-section">
+              <UserAvatar
+                :avatar-url="member.profiles?.avatar_url"
+                :full-name="member.profiles?.full_name"
+                :size="32"
+              />
+            </q-item-section>
 
-          <!-- Akcije jedna ispod druge u uskom side stupcu -->
-          <q-item-section side top class="column items-end q-gutter-xs">
-            <!-- Sve notifikacijske postavke (uklj. badge on/off) žive u ovom meniju -->
-            <q-btn
-              v-if="member.user_id === authStore.user?.id"
-              flat
-              round
-              dense
-              icon="tune"
-              size="sm"
-            >
-              <q-tooltip>{{ $t('notifications.prefsTitle') }}</q-tooltip>
-              <q-menu>
-                <q-list dense style="min-width: 220px">
-                  <q-item-label header>{{ $t('notifications.prefsTitle') }}</q-item-label>
-                  <q-item tag="label" clickable>
-                    <q-item-section side>
-                      <q-toggle
-                        :model-value="member.badge_enabled !== false"
-                        size="sm"
-                        color="accent"
-                        @update:model-value="(v) => toggleBadge(member, v)"
-                      />
-                    </q-item-section>
-                    <q-item-section>{{ $t('notifications.badgeEnabled') }}</q-item-section>
-                  </q-item>
-                  <q-separator />
-                  <q-item
-                    v-for="pref in notifPrefs"
-                    :key="pref.field"
-                    tag="label"
-                    clickable
-                    :disable="member.badge_enabled === false"
-                  >
-                    <q-item-section side>
-                      <q-toggle
-                        :model-value="member[pref.field] !== false"
-                        size="sm"
-                        color="accent"
-                        :disable="member.badge_enabled === false"
-                        @update:model-value="(v) => updateNotifPref(pref.field, v)"
-                      />
-                    </q-item-section>
-                    <q-item-section>{{ $t(pref.labelKey) }}</q-item-section>
-                  </q-item>
-                </q-list>
-              </q-menu>
-            </q-btn>
-            <q-btn
-              v-if="isOwner && member.user_id !== authStore.user.id"
-              flat
-              round
-              dense
-              icon="close"
-              size="xs"
-              color="negative"
-              @click="removeMember(member)"
-            />
-          </q-item-section>
-        </q-item>
-      </q-list>
-      <q-separator size="0.5rem" />
-      <!-- Dodaj člana -->
-      <q-card-section v-if="isOwner" class="q-gutter-sm">
-        <div class="text-subtitle2">{{ $t('projects.addMember') }}</div>
-        <div class="row q-gutter-sm">
-          <q-input
-            v-model="newEmail"
-            :label="$t('auth.email')"
+            <q-item-section>
+              <q-item-label class="row items-center no-wrap q-gutter-xs">
+                <q-badge
+                  :color="member.role === 'owner' ? 'primary' : 'grey-5'"
+                  rounded
+                  class="role-badge"
+                >
+                  {{ member.role?.[0]?.toUpperCase() }}
+                  <q-tooltip>{{ member.role }}</q-tooltip>
+                </q-badge>
+                <span class="member-name">{{ member.profiles?.full_name }}</span>
+              </q-item-label>
+              <q-item-label caption class="member-email">{{ member.profiles?.email }}</q-item-label>
+            </q-item-section>
+
+            <q-item-section side>
+              <q-btn v-if="canManage" flat round dense icon="more_vert" size="sm">
+                <q-menu auto-close>
+                  <q-list dense style="min-width: 200px">
+                    <q-item
+                      v-if="member.role !== 'owner'"
+                      clickable
+                      @click="setRole(member, 'owner')"
+                    >
+                      <q-item-section>{{ $t('projects.makeProjectOwner') }}</q-item-section>
+                    </q-item>
+                    <q-item
+                      v-if="member.role === 'owner'"
+                      clickable
+                      @click="setRole(member, 'member')"
+                    >
+                      <q-item-section>{{ $t('projects.makeProjectMember') }}</q-item-section>
+                    </q-item>
+                    <q-separator />
+                    <q-item clickable @click="confirmRemove(member)">
+                      <q-item-section class="text-negative">{{
+                        $t('projects.removeMemberTitle')
+                      }}</q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-menu>
+              </q-btn>
+            </q-item-section>
+          </q-item>
+        </q-list>
+
+        <!-- Dodaj člana — iz adresara organizacije, ne po e-mailu: project_members_insert
+             (B12) svejedno odbija ikoga tko nije u organizaciji projekta, pa je
+             biranje umjesto upisivanja i ispravnije i jednostavnije. Gost je
+             namjerno u popisu — eksplicitan redak na privatnom projektu je
+             jedini način da gost uopće dobije pristup nečemu. -->
+        <q-card-section v-if="canManage" class="q-gutter-sm">
+          <div class="text-subtitle2">{{ $t('projects.addMember') }}</div>
+          <q-select
+            :model-value="null"
+            :options="pickableMembers"
+            option-label="label"
+            option-value="user_id"
+            emit-value
+            map-options
             outlined
             dense
-            class="col"
-            @keydown.enter="addMember"
+            :label="$t('projects.pickMember')"
+            :loading="adding"
+            :disable="!pickableMembers.length"
+            :hint="!pickableMembers.length ? $t('projects.noMoreMembers') : undefined"
+            @update:model-value="addMember"
           />
-          <q-btn color="primary" icon="person_add" :loading="adding" @click="addMember" />
-        </div>
-        <div v-if="errorMsg" class="text-negative text-caption">
-          {{ errorMsg }}
-        </div>
-      </q-card-section>
+        </q-card-section>
+      </template>
+
+      <!-- Vlastite postavke obavijesti — vrijede neovisno o vidljivosti, ali
+           samo ako uopće postoji pretplata (B25) na koju se imaju što odnositi. -->
+      <template v-if="myMembership">
+        <q-separator size="0.5rem" />
+        <q-card-section class="q-gutter-xs">
+          <div class="text-subtitle2 q-mb-xs">{{ $t('notifications.prefsTitle') }}</div>
+          <q-item tag="label" clickable dense class="q-px-none">
+            <q-item-section side>
+              <q-toggle
+                :model-value="myMembership.badge_enabled !== false"
+                size="sm"
+                color="accent"
+                @update:model-value="(v) => toggleBadge(v)"
+              />
+            </q-item-section>
+            <q-item-section>{{ $t('notifications.badgeEnabled') }}</q-item-section>
+          </q-item>
+          <q-item
+            v-for="pref in notifPrefs"
+            :key="pref.field"
+            tag="label"
+            clickable
+            dense
+            class="q-px-none"
+            :disable="myMembership.badge_enabled === false"
+          >
+            <q-item-section side>
+              <q-toggle
+                :model-value="myMembership[pref.field] !== false"
+                size="sm"
+                color="accent"
+                :disable="myMembership.badge_enabled === false"
+                @update:model-value="(v) => updateNotifPref(pref.field, v)"
+              />
+            </q-item-section>
+            <q-item-section>{{ $t(pref.labelKey) }}</q-item-section>
+          </q-item>
+        </q-card-section>
+      </template>
     </q-card>
   </q-dialog>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useProjectsStore } from 'src/stores/projects'
+import { useOrgsStore } from 'src/stores/orgs'
 import { useNotificationsStore } from 'src/stores/notifications'
 import { useAuthStore } from 'src/stores/auth'
 import { useQuasar } from 'quasar'
@@ -141,12 +165,11 @@ const $q = useQuasar()
 const { t } = useI18n()
 const { blockedOffline } = useOfflineGuard()
 const projectsStore = useProjectsStore()
+const orgsStore = useOrgsStore()
 const notifStore = useNotificationsStore()
 const authStore = useAuthStore()
 
-const newEmail = ref('')
 const adding = ref(false)
-const errorMsg = ref('')
 
 const open = computed({
   get: () => props.modelValue,
@@ -154,41 +177,75 @@ const open = computed({
 })
 
 const project = computed(() => projectsStore.projects.find((p) => p.id === props.projectId))
-
 const members = computed(() => project.value?.project_members ?? [])
-const isOwner = computed(() =>
-  members.value.some((m) => m.user_id === authStore.user?.id && m.role === 'owner'),
+const myMembership = computed(() => members.value.find((m) => m.user_id === authStore.user?.id))
+
+// Ista logika kao can_manage_project_members u bazi (B12): admin/owner
+// organizacije, tvorac projekta, ili owner NA OVOM projektu. Računa se
+// klijentski da se izbjegne dodatan RPC poziv samo za prikaz gumba — same
+// akcije ionako ponovno provjerava poslužitelj.
+const myOrgRole = computed(() => orgsStore.orgs.find((o) => o.id === project.value?.org_id)?.role)
+const canManage = computed(() => {
+  if (!project.value) return false
+  if (['owner', 'admin'].includes(myOrgRole.value)) return true
+  if (project.value.created_by === authStore.user?.id) return true
+  return myMembership.value?.role === 'owner'
+})
+
+const pickableMembers = computed(() => {
+  const already = new Set(members.value.map((m) => m.user_id))
+  return orgsStore.members
+    .filter((m) => !already.has(m.user_id))
+    .map((m) => ({ user_id: m.user_id, label: m.profiles?.full_name ?? m.profiles?.email }))
+})
+
+watch(
+  () => [open.value, project.value?.org_id],
+  ([isOpen, orgId]) => {
+    if (isOpen && orgId) orgsStore.fetchMembers(orgId)
+  },
+  { immediate: true },
 )
 
-async function addMember() {
-  if (!newEmail.value.trim()) return
+async function addMember(userId) {
+  if (!userId) return
   if (blockedOffline('common.offlineNoAction')) return
-  errorMsg.value = ''
   adding.value = true
   try {
-    await projectsStore.addMember(props.projectId, newEmail.value.trim())
-    newEmail.value = ''
+    await projectsStore.addProjectMember(props.projectId, userId)
     $q.notify({ type: 'positive', message: t('projects.addMember') })
   } catch (e) {
-    errorMsg.value = e.message
+    $q.notify({ type: 'negative', message: e.message })
   } finally {
     adding.value = false
   }
 }
 
-async function removeMember(member) {
+function confirmRemove(member) {
   if (blockedOffline()) return
   $q.dialog({
-    title: t('common.delete'),
-    message: member.profiles?.full_name,
+    title: t('projects.removeMemberTitle'),
+    message: t('projects.removeMemberConfirm', { name: member.profiles?.full_name }),
     ok: { label: t('common.delete'), color: 'negative' },
     cancel: t('common.cancel'),
   }).onOk(async () => {
-    await projectsStore.removeMember(props.projectId, member.user_id)
+    try {
+      await projectsStore.removeMember(props.projectId, member.user_id)
+    } catch (e) {
+      $q.notify({ type: 'negative', message: e.message })
+    }
   })
 }
 
-async function toggleBadge(member, enabled) {
+async function setRole(member, role) {
+  try {
+    await projectsStore.setProjectMemberRole(props.projectId, member.user_id, role)
+  } catch (e) {
+    $q.notify({ type: 'negative', message: e.message })
+  }
+}
+
+async function toggleBadge(enabled) {
   if (blockedOffline('common.offlineNoAction')) return
   await supabase
     .from('project_members')
@@ -254,5 +311,9 @@ async function updateNotifPref(field, enabled) {
 .member-avatar-section {
   min-width: 0;
   padding-right: 8px;
+}
+
+.member-hint {
+  color: var(--aarc-muted);
 }
 </style>
