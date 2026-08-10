@@ -98,27 +98,31 @@ Sučelje (nakon što baza stoji)
 - kartica "Tim" u podnožju konačno vodi na ekran organizacije (sad je mrtva)
 - gost NE vidi sekciju ni karticu Tim
 - prekidač vidljivosti projekta (samo admin/owner)
-  🟠 B20b. MemberDialog: postavke obavijesti sada se smiju mijenjati SAMO na vlastitom retku
-  (politika + column grant). Sučelje ih još nudi na svakom članu, pa bi tuđi prekidač tiho
-  padao. Prikazati izbornik samo na vlastitom retku. ⚠️ prije nego se dira MemberDialog.
-  🟠 B20c. projectsStore.addMember traži profil po e-mailu i ubacuje redak u project_members.
-  Nova politika to odbija ako osoba nije član organizacije — što je ispravno. Zamijeniti
-  odabirom iz adresara organizacije; pozivanje izvana ide kroz pozivnice (B21).
-  🟠 B21b. Stanje "nemaš pristup" na ProjectPage. Kad RLS ispravno ne vrati projekt, stranica
-  se otvori prazna i bez naslova — izgleda kao kvar, a zapravo radi ispravno. Treba jasna
-  poruka + povratak na Home. Uočeno pri testiranju B9–B11.
-  🟠 B22. Badge preko organizacija: u aplikaciji samo tekuća, na ikoni zbroj svih, točkica na
-  prebacivaču kad druga organizacija ima nepročitano. ⚠️ nakon B20.
-  🟠 B23. Prvi ulazak: ako postoji pozivnica na taj e-mail → ulazi u tu organizaciju, inače se
-  automatski stvori organizacija nazvana po korisniku. ⚠️ nakon B21 (pozivnice).
-  🟠 B24. projects DELETE politika: sad samo autor. Dodati admin/owner organizacije — inače se
-  ne može počistiti za članom koji je otišao.
-  🟠 B21. Potvrda e-maila (G2) + pozivnice — **moraju ići zajedno**: bez potvrde e-maila se
-  registriraš s tuđom adresom i preuzmeš tuđu pozivnicu.
+  🟠 B20b. Dvije posljedice B12 u MemberDialogu, obje tihe:
+  - postavke obavijesti smiju se mijenjati samo na VLASTITOM retku (politika + column grant),
+    a sučelje ih još nudi na svakom članu → tuđi prekidač pada bez poruke
+  - projectsStore.changeRole piše project_members.role, a UPDATE je grantom sužen na
+    badge_enabled + notif_* → sada odbija. Treba RPC set_project_member_role uz provjeru
+    can_manage_project_members, po istom obrascu kao org uloge iz B12.
+    ⚠️ prije nego se dira MemberDialog.
+    🟠 B20c. projectsStore.addMember traži profil po e-mailu i ubacuje redak u project_members.
+    Nova politika to odbija ako osoba nije član organizacije — što je ispravno. Zamijeniti
+    odabirom iz adresara organizacije; pozivanje izvana ide kroz pozivnice (B21).
+    🟠 B21b. Stanje "nemaš pristup" na ProjectPage. Kad RLS ispravno ne vrati projekt, stranica
+    se otvori prazna i bez naslova — izgleda kao kvar, a zapravo radi ispravno. Treba jasna
+    poruka + povratak na Home. Uočeno pri testiranju B9–B11.
+    🟠 B22. Badge preko organizacija: u aplikaciji samo tekuća, na ikoni zbroj svih, točkica na
+    prebacivaču kad druga organizacija ima nepročitano. ⚠️ nakon B20.
+    🟠 B23. Prvi ulazak: ako postoji pozivnica na taj e-mail → ulazi u tu organizaciju, inače se
+    automatski stvori organizacija nazvana po korisniku. ⚠️ nakon B21 (pozivnice).
+    🟠 B24. projects DELETE politika: sad samo autor. Dodati admin/owner organizacije — inače se
+    ne može počistiti za članom koji je otišao.
+    🟠 B21. Potvrda e-maila (G2) + pozivnice — **moraju ići zajedno**: bez potvrde e-maila se
+    registriraš s tuđom adresom i preuzmeš tuđu pozivnicu.
 
 C. Baza — konzistentnost
 🟠 C1. CHECK constrainti za preostale statusne kolone: project_members.role, push_tokens.platform, messages.channel. (items.kind/stage/priority ih imaju od M2.)
-🟠 C2. Atomarni create_project(name, desc, color) SQL RPC (projekt + owner u jednoj transakciji); prilagoditi projectsStore.createProject. Uklanja race i "projekt bez ownera" scenarij.
+✅ C2. (2026-08-10) Atomarni create_project RPC — projekt + owner u jednoj transakciji. Uklonjena utrka i "projekt bez ownera"; usput jedini način da tvorac privatnog projekta uopće vidi ono što je upravo stvorio.
 🟠 C3. Prijeći na inkrementalne migracije (svaka promjena = nova migracija; schema.sql ostaje kao dump referenca).
 ✅ C4. Drop legacy tablica bug_reads i idea_reads (riješeno 2026-08-09 uz M6).
 ✅ C5. Siročad u item_reads (riješeno 2026-08-09 uz M6 — tablicu je zamijenio item_user_state s pravim FK-om).
