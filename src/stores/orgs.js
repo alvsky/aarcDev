@@ -18,6 +18,10 @@ export const useOrgsStore = defineStore('orgs', {
   state: () => ({
     orgs: [], // { id, name, slug, plan, role }
     currentId: localStorage.getItem(CURRENT_KEY) ?? null,
+    // Adresar tekuće organizacije — { user_id, role, profiles }. Odvojeno od
+    // `orgs` jer je puno rjeđe potreban (samo B20a kandidati za izvršitelja i
+    // B20 ekran organizacije), pa se dohvaća lijeno preko fetchMembers().
+    members: [],
   }),
 
   getters: {
@@ -59,6 +63,32 @@ export const useOrgsStore = defineStore('orgs', {
       if (!this.orgs.some((o) => o.id === this.currentId)) {
         this.setCurrent(this.orgs[0]?.id ?? null)
       }
+    },
+
+    // Adresar organizacije — za koga vrijedi vidljivost 'org'. Politika
+    // org_members_select vraća cijeli popis (uključujući goste) svakome tko
+    // sam nije gost; gosti se ovdje ionako ne uzimaju u obzir kao kandidati.
+    //
+    // FK na auth.users, ne na profiles — ručno spajanje (invarijanta 1).
+    async fetchMembers(orgId) {
+      if (!isOnline() || !orgId) return
+
+      const { data: rows, error } = await supabase
+        .from('org_members')
+        .select('user_id, role')
+        .eq('org_id', orgId)
+      if (error) throw error
+
+      const userIds = (rows ?? []).map((r) => r.user_id)
+      const { data: profiles } = userIds.length
+        ? await supabase
+            .from('profiles')
+            .select('id, full_name, email, avatar_url')
+            .in('id', userIds)
+        : { data: [] }
+
+      const byId = new Map((profiles ?? []).map((p) => [p.id, p]))
+      this.members = (rows ?? []).map((r) => ({ ...r, profiles: byId.get(r.user_id) ?? null }))
     },
 
     setCurrent(orgId) {

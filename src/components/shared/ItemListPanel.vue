@@ -70,11 +70,12 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useItemsStore } from 'src/stores/items'
 import { useProjectsStore } from 'src/stores/projects'
+import { useOrgsStore } from 'src/stores/orgs'
 import { useChatStore } from 'src/stores/chat'
 import { useNotificationsStore } from 'src/stores/notifications'
 import { useOfflineGuard } from 'src/composables/useOfflineGuard'
@@ -98,12 +99,32 @@ const $q = useQuasar()
 const { t } = useI18n()
 const itemsStore = useItemsStore()
 const projectsStore = useProjectsStore()
+const orgsStore = useOrgsStore()
 const chatStore = useChatStore()
 
-// Članovi za odabir izvršitelja — panel ih sam dohvaća da ih tri stranice ne
-// moraju prosljeđivati.
-const members = computed(
-  () => projectsStore.projects.find((p) => p.id === props.projectId)?.project_members ?? [],
+const project = computed(() => projectsStore.getById(props.projectId))
+
+// Kandidati za izvršitelja — TKO IMA PRISTUP, ne project_members (B25 ga je
+// pretvorio u pretplatu; na projektu vidljivom organizaciji ondje bi ostao
+// samo tvorac, a ostali s pristupom se ne bi mogli zadužiti). Gosti se
+// isključuju: vidljivost 'org' im ionako ne daje pristup projektu.
+//
+// Na privatnom projektu je project_members i dalje pravi popis, jer ondje
+// redak = dozvola (can_access_project to zahtijeva), ne samo pretplata.
+const members = computed(() => {
+  if (!project.value) return []
+  if (project.value.visibility === 'org') {
+    return orgsStore.members.filter((m) => m.role !== 'guest')
+  }
+  return project.value.project_members ?? []
+})
+
+watch(
+  () => project.value?.org_id,
+  (orgId) => {
+    if (orgId && project.value?.visibility === 'org') orgsStore.fetchMembers(orgId)
+  },
+  { immediate: true },
 )
 const notifStore = useNotificationsStore()
 const { blockedOffline } = useOfflineGuard()
