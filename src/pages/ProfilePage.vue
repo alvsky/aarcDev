@@ -4,6 +4,20 @@
 
     <q-page-container>
       <q-page class="profile-page q-pb-xl">
+        <!-- Logout — na vrhu i malen: pri dnu je znao ostati nevidljiv ispod
+             popisa projekata na dužim ekranima. -->
+        <div class="row justify-end q-px-md q-pt-sm">
+          <q-btn
+            flat
+            dense
+            size="sm"
+            color="grey-6"
+            icon="logout"
+            :label="$t('auth.logout')"
+            @click="logout"
+          />
+        </div>
+
         <!-- Avatar -->
         <div class="column items-center q-pt-xl q-pb-lg">
           <div class="avatar-upload cursor-pointer">
@@ -130,18 +144,6 @@
               </q-item-section>
             </q-item>
           </q-list>
-        </div>
-
-        <!-- Logout -->
-        <div class="q-px-md q-mb-md">
-          <q-btn
-            outline
-            color="grey-6"
-            icon="logout"
-            :label="$t('auth.logout')"
-            class="full-width"
-            @click="logout"
-          />
         </div>
 
         <!-- Brisanje accounta -->

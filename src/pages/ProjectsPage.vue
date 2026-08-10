@@ -1,58 +1,16 @@
 <template>
   <q-layout view="hHh lpR fFf">
-    <AppHeader settings>
+    <!-- Naziv organizacije je sad čist tekst — prebacivanje i sve ostalo
+         vezano uz organizaciju živi na jednom mjestu, na /org (kartica
+         "Organizacija" u podnožju), umjesto razdvojeno između zaglavlja i
+         podnožja. -->
+    <AppHeader :title="orgsStore.current?.name ?? ''" settings>
       <template #left>
         <UserAvatar
           :avatar-url="authStore.profile?.avatar_url"
           :full-name="authStore.profile?.full_name"
           :size="40"
         />
-      </template>
-      <!-- Naziv organizacije je ujedno prebacivač — isti obrazac kao klikabilan
-           avatar na Profilu (q-menu kao dijete klikabilnog elementa). -->
-      <template #title>
-        <div class="row items-center no-wrap cursor-pointer org-switcher">
-          <span class="ellipsis">{{ orgsStore.current?.name ?? '' }}</span>
-          <q-icon v-if="orgsStore.orgs.length > 1" name="expand_more" size="18px" class="q-ml-xs" />
-          <q-badge
-            v-if="otherOrgsUnread"
-            color="negative"
-            floating
-            rounded
-            style="top: 2px; right: -6px"
-          />
-          <q-menu v-if="orgsStore.orgs.length > 1 || !orgsStore.isGuest">
-            <q-list dense style="min-width: 220px">
-              <q-item
-                v-for="o in orgsStore.orgs"
-                :key="o.id"
-                clickable
-                v-close-popup
-                :active="o.id === orgsStore.currentId"
-                @click="switchOrg(o.id)"
-              >
-                <q-item-section>{{ o.name }}</q-item-section>
-                <q-item-section v-if="notifStore.orgUnread(o.id) > 0" side>
-                  <q-badge color="negative" rounded>{{ notifStore.orgUnread(o.id) }}</q-badge>
-                </q-item-section>
-              </q-item>
-              <q-separator />
-              <q-item clickable v-close-popup @click="promptNewOrg">
-                <q-item-section side><q-icon name="add" /></q-item-section>
-                <q-item-section>{{ $t('projects.newOrg') }}</q-item-section>
-              </q-item>
-              <q-item
-                v-if="!orgsStore.isGuest"
-                clickable
-                v-close-popup
-                @click="$router.push('/org')"
-              >
-                <q-item-section side><q-icon name="tune" /></q-item-section>
-                <q-item-section>{{ $t('projects.orgSettings') }}</q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
-        </div>
       </template>
     </AppHeader>
 
@@ -164,31 +122,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Tim organizacije. Gost ovo ne vidi — adresar organizacije je
-             upravo ono što ta uloga skriva od vanjskih suradnika. -->
-        <div class="q-px-md q-mb-xl" v-if="!orgsStore.isGuest && orgsStore.members.length">
-          <div class="text-h6 text-weight-medium q-mb-lg home-section-label">
-            {{ $t('projects.members') }} ({{ orgsStore.members.length }})
-          </div>
-          <div class="row q-gutter-lg">
-            <div
-              v-for="member in orgsStore.members"
-              :key="member.user_id"
-              class="column items-center"
-            >
-              <UserAvatar
-                :avatar-url="member.profiles?.avatar_url"
-                :full-name="member.profiles?.full_name"
-                :size="80"
-                style="border: 3px solid var(--aarc-border)"
-              />
-              <div class="member-name q-mt-sm">
-                {{ member.profiles?.full_name?.split(' ')[0] }}
-              </div>
-            </div>
-          </div>
-        </div>
       </q-page>
     </q-page-container>
 
@@ -216,15 +149,18 @@
         indicator-color="transparent"
       >
         <q-tab name="home" icon="home" :label="$t('nav.projects')" />
-        <!-- Vodi na ekran organizacije — do sada nije radila ništa (samo
-             mijenjala boju), a adresar ionako živi ondje, ne ovdje na Homeu. -->
+        <!-- Jedina ulazna točka za sve vezano uz organizaciju — prebacivanje,
+             novu organizaciju, adresar, postavke. Prije razdvojeno između
+             zaglavlja i ove kartice; sad je jasno "sve o organizaciji je ovdje". -->
         <q-tab
           v-if="!orgsStore.isGuest"
-          name="team"
-          icon="group"
-          label="Tim"
+          name="org"
+          icon="domain"
+          :label="$t('org.title')"
           @click="$router.push('/org')"
-        />
+        >
+          <q-badge v-if="otherOrgsUnread" color="negative" floating rounded />
+        </q-tab>
         <q-tab
           name="profile"
           icon="person_outline"
@@ -287,25 +223,6 @@ function cardMembers(project) {
     return orgsStore.members.filter((m) => m.role !== 'guest').slice(0, 5)
   }
   return project.project_members?.slice(0, 5) ?? []
-}
-
-function switchOrg(orgId) {
-  orgsStore.setCurrent(orgId)
-}
-
-function promptNewOrg() {
-  $q.dialog({
-    title: t('projects.newOrg'),
-    prompt: { model: '', type: 'text', label: t('projects.orgNamePlaceholder') },
-    cancel: true,
-  }).onOk(async (name) => {
-    if (!name?.trim()) return
-    try {
-      await orgsStore.createOrg(name)
-    } catch (e) {
-      $q.notify({ type: 'negative', message: e.message })
-    }
-  })
 }
 
 const firstName = computed(() => {
@@ -485,21 +402,9 @@ onUnmounted(() => {
   padding-right: 8px;
 }
 
-.member-name {
-  color: var(--aarc-muted);
-  font-size: 14px;
-  text-align: center;
-  font-weight: 500;
-}
-
 /* Na kartici projekta (--aarc-surface pozadina), ne u zaglavlju */
 .lock-icon {
   color: var(--aarc-muted);
   flex-shrink: 0;
-}
-
-.org-switcher {
-  position: relative;
-  max-width: 60vw;
 }
 </style>

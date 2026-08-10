@@ -4,6 +4,29 @@
 
     <q-page-container>
       <q-page class="org-page q-pb-xl">
+        <!-- Prebacivanje i nova organizacija — jedino mjesto za oboje otkad je
+             zaglavlje na Homeu postalo čisti tekst. Prikazano uvijek, ne samo
+             kad ih ima više, jer "+ Nova" mora ostati dostupan i s jednom. -->
+        <div class="q-px-md q-pt-md">
+          <div class="row q-gutter-xs items-center">
+            <q-chip
+              v-for="o in orgsStore.orgs"
+              :key="o.id"
+              clickable
+              :outline="o.id !== orgsStore.currentId"
+              :color="o.id === orgsStore.currentId ? 'primary' : undefined"
+              :text-color="o.id === orgsStore.currentId ? 'white' : undefined"
+              @click="switchOrg(o.id)"
+            >
+              {{ o.name }}
+              <q-badge v-if="notifStore.orgUnread(o.id) > 0" color="negative" floating rounded />
+            </q-chip>
+            <q-chip clickable outline icon="add" @click="promptNewOrg">
+              {{ $t('projects.newOrg') }}
+            </q-chip>
+          </div>
+        </div>
+
         <!-- Naziv -->
         <div class="row items-center q-px-md q-pt-md q-mb-sm">
           <div class="text-h6 org-name">{{ org?.name }}</div>
@@ -131,6 +154,7 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useOrgsStore } from 'src/stores/orgs'
 import { useAuthStore } from 'src/stores/auth'
+import { useNotificationsStore } from 'src/stores/notifications'
 import AppHeader from 'src/components/shared/AppHeader.vue'
 import UserAvatar from 'src/components/shared/UserAvatar.vue'
 
@@ -139,6 +163,26 @@ const $q = useQuasar()
 const { t } = useI18n()
 const orgsStore = useOrgsStore()
 const authStore = useAuthStore()
+const notifStore = useNotificationsStore()
+
+function switchOrg(orgId) {
+  orgsStore.setCurrent(orgId)
+}
+
+function promptNewOrg() {
+  $q.dialog({
+    title: t('projects.newOrg'),
+    prompt: { model: '', type: 'text', label: t('projects.orgNamePlaceholder') },
+    cancel: true,
+  }).onOk(async (name) => {
+    if (!name?.trim()) return
+    try {
+      await orgsStore.createOrg(name)
+    } catch (e) {
+      $q.notify({ type: 'negative', message: e.message })
+    }
+  })
+}
 
 const org = computed(() => orgsStore.current)
 
