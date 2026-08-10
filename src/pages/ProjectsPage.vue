@@ -78,37 +78,60 @@
             {{ $t('projects.noProjects') }}
           </div>
 
-          <div class="scroll-row">
+          <div class="project-list">
             <div
               v-for="project in orgProjects"
               :key="project.id"
-              class="project-card-h cursor-pointer"
+              class="project-row cursor-pointer"
+              :style="{
+                background: `linear-gradient(120deg, ${project.color}26, var(--aarc-surface) 60%)`,
+              }"
               @click="$router.push(`/project/${project.id}`)"
             >
-              <!-- Color bar na vrhu kartice -->
-              <div class="card-color-bar" :style="{ background: project.color }" />
+              <!-- Obojena traka umjesto pune trake preko kartice — gušće, a
+                   boja projekta i dalje odmah prepoznatljiva u dugom popisu. -->
+              <div class="row-accent" :style="{ background: project.color }" />
 
-              <!-- Header kartice -->
-              <div class="row items-start no-wrap q-mt-md q-mb-md">
-                <div class="col" style="min-width: 0">
-                  <div class="row items-center no-wrap q-gutter-xs">
-                    <q-icon
-                      v-if="project.visibility === 'private'"
-                      name="lock"
-                      size="14px"
-                      class="lock-icon"
-                    >
-                      <q-tooltip>{{ $t('projects.visibilityPrivate') }}</q-tooltip>
-                    </q-icon>
-                    <div class="card-title ellipsis-2-lines" style="min-width: 0">
-                      {{ project.name }}
-                    </div>
-                  </div>
-                  <div v-if="project.description" class="card-desc q-mt-xs ellipsis">
-                    {{ project.description }}
-                  </div>
+              <div class="row-main">
+                <div class="row items-center no-wrap">
+                  <q-icon
+                    v-if="project.visibility === 'private'"
+                    name="lock"
+                    size="12px"
+                    class="lock-icon q-mr-xs"
+                  >
+                    <q-tooltip>{{ $t('projects.visibilityPrivate') }}</q-tooltip>
+                  </q-icon>
+                  <div class="row-title col ellipsis">{{ project.name }}</div>
+                  <q-badge
+                    v-if="notifStore.projectTotal(project.id) > 0"
+                    color="negative"
+                    rounded
+                    class="q-ml-sm"
+                  >
+                    {{ notifStore.projectTotal(project.id) }}
+                  </q-badge>
                 </div>
-                <q-btn flat dense round icon="more_vert" size="md" color="grey" @click.stop>
+                <div v-if="project.description" class="row-desc ellipsis">
+                  {{ project.description }}
+                </div>
+                <div v-if="tbiProgress(project.id)" class="row items-center q-mt-xs no-wrap">
+                  <q-linear-progress
+                    :value="tbiProgress(project.id).percent"
+                    color="accent"
+                    track-color="grey-3"
+                    rounded
+                    class="col"
+                    style="height: 4px"
+                  />
+                  <span class="row-progress-text q-ml-sm">
+                    {{ tbiProgress(project.id).done }}/{{ tbiProgress(project.id).total }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="row-side column items-end justify-between no-wrap">
+                <q-btn flat dense round icon="more_vert" size="sm" color="grey" @click.stop>
                   <q-menu auto-close>
                     <q-list dense style="min-width: 140px">
                       <q-item clickable @click.stop="openDialog(project)">
@@ -127,46 +150,16 @@
                     </q-list>
                   </q-menu>
                 </q-btn>
-              </div>
-
-              <!-- Progress -->
-              <div v-if="tbiProgress(project.id)" class="q-mb-md">
-                <div class="row items-center q-mb-sm">
-                  <span class="card-desc">
-                    {{ tbiProgress(project.id).done }}/{{ tbiProgress(project.id).total }} završeno
-                  </span>
-                  <q-space />
-                  <q-badge v-if="notifStore.projectTotal(project.id) > 0" color="negative" rounded>
-                    {{ notifStore.projectTotal(project.id) }}
-                  </q-badge>
+                <div class="row-avatars">
+                  <UserAvatar
+                    v-for="member in cardMembers(project).slice(0, 3)"
+                    :key="member.user_id"
+                    :avatar-url="member.profiles?.avatar_url"
+                    :full-name="member.profiles?.full_name"
+                    :size="26"
+                    style="margin-left: -8px; border: 2px solid var(--aarc-surface)"
+                  />
                 </div>
-                <q-linear-progress
-                  :value="tbiProgress(project.id).percent"
-                  color="accent"
-                  track-color="grey-3"
-                  rounded
-                  style="height: 6px"
-                />
-              </div>
-
-              <!-- Članovi -->
-              <div class="row items-center q-mt-md">
-                <UserAvatar
-                  v-for="member in cardMembers(project)"
-                  :key="member.user_id"
-                  :avatar-url="member.profiles?.avatar_url"
-                  :full-name="member.profiles?.full_name"
-                  :size="60"
-                  style="margin-right: -12px; border: 2px solid var(--aarc-surface)"
-                />
-                <q-space />
-                <q-badge
-                  v-if="!tbiProgress(project.id) && notifStore.projectTotal(project.id) > 0"
-                  color="negative"
-                  rounded
-                >
-                  {{ notifStore.projectTotal(project.id) }}
-                </q-badge>
               </div>
             </div>
           </div>
@@ -428,48 +421,68 @@ onUnmounted(() => {
   border-top: 1px solid rgba(0, 209, 255, 0.15);
 }
 
-.scroll-row {
+/* Okomit popis umjesto bočnog skrolanja — s puno projekata vertikalni prostor
+   je jeftin (skrolaš dolje), horizontalni skriva stavke iz vidokruga. */
+.project-list {
   display: flex;
-  gap: 16px;
-  overflow-x: auto;
-  padding-bottom: 12px;
-  scrollbar-width: none;
-}
-.scroll-row::-webkit-scrollbar {
-  display: none;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.card-color-bar {
-  height: 5px;
-  border-radius: 4px;
-  width: 100%;
-}
-
-.project-card-h {
-  flex: 0 0 85vw;
-  max-width: 380px;
-  background: var(--aarc-surface);
-  border-radius: 20px;
-  padding: 20px 24px 24px;
+.project-row {
+  display: flex;
+  align-items: stretch;
+  border-radius: 16px;
   border: 1px solid var(--aarc-border);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
   transition: box-shadow 0.2s;
 }
 
-.project-card-h:active {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.project-row:active {
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
-.card-title {
-  font-size: 22px;
+/* Obojena traka slijeva nosi identitet projekta u gušćem popisu — zamjena za
+   punu traku preko vrha kartice, koja bi ovdje bila prevelika. */
+.row-accent {
+  width: 5px;
+  flex-shrink: 0;
+}
+
+.row-main {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 14px;
+}
+
+.row-title {
+  min-width: 0;
+  font-size: 16px;
   font-weight: 700;
   color: var(--aarc-text);
-  line-height: 1.3;
 }
 
-.card-desc {
+.row-desc {
   color: var(--aarc-muted);
-  font-size: 15px;
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.row-progress-text {
+  color: var(--aarc-muted);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.row-side {
+  flex-shrink: 0;
+  padding: 6px 8px;
+}
+
+.row-avatars {
+  display: flex;
+  padding-right: 8px;
 }
 
 .member-name {
