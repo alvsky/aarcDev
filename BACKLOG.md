@@ -105,6 +105,17 @@ Sučelje (nakon što baza stoji)
     badge_enabled + notif_* → sada odbija. Treba RPC set_project_member_role uz provjeru
     can_manage_project_members, po istom obrascu kao org uloge iz B12.
     ⚠️ prije nego se dira MemberDialog.
+    🔴 B20a. Popis kandidata za izvršitelja vuče se iz project_members (ItemListPanel), a to je
+    nakon organizacija pogrešan izvor: na projektu vidljivom organizaciji ondje je samo tvorac,
+    pa se ostalima ne može dodijeliti stavka iako imaju pristup. Kandidati moraju biti "tko ima
+    pristup projektu" — org članovi za 'org', izričiti popis za 'private'.
+    🟠 B20d. Popis članova znači različite stvari po vidljivosti, a sučelje ga prikazuje jednako:
+  - 'org' → avatari i "dodaj člana" nemaju smisla (uvijek ista skupina) i zavaravaju, jer
+    prikazuju samo one koji slučajno imaju redak. Maknuti, eventualno sitna oznaka vidljivosti.
+  - 'private' → ostaju, i to je jedino mjesto gdje nose informaciju.
+    🟠 B20e. Postavke obavijesti izvaditi iz MemberDialoga u postavke projekta. To je osobna
+    postavka za projekt, a ne svojstvo retka u popisu ljudi — danas se nudi na svakom članu,
+    što je i prije bilo pogrešno, a nakon B12 tuđe tiho padaju (vidi B20b).
     🟠 B20c. projectsStore.addMember traži profil po e-mailu i ubacuje redak u project_members.
     Nova politika to odbija ako osoba nije član organizacije — što je ispravno. Zamijeniti
     odabirom iz adresara organizacije; pozivanje izvana ide kroz pozivnice (B21).
