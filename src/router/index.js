@@ -8,6 +8,14 @@ const routes = [
     meta: { public: true },
   },
   {
+    // Javno namjerno: pozvana osoba u pravilu nema sesiju kad prvi put otvori
+    // link. Stranica sama grana na prijavljen/neprijavljen (vidi
+    // AcceptInvitePage.vue) — vlastiti q-layout, izvan MainLayouta.
+    path: '/invite/:token',
+    component: () => import('src/pages/AcceptInvitePage.vue'),
+    meta: { public: true },
+  },
+  {
     path: '/',
     component: () => import('src/layouts/MainLayout.vue'),
     meta: { auth: true },
@@ -58,7 +66,11 @@ router.beforeEach(async (to) => {
     await auth.init()
   }
   if (!auth.user && !to.meta.public) return '/login'
-  if (auth.user && to.path === '/login') return '/'
+  // redirect čuva /invite/:token kroz prijavu/registraciju umjesto da uvijek
+  // odbaci na Home (vidi AcceptInvitePage → goToLogin).
+  if (auth.user && to.path === '/login') {
+    return typeof to.query.redirect === 'string' ? to.query.redirect : '/'
+  }
 })
 
 export default router

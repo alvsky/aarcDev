@@ -72,10 +72,11 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from 'src/stores/auth'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 const isLogin = ref(true)
@@ -85,7 +86,11 @@ const errorMsg = ref('')
 
 const form = reactive({
   fullName: '',
-  email: '',
+  // Stiže s /invite/:token kad korisnik nema račun ili nije prijavljen tom
+  // adresom — pozivnica traži TOČNO tu adresu, pa je predispuna umjesto
+  // prepisivanja smanjuje šansu za tipfeler koji bi accept_invitation svejedno
+  // odbio.
+  email: typeof route.query.email === 'string' ? route.query.email : '',
   password: '',
 })
 
@@ -103,7 +108,8 @@ async function submit() {
     } else {
       await authStore.register(form.email, form.password, form.fullName)
     }
-    router.push('/')
+    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
+    router.push(redirect)
   } catch (e) {
     errorMsg.value = e.message
   } finally {

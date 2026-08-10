@@ -3,9 +3,13 @@ import { supabase } from 'src/boot/supabase'
 import { useAuthStore } from './auth'
 import { isOnline } from 'src/composables/useNetwork'
 
-// Organizacije: prebacivač, ekran organizacije (B20). Pozivnice ostaju B21 —
-// čekaju potvrdu e-maila (G2), inače se pozivnica poslana na tuđu adresu može
-// preuzeti prijavom s tom (nepotvrđenom) adresom.
+// Organizacije: prebacivač, ekran organizacije (B20), pozivnice (B21).
+//
+// ⚠️ Pozivnice su svjesno izgrađene PRIJE G2 (potvrda e-maila), na izričit
+// zahtjev — za mali, povjerljiv tim rizik je nizak. accept_invitation
+// uspoređuje e-mail sesije s pozivnicom, ali ta provjera vrijedi onoliko
+// koliko vrijedi da je adresa stvarno vlasnikova. Zatvoriti s G2 prije
+// javnog izlaska (BACKLOG B21).
 //
 // Odabrana organizacija ide u localStorage, ne u IndexedDB keš: to je postavka
 // uređaja, ne podatak, i mora biti poznata prije nego se išta dohvati.
@@ -23,6 +27,8 @@ export const useOrgsStore = defineStore('orgs', {
     // `orgs` jer je puno rjeđe potreban (samo B20a kandidati za izvršitelja i
     // B20 ekran organizacije), pa se dohvaća lijeno preko fetchMembers().
     members: [],
+    // Pozivnice na čekanju za tekuću organizaciju — vidljivo samo adminu.
+    invitations: [],
   }),
 
   getters: {
@@ -64,6 +70,71 @@ export const useOrgsStore = defineStore('orgs', {
       if (!this.orgs.some((o) => o.id === this.currentId)) {
         this.setCurrent(this.orgs[0]?.id ?? null)
       }
+    },
+
+    // Pozivnice na čekanju za organizaciju — vidljivo samo adminu
+    // (invitations_select), pa se poziv tiho vraća prazan za nekog drugog.
+    async fetchInvitations(orgId) {
+      if (!isOnline() || !orgId) return
+      const { data, error } = await supabase
+        .from('invitations')
+        .select('*')
+        .eq('org_id', orgId)
+        .is('accepted_at', null)
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      this.invitations = data ?? []
+    },
+
+    // .select().single() da se dobije natrag token — treba odmah za link koji
+    // admin dijeli, jer još nema slanja e-mailova (BACKLOG K, izvan opsega).
+    // Jedinstveni indeks (org_id, lower(email)) WHERE accepted_at IS NULL javi
+    // se kao 23505 ako već postoji neprihvaćena pozivnica na tu adresu —
+    // pretvoreno u čitljivu poruku umjesto sirove Postgres greške.
+    async createInvitation(orgId, email, role) {
+      const auth = useAuthStore()
+      const { data, error } = await supabase
+        .from('invitations')
+        .insert({
+          org_id: orgId,
+          email: email.trim().toLowerCase(),
+          role,
+          invited_by: auth.user.id,
+        })
+        .select()
+        .single()
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error('Već postoji neprihvaćena pozivnica na tu adresu.')
+        }
+        throw error
+      }
+      this.invitations = [data, ...this.invitations]
+      return data
+    },
+
+    async revokeInvitation(invitationId) {
+      const { error } = await supabase.from('invitations').delete().eq('id', invitationId)
+      if (error) throw error
+      this.invitations = this.invitations.filter((i) => i.id !== invitationId)
+    },
+
+    // Bez prijave, bez članstva — token sam po sebi otključava pregled
+    // (get_invitation_preview, B21). Vraća null za nepostojeću/isteklu/već
+    // prihvaćenu pozivnicu, ne baca grešku — "nije pronađeno" je normalno
+    // stanje ovog poziva, ne kvar.
+    async getInvitationPreview(token) {
+      const { data, error } = await supabase.rpc('get_invitation_preview', { p_token: token })
+      if (error) throw error
+      return data?.[0] ?? null
+    },
+
+    async acceptInvitation(token) {
+      const { data: orgId, error } = await supabase.rpc('accept_invitation', { p_token: token })
+      if (error) throw error
+      await this.fetchOrgs()
+      this.setCurrent(orgId)
+      return orgId
     },
 
     // Adresar organizacije — za koga vrijedi vidljivost 'org'. Politika

@@ -134,8 +134,16 @@ list: popis organizacija s bedžom nepročitanog, "Nova organizacija", "Postavke
   novoregistrirani korisnik nema organizaciju — provjeriti signup flow.
   ✅ B24. (riješeno ranije, uz B9–B11 — backlog samo nije bio ažuriran) projects DELETE:
   is_org_admin(org_id) or created_by = auth.uid().
-  🟠 B21. Potvrda e-maila (G2) + pozivnice — **moraju ići zajedno**: bez potvrde e-maila se
-  registriraš s tuđom adresom i preuzmeš tuđu pozivnicu.
+  🟡 B21. (2026-08-13) Pozivnice IZGRAĐENE, svjesno prije G2 — na izričit zahtjev, prihvaćen
+  rizik za mali povjerljivi tim. get_invitation_preview RPC (novi, anon+authenticated: pregled
+  bez prijave preko tokena) + OrgPage obrazac za slanje/povlačenje + kopirljiv link
+  (`/#/invite/:token`, nema slanja e-mailova — K4) + AcceptInvitePage (grana na
+  neprijavljen/kriva adresa/ispravna adresa) + LoginPage `redirect`+`email` query da token
+  preživi prijavu/registraciju.
+  🔴 PRIJE JAVNOG IZLASKA: bez G2 se netko može registrirati tuđom (nepotvrđenom) adresom i
+  preuzeti tuđu pozivnicu — accept_invitation uspoređuje e-mail sesije s pozivnicom, ali ta
+  provjera vrijedi onoliko koliko vrijedi da je adresa stvarno vlasnikova. Zatvoriti s G2 prije
+  javnog izlaska, ne odgađati dalje.
   ✅ B25. (2026-08-11) project_members postaje pretplata, ne dozvola: nakon B7/B15 svaki
   član organizacije dobivao je obavijesti za SVAKI projekt vidljiv organizaciji, i za one
   koje nikad nije otvorio. auto_follow_on_message/_on_assign okidači + follow_project RPC

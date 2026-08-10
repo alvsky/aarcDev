@@ -110,10 +110,88 @@
           </q-item>
         </q-list>
 
-        <!-- Pozivnice — čeka B21 (potvrda e-maila) -->
-        <div v-if="orgsStore.isAdmin" class="q-px-md q-mt-md text-caption org-hint">
-          {{ $t('org.invitesComingSoon') }}
-        </div>
+        <!-- Pozivnice. Namjerno izgrađeno prije G2 (potvrda e-maila) — vidi
+             bilješku na vrhu orgs.js. Nema slanja e-mailova (K), pa admin
+             dijeli link ručno. -->
+        <template v-if="orgsStore.isAdmin">
+          <q-separator class="q-mx-md q-my-md" />
+
+          <div class="q-px-md q-mb-sm text-subtitle2 org-section-label">
+            {{ $t('org.invite') }}
+          </div>
+          <div class="q-px-md q-gutter-sm">
+            <div class="row q-gutter-sm">
+              <q-input
+                v-model="inviteEmail"
+                :label="$t('auth.email')"
+                type="email"
+                outlined
+                dense
+                class="col"
+                @keydown.enter="sendInvite"
+              />
+              <q-select
+                v-model="inviteRole"
+                :options="inviteRoleOptions"
+                emit-value
+                map-options
+                outlined
+                dense
+                style="min-width: 120px"
+                :label="$t('org.inviteRole')"
+              />
+            </div>
+            <q-btn
+              color="primary"
+              icon="send"
+              :label="$t('org.inviteSend')"
+              :loading="inviting"
+              @click="sendInvite"
+            />
+          </div>
+
+          <div v-if="orgsStore.invitations.length" class="q-px-md q-mt-md">
+            <div class="text-caption org-section-label q-mb-xs">
+              {{ $t('org.pendingInvitations') }}
+            </div>
+            <q-list separator bordered class="rounded-borders">
+              <q-item v-for="inv in orgsStore.invitations" :key="inv.id">
+                <q-item-section>
+                  <q-item-label>{{ inv.email }}</q-item-label>
+                  <q-item-label caption class="member-email">
+                    {{ $t(`org.role.${inv.role}`) }} ·
+                    {{ $t('org.inviteExpires', { date: formatDate.full(inv.expires_at) }) }}
+                  </q-item-label>
+                </q-item-section>
+                <q-item-section side>
+                  <div class="row q-gutter-xs">
+                    <q-btn
+                      flat
+                      round
+                      dense
+                      size="sm"
+                      icon="link"
+                      @click="copyInviteLink(inv.token)"
+                    >
+                      <q-tooltip>{{ $t('org.copyLink') }}</q-tooltip>
+                    </q-btn>
+                    <q-btn
+                      flat
+                      round
+                      dense
+                      size="sm"
+                      icon="close"
+                      color="negative"
+                      @click="confirmRevokeInvite(inv)"
+                    >
+                      <q-tooltip>{{ $t('org.revokeInvite') }}</q-tooltip>
+                    </q-btn>
+                  </div>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </div>
+        </template>
 
         <!-- Napusti organizaciju -->
         <div class="q-px-md q-mt-lg">
@@ -148,13 +226,14 @@
 </template>
 
 <script setup>
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useOrgsStore } from 'src/stores/orgs'
 import { useAuthStore } from 'src/stores/auth'
 import { useNotificationsStore } from 'src/stores/notifications'
+import { useFormatDate } from 'src/composables/useFormatDate'
 import AppHeader from 'src/components/shared/AppHeader.vue'
 import UserAvatar from 'src/components/shared/UserAvatar.vue'
 
@@ -164,6 +243,16 @@ const { t } = useI18n()
 const orgsStore = useOrgsStore()
 const authStore = useAuthStore()
 const notifStore = useNotificationsStore()
+const formatDate = useFormatDate()
+
+const inviteEmail = ref('')
+const inviteRole = ref('member')
+const inviting = ref(false)
+const inviteRoleOptions = [
+  { label: t('org.role.admin'), value: 'admin' },
+  { label: t('org.role.member'), value: 'member' },
+  { label: t('org.role.guest'), value: 'guest' },
+]
 
 function switchOrg(orgId) {
   orgsStore.setCurrent(orgId)
@@ -277,10 +366,53 @@ function confirmDeleteOrg() {
   })
 }
 
+async function sendInvite() {
+  if (!inviteEmail.value.trim() || !org.value) return
+  inviting.value = true
+  try {
+    const inv = await orgsStore.createInvitation(org.value.id, inviteEmail.value, inviteRole.value)
+    inviteEmail.value = ''
+    copyInviteLink(inv.token, false)
+    $q.notify({ type: 'positive', message: t('org.inviteCreated') })
+  } catch (e) {
+    $q.notify({ type: 'negative', message: e.message })
+  } finally {
+    inviting.value = false
+  }
+}
+
+function inviteUrl(token) {
+  // Hash-router (invarijanta arhitekture) — link mora nositi #/ da radi izvan
+  // aplikacije (npr. zalijepljen u poruku), ne samo unutar SPA navigacije.
+  return `${window.location.origin}/#/invite/${token}`
+}
+
+async function copyInviteLink(token, notify = true) {
+  await navigator.clipboard.writeText(inviteUrl(token))
+  if (notify) $q.notify({ type: 'positive', message: t('org.linkCopied') })
+}
+
+function confirmRevokeInvite(inv) {
+  $q.dialog({
+    title: t('org.revokeInvite'),
+    message: t('org.revokeInviteConfirm', { email: inv.email }),
+    ok: { label: t('common.delete'), color: 'negative' },
+    cancel: t('common.cancel'),
+  }).onOk(async () => {
+    try {
+      await orgsStore.revokeInvitation(inv.id)
+    } catch (e) {
+      $q.notify({ type: 'negative', message: e.message })
+    }
+  })
+}
+
 watch(
   () => orgsStore.currentId,
   (id) => {
-    if (id) orgsStore.fetchMembers(id)
+    if (!id) return
+    orgsStore.fetchMembers(id)
+    if (orgsStore.isAdmin) orgsStore.fetchInvitations(id)
   },
   { immediate: true },
 )
@@ -300,7 +432,6 @@ onMounted(() => {
 }
 
 .org-role-caption,
-.org-hint,
 .org-section-label {
   color: var(--aarc-muted);
 }
