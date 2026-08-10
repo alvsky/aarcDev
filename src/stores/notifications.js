@@ -4,44 +4,14 @@ import { useAuthStore } from './auth'
 import { isOnline } from 'src/composables/useNetwork'
 import { useBadge } from 'src/composables/useBadge'
 
-// Jedna stavka — jedan badge (docs/item-model.md).
+// Brojanje živi u bazi (get_unread RPC), ne ovdje. Klijent je prije dohvaćao SVE
+// poruke svih svojih projekata da bi ih prebrojao; sada dobiva nekoliko desetaka
+// gotovih redaka i samo ih posloži.
 //
-// Stavka smije biti vidljiva u dvije kartice (prihvaćeni bug je i u registru
-// bugova i na TBI ploči), ali se broji točno u JEDNOJ — onoj gdje traži pažnju.
-// Vidljivost i brojanje su namjerno odvojeni.
-// Aktivan rad — sve tri faze pripadaju TBI ploči.
-const ACTIVE_STAGES = ['accepted', 'in_progress', 'testing']
-const TERMINAL_STAGES = ['done', 'rejected']
+// Pravilo "jedna stavka, jedan badge" je time također u SQL-u
+// (item_tab_new / item_tab_thread) — na jednom mjestu umjesto dva.
 
-function tabForNewItem(item) {
-  if (!item) return null
-  if (ACTIVE_STAGES.includes(item.stage)) return 'newTbi'
-  if (TERMINAL_STAGES.includes(item.stage)) return null
-  if (item.kind === 'bug') return 'newBugs'
-  if (item.kind === 'idea') return 'newIdeas'
-  return null // zadatak izvan aktivnog rada nema svoju karticu
-}
-
-// Za NEPROČITANE PORUKE vrijedi drukčije pravilo nego za nove stavke: poruka je
-// stvaran signal i kad je stavka zatvorena, pa se pripisuje kartici u kojoj se
-// stavka može PRONAĆI. Inače bi nastao badge koji se ne da otvoriti — točno ona
-// greška zbog koje je cijeli ovaj model i nastao.
-//
-// ⚠️ Uvjet za sučelje: zadani filtar kartice mora prikazati stavku koja ima
-// nepročitanih poruka, čak i ako je u fazi done/rejected.
-function tabForThread(item) {
-  if (!item) return null
-  if (ACTIVE_STAGES.includes(item.stage)) return 'newTbi'
-  if (item.kind === 'bug') return 'newBugs'
-  if (item.kind === 'idea') return 'newIdeas'
-  return 'newTbi'
-}
-
-const PREF_BY_TAB = {
-  newIdeas: 'notif_ideas',
-  newBugs: 'notif_bugs',
-  newTbi: 'notif_tbi',
-}
+const TAB_KEY = { ideas: 'newIdeas', bugs: 'newBugs', tbi: 'newTbi' }
 
 const emptyProject = () => ({
   total: 0,
@@ -82,54 +52,14 @@ export const useNotificationsStore = defineStore('notifications', {
     async fetchUnread() {
       const auth = useAuthStore()
       if (!auth.user) return
-      // Offline: zadrži keširano stanje (upiti bi vratili prazno i pobrisali badge)
+      // Offline: zadrži keširano stanje (prazan odgovor bi pobrisao badge)
       if (!isOnline()) return
 
-      const { data: enabledProjects } = await supabase
-        .from('project_members')
-        .select('project_id, notif_messages, notif_ideas, notif_bugs, notif_tbi')
-        .eq('user_id', auth.user.id)
-        .eq('badge_enabled', true)
-
-      // Bez projekata s uključenim badgeom nema što računati —
-      // ujedno izbjegava dohvat SVIH poruka iz baze
-      if (!enabledProjects?.length) {
-        this.unread = {}
-        await this.syncBadge()
+      const { data, error } = await supabase.rpc('get_unread')
+      if (error) {
+        console.error('[unread] get_unread:', error)
         return
       }
-
-      const projectIds = enabledProjects.map((p) => p.project_id)
-      const prefs = new Map(enabledProjects.map((p) => [p.project_id, p]))
-      // badge_enabled je glavni prekidač, notif_* sužava kategorije
-      // (null = uključeno, zbog starih redaka)
-      const msgProjectIds = enabledProjects
-        .filter((p) => p.notif_messages !== false)
-        .map((p) => p.project_id)
-
-      const allowed = (projectId, tab) => prefs.get(projectId)?.[PREF_BY_TAB[tab]] !== false
-
-      const [{ data: messages }, { data: reads }, { data: items }, { data: states }] =
-        await Promise.all([
-          msgProjectIds.length
-            ? supabase
-                .from('messages')
-                .select('id, project_id, item_id, channel, author_id, created_at')
-                .in('project_id', msgProjectIds)
-                .neq('author_id', auth.user.id)
-            : Promise.resolve({ data: [] }),
-          supabase.from('message_reads').select('*').eq('user_id', auth.user.id),
-          // Sve stavke, ne samo nepročitane — trebaju i pročitane da bi se
-          // nepročitane poruke znale pripisati pravoj kartici.
-          supabase
-            .from('items')
-            .select('id, project_id, kind, stage, created_by')
-            .in('project_id', projectIds),
-          supabase.from('item_user_state').select('item_id, read_at').eq('user_id', auth.user.id),
-        ])
-
-      const readItemIds = new Set((states ?? []).filter((s) => s.read_at).map((s) => s.item_id))
-      const itemById = new Map((items ?? []).map((i) => [i.id, i]))
 
       const result = {}
       const ensure = (pid) => {
@@ -137,58 +67,29 @@ export const useNotificationsStore = defineStore('notifications', {
         return result[pid]
       }
 
-      // 1) Nove stavke koje korisnik nije otvorio
-      for (const item of items ?? []) {
-        if (item.created_by === auth.user.id) continue
-        if (readItemIds.has(item.id)) continue
-        const tab = tabForNewItem(item)
-        if (!tab || !allowed(item.project_id, tab)) continue
-        const p = ensure(item.project_id)
-        p[tab]++
-        p.total++
-      }
+      for (const row of data ?? []) {
+        const p = ensure(row.project_id)
 
-      // 2) Nepročitane poruke u threadovima i kanalima
-      for (const msg of messages ?? []) {
-        const read = reads?.find(
-          (r) =>
-            r.project_id === msg.project_id &&
-            (r.item_id ?? null) === (msg.item_id ?? null) &&
-            (r.channel ?? 'main') === (msg.channel ?? 'main'),
-        )
+        // Svaki redak ulazi u ukupan zbroj točno jednom.
+        p.total += row.n
 
-        const isUnread = !read || new Date(msg.created_at) > new Date(read.last_read_at)
-        if (!isUnread) continue
-
-        const p = ensure(msg.project_id)
-        p.total++
-
-        if (msg.item_id) {
-          p.items[msg.item_id] = (p.items[msg.item_id] ?? 0) + 1
-        } else {
-          const ch = msg.channel ?? 'main'
-          p.channels[ch] = (p.channels[ch] ?? 0) + 1
+        if (row.scope === 'channel') {
+          p.channels[row.ref] = (p.channels[row.ref] ?? 0) + row.n
+        } else if (row.scope === 'thread') {
+          p.items[row.ref] = (p.items[row.ref] ?? 0) + row.n
         }
-      }
 
-      // 3) Poruke threadova propagiraj u badge kartice — po fazi stavke.
-      // Total se NE povećava, već je zbrojen u koraku 2.
-      for (const pid of Object.keys(result)) {
-        const p = result[pid]
-        for (const [itemId, count] of Object.entries(p.items)) {
-          const tab = tabForThread(itemById.get(itemId))
-          if (!tab || !allowed(pid, tab)) continue
-          p[tab] += count
-        }
+        // Kartica: nove stavke i poruke threadova zbrajaju se u istu.
+        const tabKey = TAB_KEY[row.tab]
+        if (tabKey) p[tabKey] += row.n
       }
 
       this.unread = result
       await this.syncBadge()
     },
 
-    // Vodenokaz threada. Otkad message_reads ima obični unique indeks
-    // (NULLS NOT DISTINCT), upsert ide izravno — RPC više ne postoji, a s njim
-    // je otpala i rupa u kojoj se p_user_id slao iz poziva bez provjere.
+    // Vodenokaz threada. message_reads ima obični unique indeks
+    // (NULLS NOT DISTINCT), pa upsert ide izravno — bez RPC-a.
     async markRead({ projectId, itemId = null, channel = 'main' }) {
       const auth = useAuthStore()
 

@@ -62,12 +62,12 @@ pozivatelja. Zatvara sadašnju rupu (WITH CHECK (true) → svatko si doda člans
 postavi role='owner').
 ✅ B13. (2026-08-10) Okidač: organizacija uvijek mora imati barem jednog ownera. Zadnji owner se ne može
 razvlastiti ni izaći. Server-side, ne klijentski (pouka iz B18).
-🟠 B14. get_unread_total: maknuti parametar p_user_id, koristiti auth.uid() iznutra — sad je
-SECURITY DEFINER s korisnikovim ID-em iz poziva bez provjere. (upsert_message_read je
-obrisan 2026-08-08 uz M3, pa je pola ovoga već zatvoreno.)
+✅ B14. (2026-08-10) Potpis je ostao — edge funkcija legitimno računa za drugoga. Umjesto
+toga je oduzeto pravo pozivanja roli authenticated; iste mjere dobile su i _unread_rows,
+push_recipients i dvoargumentni can_access_project.
 
 Posljedice modela
-🔴 B15. ŽIVO OD 2026-08-10 — notificationsStore.fetchUnread, get_unread_total i edge funkcija
+✅ B15. (2026-08-10, s D1) — notificationsStore.fetchUnread, get_unread_total i edge funkcija
 (popis primatelja) sve voze iz project_members. Radi samo zato što postojeći projekti imaju
 te retke od prije. Čim se napravi NOVI projekt vidljiv organizaciji, ostali članovi nemaju
 redak → nula nepročitanih i nikakav push, bez ijedne greške. Prepisati na "članovi
@@ -125,7 +125,7 @@ C. Baza — konzistentnost
 ✅ C6. Brisanje screenshotova iz Storagea pri brisanju ideje/buga/TBI itema (riješeno 2026-08-05 — briše se i iz Storagea i iz lokalnog keša).
 
 D. Performanse i skalabilnost
-🟠 D1. Server-side unread: RPC/view koji vraća gotove brojeve po projektu/threadu umjesto da klijent dohvaća sve poruke. Ovo je najveći pojedinačni dobitak u aplikaciji.
+✅ D1. (2026-08-10) Server-side unread: get_unread() vraća gotove retke; klijent više ne dohvaća sve poruke. Pravilo "jedna stavka jedan badge" preseljeno u SQL (item_tab_new / item_tab_thread).
 🟠 D2. Debounce/throttle fetchUnread() poziva (sad se zove nakon skoro svakog realtime eventa). Samostalno izvedivo i prije D1.
 🟠 D3. Filtrirati realtime kanale za message UPDATE i message_reactions po project_id (sad slušaju sve projekte).
 🟢 D4. Paginacija poruka u threadovima (sad se učitava cijeli thread; limit + "učitaj starije").

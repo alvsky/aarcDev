@@ -100,13 +100,20 @@ async function sendPushToMembers(
     data: Record<string, string>
   }
 ) {
-  const { data: members } = await supabase
-    .from('project_members')
-    .select('user_id')
-    .eq('project_id', projectId)
-    .neq('user_id', excludeUserId)
-    .eq('badge_enabled', true)
-    .eq(notifField, true)
+  // Ne čita project_members izravno: taj redak za člana organizacije ne mora ni
+  // postojati kad je projekt vidljiv cijeloj organizaciji, pa bi INNER JOIN tiho
+  // ostavio ljude bez pusha. push_recipients primjenjuje ista pravila pristupa
+  // kao RLS, a project_members gleda samo kao izvor osobnih postavki.
+  const { data: members, error: recipientsError } = await supabase.rpc('push_recipients', {
+    p_project: projectId,
+    p_exclude: excludeUserId,
+    p_field: notifField,
+  })
+
+  if (recipientsError) {
+    console.error('push_recipients error:', recipientsError)
+    return
+  }
 
   console.log('Members found:', members?.length)
   if (!members?.length) return
