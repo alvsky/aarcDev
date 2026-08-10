@@ -1,6 +1,7 @@
 import { defineStore, acceptHMRUpdate } from 'pinia'
 import { supabase } from 'src/boot/supabase'
 import { useAuthStore } from './auth'
+import { useProjectsStore } from './projects'
 import { isOnline } from 'src/composables/useNetwork'
 import { useBadge } from 'src/composables/useBadge'
 
@@ -46,6 +47,17 @@ export const useNotificationsStore = defineStore('notifications', {
     newTbi: (state) => (projectId) => state.unread[projectId]?.newTbi ?? 0,
 
     anyUnread: (state) => Object.values(state.unread).some((p) => p.total > 0),
+
+    // Zbroj nepročitanog preko SVIH projekata jedne organizacije — za točkicu
+    // na prebacivaču kad neka DRUGA organizacija ima nešto novo (B22). U
+    // aplikaciji se posvuda drugdje broji samo tekuća organizacija; ovo je
+    // jedina namjerna iznimka.
+    orgUnread: (state) => (orgId) => {
+      const projectsStore = useProjectsStore()
+      return projectsStore.projects
+        .filter((p) => p.org_id === orgId)
+        .reduce((sum, p) => sum + (state.unread[p.id]?.total ?? 0), 0)
+    },
   },
 
   actions: {

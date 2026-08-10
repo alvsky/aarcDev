@@ -47,6 +47,26 @@
             />
           </div>
         </div>
+
+        <!-- Vidljivost — samo pri uređivanju postojećeg (novi je uvijek
+             privatan, create_project to nameće) i samo admin/owner smije
+             mijenjati (projects_visibility_guard okidač bi to i onako odbio,
+             ali ne pokazujemo radnju koja bi svejedno pala). -->
+        <div v-if="project?.id && orgsStore.isAdmin">
+          <div class="text-caption text-grey-6 q-mb-xs">
+            {{ $t('projects.visibilityLabel') }}
+          </div>
+          <q-btn-toggle
+            v-model="form.visibility"
+            spread
+            no-caps
+            toggle-color="primary"
+            :options="[
+              { label: $t('projects.visibilityOrg'), value: 'org' },
+              { label: $t('projects.visibilityPrivate'), value: 'private' },
+            ]"
+          />
+        </div>
       </q-card-section>
 
       <q-card-actions align="right">
@@ -60,6 +80,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { useProjectsStore } from 'src/stores/projects'
+import { useOrgsStore } from 'src/stores/orgs'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 
@@ -72,6 +93,7 @@ const emit = defineEmits(['update:modelValue'])
 const $q = useQuasar()
 const { t } = useI18n()
 const projectsStore = useProjectsStore()
+const orgsStore = useOrgsStore()
 const saving = ref(false)
 
 const colors = [
@@ -90,7 +112,7 @@ const open = computed({
   set: (v) => emit('update:modelValue', v),
 })
 
-const form = ref({ name: '', description: '', color: '#6366F1' })
+const form = ref({ name: '', description: '', color: '#6366F1', visibility: 'private' })
 
 watch(
   () => props.modelValue,
@@ -101,8 +123,9 @@ watch(
             name: props.project.name,
             description: props.project.description ?? '',
             color: props.project.color ?? '#6366F1',
+            visibility: props.project.visibility ?? 'private',
           }
-        : { name: '', description: '', color: '#6366F1' }
+        : { name: '', description: '', color: '#6366F1', visibility: 'private' }
     }
   },
 )

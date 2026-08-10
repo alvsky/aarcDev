@@ -8,7 +8,9 @@
 
       <img src="/logos/aarc_t_225-75.png" alt="aarc" class="app-logo" @click="$router.push('/')" />
 
-      <q-toolbar-title v-if="title" class="text-white">{{ title }}</q-toolbar-title>
+      <q-toolbar-title v-if="title || $slots.title" class="text-white">
+        <slot name="title">{{ title }}</slot>
+      </q-toolbar-title>
       <q-space v-else />
 
       <!-- Offline indikator -->

@@ -89,62 +89,69 @@ odbija kaskadno brisanje zadnjeg vlasnika). Preostaje samo da aplikacija tu izni
 pokaže čitljivu poruku umjesto sirove Postgres greške.
 
 Sučelje (nakon što baza stoji)
-🟠 B20. Home i ekran organizacije — makro po specifikaciji u docs/multi-tenancy.md
-("What this looks like on screen"):
+✅ B20. (2026-08-11) Home i ekran organizacije, po specifikaciji u docs/multi-tenancy.md
+("What this looks like on screen"): naziv organizacije kao prebacivač u zaglavlju (donji
+list: popis organizacija s bedžom nepročitanog, "Nova organizacija", "Postavke organizacije")
 
-- naziv organizacije kao prebacivač u zaglavlju + donji list (popis, nova, postavke)
-- lokot na kartici privatnog projekta
-- sekcija Tim = članovi organizacije (danas je unija svih projekata)
-- kartica "Tim" u podnožju konačno vodi na ekran organizacije (sad je mrtva)
-- gost NE vidi sekciju ni karticu Tim
-- prekidač vidljivosti projekta (samo admin/owner)
+- nova stranica OrgPage (preimenovanje, popis članova s ulogama, promjena/oduzimanje uloge,
+  uklanjanje člana, prijenos vlasništva, napusti organizaciju, opasna zona brisanja) + lokot na
+  kartici privatnog projekta + Tim sekcija sad je org roster, ne unija project_members + kartica
+  "Tim" u podnožju konačno vodi na /org (bila je mrtva) + gost ne vidi Tim ni FAB za novi
+  projekt + prekidač vidljivosti u ProjectDialogu (samo admin/owner, samo pri uređivanju — novi
+  projekt je uvijek privatan). Nove RPC/politike: create_organization,
+  organizations_update/delete. Usput otkriven i popravljen mrtav realtime na Homeu:
+  useRealtime dobiva onIdea/onBug koje composable ne prepoznaje otkad postoji items (M2/5a) —
+  otad je realtime za stavke na Homeu bio tih; sad onItem.
+  ✅ B20a. (2026-08-11) Kandidati za izvršitelja sad ovise o vidljivosti: org roster
+  (orgsStore.fetchMembers, bez gostiju) za 'org', project_members za 'private' (ondje redak
+  i dalje = dozvola, ne samo pretplata).
+  ✅ B20d. (2026-08-11) Avatari na kartici projekta i Tim sekcija sad koriste org roster za
+  vidljivost 'org' (isto rješenje kao B20a), project_members samo za 'private'. Lokot iz istog
+  prolaza.
   🟠 B20b. Dvije posljedice B12 u MemberDialogu, obje tihe:
-  - postavke obavijesti smiju se mijenjati samo na VLASTITOM retku (politika + column grant),
-    a sučelje ih još nudi na svakom članu → tuđi prekidač pada bez poruke
-  - projectsStore.changeRole piše project_members.role, a UPDATE je grantom sužen na
-    badge_enabled + notif_* → sada odbija. Treba RPC set_project_member_role uz provjeru
-    can_manage_project_members, po istom obrascu kao org uloge iz B12.
-    ⚠️ prije nego se dira MemberDialog.
-    ✅ B20a. (2026-08-11) Kandidati za izvršitelja sad ovise o vidljivosti: org roster
-    (orgsStore.fetchMembers, bez gostiju) za 'org', project_members za 'private' (ondje redak
-    i dalje = dozvola, ne samo pretplata).
-    🟠 B20d. Popis članova znači različite stvari po vidljivosti, a sučelje ga prikazuje jednako:
-  - 'org' → avatari i "dodaj člana" nemaju smisla (uvijek ista skupina) i zavaravaju, jer
-    prikazuju samo one koji slučajno imaju redak. Maknuti, eventualno sitna oznaka vidljivosti.
-  - 'private' → ostaju, i to je jedino mjesto gdje nose informaciju.
-    🟠 B20e. Postavke obavijesti izvaditi iz MemberDialoga u postavke projekta. To je osobna
-    postavka za projekt, a ne svojstvo retka u popisu ljudi — danas se nudi na svakom članu,
-    što je i prije bilo pogrešno, a nakon B12 tuđe tiho padaju (vidi B20b).
-    🟠 B20c. projectsStore.addMember traži profil po e-mailu i ubacuje redak u project_members.
-    Nova politika to odbija ako osoba nije član organizacije — što je ispravno. Zamijeniti
-    odabirom iz adresara organizacije; pozivanje izvana ide kroz pozivnice (B21).
-    🟠 B21b. Stanje "nemaš pristup" na ProjectPage. Kad RLS ispravno ne vrati projekt, stranica
-    se otvori prazna i bez naslova — izgleda kao kvar, a zapravo radi ispravno. Treba jasna
-    poruka + povratak na Home. Uočeno pri testiranju B9–B11.
-    🟠 B22. Badge preko organizacija: u aplikaciji samo tekuća, na ikoni zbroj svih, točkica na
-    prebacivaču kad druga organizacija ima nepročitano. ⚠️ nakon B20.
-    🟠 B23. Prvi ulazak: ako postoji pozivnica na taj e-mail → ulazi u tu organizaciju, inače se
-    automatski stvori organizacija nazvana po korisniku. ⚠️ nakon B21 (pozivnice).
-    🟠 B24. projects DELETE politika: sad samo autor. Dodati admin/owner organizacije — inače se
-    ne može počistiti za članom koji je otišao.
-    🟠 B21. Potvrda e-maila (G2) + pozivnice — **moraju ići zajedno**: bez potvrde e-maila se
-    registriraš s tuđom adresom i preuzmeš tuđu pozivnicu.
-    ✅ B25. (2026-08-11) project_members postaje pretplata, ne dozvola: nakon B7/B15 svaki
-    član organizacije dobivao je obavijesti za SVAKI projekt vidljiv organizaciji, i za one
-    koje nikad nije otvorio. auto_follow_on_message/_on_assign okidači + follow_project RPC
-    (ručno) + unfollowProject (postojeća delete politika). _unread_rows i push_recipients
-    vraćeni s LEFT na INNER JOIN na project_members.
-    ⚠️ OVO IZGLEDA KAO PONIŠTAVANJE B15 — NIJE. B15: project_members kao provjera PRISTUPA
-    (loše, curi/nedostaje pristup). Ovo: project_members kao provjera PRETPLATE, pristup i
-    dalje zaseban can_access_project poziv u istom upitu. Pročitati komentar na vrhu
-    20260811100000_project_following.sql prije nego se ovo dira.
-    MessageInput.vue prikazuje dismissable notify ("Sada pratiš X — dobivat ćeš obavijesti",
-    akcija Ne prati) kad je auto-praćenje upravo okinuto prvom porukom u projektu.
-    🟢 B25b. Isti "sad pratiš" trenutak ne postoji za auto-praćenje preko dodjele stavke
-    (auto_follow_on_assign) — korisnik dobije obavijesti bez ijedne poruke o tome. Manji
-    prioritet: dodjela je rjeđi okidač i sam čin dodjele je već neka vrsta obavijesti.
-    🟢 B25c. follow_project RPC nema još gumb u sučelju (ručno zapratiti projekt bez pisanja
-    poruke) — čeka B20 (ekran/postavke projekta).
+
+* postavke obavijesti smiju se mijenjati samo na VLASTITOM retku (politika + column grant),
+  a sučelje ih još nudi na svakom članu → tuđi prekidač pada bez poruke
+* projectsStore.changeRole piše project_members.role, a UPDATE je grantom sužen na
+  badge_enabled + notif_\* → sada odbija. Treba RPC set_project_member_role uz provjeru
+  can_manage_project_members, po istom obrascu kao org uloge iz B12.
+  ⚠️ prije nego se dira MemberDialog.
+  🟠 B20e. Postavke obavijesti izvaditi iz MemberDialoga u postavke projekta. To je osobna
+  postavka za projekt, a ne svojstvo retka u popisu ljudi — danas se nudi na svakom članu,
+  što je i prije bilo pogrešno, a nakon B12 tuđe tiho padaju (vidi B20b).
+  🟠 B20c. projectsStore.addMember traži profil po e-mailu i ubacuje redak u project_members.
+  Nova politika to odbija ako osoba nije član organizacije — što je ispravno. Zamijeniti
+  odabirom iz adresara organizacije; pozivanje izvana ide kroz pozivnice (B21). Vjerojatno
+  najbolje riješiti zajedno s B20b/B20e — sve troje je MemberDialog.
+  ✅ B21b. (2026-08-11) Stanje "nemaš pristup" na ProjectPage — loading spinner pa jasna
+  poruka + povratak na Home, umjesto prazne stranice bez naslova.
+  ✅ B22. (2026-08-11) Badge preko organizacija: točkica na prebacivaču kad druga organizacija
+  ima nepročitano (notifStore.orgUnread). Badge na ikoni aplikacije je zbroj svih organizacija
+  otkad postoji — fetchUnread/syncBadge nikad nisu filtrirali po organizaciji, samo po
+  RLS-vidljivim projektima.
+  🟢 B23. Prvi ulazak: ako postoji pozivnica na taj e-mail → ulazi u tu organizaciju, inače se
+  automatski stvori organizacija nazvana po korisniku. ⚠️ nakon B21 (pozivnice). Do tada
+  novoregistrirani korisnik nema organizaciju — provjeriti signup flow.
+  ✅ B24. (riješeno ranije, uz B9–B11 — backlog samo nije bio ažuriran) projects DELETE:
+  is_org_admin(org_id) or created_by = auth.uid().
+  🟠 B21. Potvrda e-maila (G2) + pozivnice — **moraju ići zajedno**: bez potvrde e-maila se
+  registriraš s tuđom adresom i preuzmeš tuđu pozivnicu.
+  ✅ B25. (2026-08-11) project_members postaje pretplata, ne dozvola: nakon B7/B15 svaki
+  član organizacije dobivao je obavijesti za SVAKI projekt vidljiv organizaciji, i za one
+  koje nikad nije otvorio. auto_follow_on_message/_on_assign okidači + follow_project RPC
+  (ručno) + unfollowProject (postojeća delete politika). _unread_rows i push_recipients
+  vraćeni s LEFT na INNER JOIN na project_members.
+  ⚠️ OVO IZGLEDA KAO PONIŠTAVANJE B15 — NIJE. B15: project_members kao provjera PRISTUPA
+  (loše, curi/nedostaje pristup). Ovo: project_members kao provjera PRETPLATE, pristup i
+  dalje zaseban can_access_project poziv u istom upitu. Pročitati komentar na vrhu
+  20260811100000_project_following.sql prije nego se ovo dira.
+  MessageInput.vue prikazuje dismissable notify ("Sada pratiš X — dobivat ćeš obavijesti",
+  akcija Ne prati) kad je auto-praćenje upravo okinuto prvom porukom u projektu.
+  🟢 B25b. Isti "sad pratiš" trenutak ne postoji za auto-praćenje preko dodjele stavke
+  (auto_follow_on_assign) — korisnik dobije obavijesti bez ijedne poruke o tome. Manji
+  prioritet: dodjela je rjeđi okidač i sam čin dodjele je već neka vrsta obavijesti.
+  🟢 B25c. follow_project RPC nema još gumb u sučelju (ručno zapratiti projekt bez pisanja
+  poruke) — čeka B20 (ekran/postavke projekta).
 
 C. Baza — konzistentnost
 🟠 C1. CHECK constrainti za preostale statusne kolone: project_members.role, push_tokens.platform, messages.channel. (items.kind/stage/priority ih imaju od M2.)

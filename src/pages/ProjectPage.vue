@@ -1,10 +1,15 @@
 <template>
   <q-layout view="hHh lpR fFf">
-    <AppHeader :title="project?.name" back back-to="/" settings>
-      <template #actions>
+    <AppHeader
+      :title="project?.name || (notFound ? $t('projects.noAccessTitle') : '')"
+      back
+      back-to="/"
+      :settings="!notFound"
+    >
+      <template v-if="!notFound" #actions>
         <q-btn flat round dense icon="group" color="white" @click="memberDialog = true" />
       </template>
-      <template #tabs>
+      <template v-if="!notFound" #tabs>
         <q-tabs v-model="tab" align="justify" dense indicator-color="white" active-color="white">
           <q-tab name="chat" icon="forum">
             <div class="row items-center q-gutter-xs">
@@ -44,7 +49,21 @@
     </AppHeader>
 
     <q-page-container>
-      <q-tab-panels v-model="tab" animated keep-alive>
+      <div v-if="loading" class="flex flex-center q-pa-xl">
+        <q-spinner size="40px" color="primary" />
+      </div>
+
+      <!-- RLS je ispravno odbio (projekt ne postoji ili nemaš pristup) — ovo
+           je namjerno, ne kvar. Bez ovoga stranica ostane prazna i bez
+           naslova, pa se ne razlikuje od stvarnog pada (B21b). -->
+      <q-page v-else-if="notFound" class="flex flex-center column text-center q-pa-xl">
+        <q-icon name="lock" size="48px" class="no-access-icon q-mb-md" />
+        <div class="text-h6 q-mb-xs">{{ $t('projects.noAccessTitle') }}</div>
+        <div class="text-body2 no-access-body q-mb-lg">{{ $t('projects.noAccessBody') }}</div>
+        <q-btn color="primary" :label="$t('projects.backHome')" to="/" />
+      </q-page>
+
+      <q-tab-panels v-else v-model="tab" animated keep-alive>
         <q-tab-panel name="chat" class="q-pa-none">
           <ChatPage :project-id="projectId" />
         </q-tab-panel>
@@ -60,7 +79,7 @@
       </q-tab-panels>
     </q-page-container>
 
-    <MemberDialog v-model="memberDialog" :project-id="projectId" />
+    <MemberDialog v-if="!notFound" v-model="memberDialog" :project-id="projectId" />
   </q-layout>
 </template>
 
@@ -92,6 +111,7 @@ watch(tab, async (newTab) => {
 })
 
 const memberDialog = ref(false)
+const loading = ref(true)
 
 const projectsStore = useProjectsStore()
 const itemsStore = useItemsStore()
@@ -100,6 +120,7 @@ let reactionsChannel = null
 const notifStore = useNotificationsStore()
 
 const project = computed(() => projectsStore.projects.find((p) => p.id === projectId))
+const notFound = computed(() => !loading.value && !project.value)
 
 const chatUnread = computed(
   () =>
@@ -141,9 +162,14 @@ onMounted(async () => {
   // iako sadržaj postoji. Time se "nemam pristup" i "nije učitano" prestaju
   // doimati isto.
   const projectUnknown = !projectsStore.projects.some((p) => p.id === projectId)
+  if (projectUnknown) await projectsStore.fetchProjects()
+  loading.value = false
+
+  // RLS je ispravno odbio ili projekt ne postoji — ne dohvaćaj ništa ostalo
+  // (item/chat upiti bi ionako vratili prazno), predložak prikazuje notFound.
+  if (!project.value) return
 
   await Promise.all([
-    projectUnknown ? projectsStore.fetchProjects() : Promise.resolve(),
     itemsStore.fetchItems(projectId),
     notifStore.fetchUnread(),
     chatStore.fetchMessages({ projectId, channel: 'main' }),
@@ -181,3 +207,12 @@ onUnmounted(() => {
   if (messagesUpdateChannel) supabase.removeChannel(messagesUpdateChannel)
 })
 </script>
+
+<style scoped>
+.no-access-icon {
+  color: var(--aarc-muted);
+}
+.no-access-body {
+  color: var(--aarc-muted);
+}
+</style>

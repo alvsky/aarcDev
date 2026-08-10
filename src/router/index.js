@@ -26,6 +26,11 @@ const routes = [
         meta: { auth: true },
       },
       {
+        path: '/org',
+        component: () => import('src/pages/OrgPage.vue'),
+        meta: { auth: true },
+      },
+      {
         path: '/project/:id',
         component: () => import('src/pages/ProjectPage.vue'),
         // ProjectPage ne koristi ove djecu-rute — sam crta q-tabs i panele. Rute
