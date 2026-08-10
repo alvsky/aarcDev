@@ -193,7 +193,10 @@
             :label="$t('common.edit')"
             @click="$emit('edit')"
           />
+          <!-- Gumb se skriva umjesto da politika tiho odbije: brisati smije
+               autor ili admin organizacije. -->
           <q-btn
+            v-if="canDelete"
             flat
             dense
             icon="delete"
@@ -212,6 +215,8 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useItemsStore } from 'src/stores/items'
+import { useOrgsStore } from 'src/stores/orgs'
+import { useAuthStore } from 'src/stores/auth'
 import { useNotificationsStore } from 'src/stores/notifications'
 import { useFormatDate } from 'src/composables/useFormatDate'
 import ChatImage from 'src/components/chat/ChatImage.vue'
@@ -229,8 +234,13 @@ defineEmits(['edit', 'delete', 'open-thread'])
 
 const { t } = useI18n()
 const itemsStore = useItemsStore()
+const orgsStore = useOrgsStore()
+const authStore = useAuthStore()
 const notifStore = useNotificationsStore()
 const formatDate = useFormatDate()
+
+// Mora pratiti items_delete politiku, inače gumb postoji a poziv pada.
+const canDelete = computed(() => props.item.created_by === authStore.user?.id || orgsStore.isAdmin)
 
 const ACTIVE = ['accepted', 'in_progress', 'testing']
 const isTerminal = computed(() => ['done', 'rejected'].includes(props.item.stage))
