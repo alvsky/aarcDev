@@ -31,6 +31,9 @@ export default {
     noProjects: "You don't have any projects yet.",
     edit: 'Edit project',
     delete: 'Delete project',
+    nowFollowing: 'Now following "{name}" — you\'ll get notifications.',
+    unfollow: 'Unfollow',
+    unfollowed: 'You no longer follow this project.',
   },
   ideas: {
     title: 'Ideas',

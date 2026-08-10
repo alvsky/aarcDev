@@ -130,6 +130,22 @@ Sučelje (nakon što baza stoji)
     ne može počistiti za članom koji je otišao.
     🟠 B21. Potvrda e-maila (G2) + pozivnice — **moraju ići zajedno**: bez potvrde e-maila se
     registriraš s tuđom adresom i preuzmeš tuđu pozivnicu.
+    ✅ B25. (2026-08-11) project_members postaje pretplata, ne dozvola: nakon B7/B15 svaki
+    član organizacije dobivao je obavijesti za SVAKI projekt vidljiv organizaciji, i za one
+    koje nikad nije otvorio. auto_follow_on_message/_on_assign okidači + follow_project RPC
+    (ručno) + unfollowProject (postojeća delete politika). _unread_rows i push_recipients
+    vraćeni s LEFT na INNER JOIN na project_members.
+    ⚠️ OVO IZGLEDA KAO PONIŠTAVANJE B15 — NIJE. B15: project_members kao provjera PRISTUPA
+    (loše, curi/nedostaje pristup). Ovo: project_members kao provjera PRETPLATE, pristup i
+    dalje zaseban can_access_project poziv u istom upitu. Pročitati komentar na vrhu
+    20260811100000_project_following.sql prije nego se ovo dira.
+    MessageInput.vue prikazuje dismissable notify ("Sada pratiš X — dobivat ćeš obavijesti",
+    akcija Ne prati) kad je auto-praćenje upravo okinuto prvom porukom u projektu.
+    🟢 B25b. Isti "sad pratiš" trenutak ne postoji za auto-praćenje preko dodjele stavke
+    (auto_follow_on_assign) — korisnik dobije obavijesti bez ijedne poruke o tome. Manji
+    prioritet: dodjela je rjeđi okidač i sam čin dodjele je već neka vrsta obavijesti.
+    🟢 B25c. follow_project RPC nema još gumb u sučelju (ručno zapratiti projekt bez pisanja
+    poruke) — čeka B20 (ekran/postavke projekta).
 
 C. Baza — konzistentnost
 🟠 C1. CHECK constrainti za preostale statusne kolone: project_members.role, push_tokens.platform, messages.channel. (items.kind/stage/priority ih imaju od M2.)

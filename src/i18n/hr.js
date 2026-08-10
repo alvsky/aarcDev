@@ -31,6 +31,9 @@ export default {
     noProjects: 'Nemaš još nijedan projekt.',
     edit: 'Uredi projekt',
     delete: 'Obriši projekt',
+    nowFollowing: 'Sada pratiš "{name}" — dobivat ćeš obavijesti.',
+    unfollow: 'Ne prati',
+    unfollowed: 'Više ne pratiš ovaj projekt.',
   },
   ideas: {
     title: 'Ideje',

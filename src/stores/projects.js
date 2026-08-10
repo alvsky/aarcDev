@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { supabase } from 'src/boot/supabase'
 import { isOnline } from 'src/composables/useNetwork'
+import { useAuthStore } from './auth'
 
 export const useProjectsStore = defineStore('projects', {
   persist: ['projects'],
@@ -11,6 +12,16 @@ export const useProjectsStore = defineStore('projects', {
 
   getters: {
     getById: (state) => (id) => state.projects.find((p) => p.id === id),
+
+    // project_members je od 2026-08-11 pretplata, ne dozvola za pristup —
+    // vidi supabase/migrations/20260811100000_project_following.sql. Redak
+    // postoji čim netko piše u projekt ili mu se nešto dodijeli; ovaj getter
+    // samo čita jesi li već u tom popisu.
+    isFollowing: (state) => (projectId) => {
+      const auth = useAuthStore()
+      const project = state.projects.find((p) => p.id === projectId)
+      return !!project?.project_members?.some((m) => m.user_id === auth.user?.id)
+    },
   },
 
   actions: {
@@ -127,6 +138,46 @@ export const useProjectsStore = defineStore('projects', {
         .eq('user_id', userId)
       if (error) throw error
       await this.fetchProjects()
+    },
+
+    // Optimistično bilježi da je auto-praćenje upravo okinuto na poslužitelju
+    // (poruka/dodjela — vidi 20260811100000_project_following.sql), da UI ne
+    // mora čekati novi fetchProjects() da bi znao da sad prati.
+    markFollowingLocally(projectId) {
+      const auth = useAuthStore()
+      const project = this.projects.find((p) => p.id === projectId)
+      if (!project || this.isFollowing(projectId)) return
+      project.project_members = [
+        ...(project.project_members ?? []),
+        {
+          project_id: projectId,
+          user_id: auth.user.id,
+          role: 'member',
+          badge_enabled: true,
+          notif_messages: true,
+          notif_ideas: true,
+          notif_bugs: true,
+          notif_tbi: true,
+          profiles: null,
+        },
+      ]
+    },
+
+    // Otključavanje ide izravnim DELETE-om (postojeća project_members_delete
+    // politika već dopušta brisanje vlastitog retka) — RPC ovdje ne treba.
+    async unfollowProject(projectId) {
+      const auth = useAuthStore()
+      const { error } = await supabase
+        .from('project_members')
+        .delete()
+        .eq('project_id', projectId)
+        .eq('user_id', auth.user.id)
+      if (error) throw error
+
+      const project = this.projects.find((p) => p.id === projectId)
+      if (project) {
+        project.project_members = project.project_members.filter((m) => m.user_id !== auth.user.id)
+      }
     },
 
     async changeRole(projectId, userId, role) {

@@ -90,6 +90,7 @@ import { ref, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useChatStore } from 'src/stores/chat'
+import { useProjectsStore } from 'src/stores/projects'
 import { useImageUpload } from 'src/composables/useImageUpload'
 import { useNetwork } from 'src/composables/useNetwork'
 
@@ -105,6 +106,7 @@ const emit = defineEmits(['cancel-reply'])
 const $q = useQuasar()
 const { t } = useI18n()
 const chatStore = useChatStore()
+const projectsStore = useProjectsStore()
 const { uploading, uploadImage } = useImageUpload()
 const { online } = useNetwork()
 
@@ -157,6 +159,11 @@ async function send() {
   if (!canSend.value || sending.value) return
   sending.value = true
 
+  // Prije slanja: poruka aktivira DB okidač auto_follow_on_message koji upiše
+  // pretplatu ako je nema. Provjera mora ići PRIJE slanja da uhvati prijelaz
+  // (nakon slanja bi redak već postojao i izgledalo bi kao da je oduvijek).
+  const wasFollowing = projectsStore.isFollowing(props.projectId)
+
   try {
     let attachmentUrl = null
     let attachmentType = null
@@ -186,6 +193,31 @@ async function send() {
     body.value = ''
     clearPending()
     if (props.replyTo) emit('cancel-reply')
+
+    if (!wasFollowing) {
+      projectsStore.markFollowingLocally(props.projectId)
+      const name = projectsStore.getById(props.projectId)?.name ?? ''
+      $q.notify({
+        message: t('projects.nowFollowing', { name }),
+        color: 'primary',
+        icon: 'visibility',
+        timeout: 6000,
+        actions: [
+          {
+            label: t('projects.unfollow'),
+            color: 'white',
+            handler: async () => {
+              try {
+                await projectsStore.unfollowProject(props.projectId)
+                $q.notify({ type: 'positive', message: t('projects.unfollowed') })
+              } catch (e) {
+                $q.notify({ type: 'negative', message: e.message })
+              }
+            },
+          },
+        ],
+      })
+    }
   } catch {
     $q.notify({ type: 'negative', message: t('chat.attachmentFail') })
   } finally {
