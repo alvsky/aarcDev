@@ -88,7 +88,10 @@ Also in `extendViteConf`: the `src` → `/src` alias — imports use `src/...` p
 
 - **Storage:** bucket `chat-attachments` must exist; access is via signed URLs, so the bucket
   stays private.
-- **Realtime:** `messages` and `items` need postgres_changes enabled;
+- **Realtime:** `messages` and `items` must be in the `supabase_realtime` publication.
+  All of a project's subscriptions share **one channel**, so a table missing from the
+  publication takes the whole channel down — the app keeps working and just stops receiving
+  live updates. `useRealtime` now logs CHANNEL_ERROR instead of swallowing it.
   `messages` requires `REPLICA IDENTITY FULL` (already in schema) for DELETE payloads.
 
 ## Conventions

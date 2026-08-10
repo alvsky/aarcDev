@@ -23,9 +23,17 @@ export function useRealtime(projectId, handlers = {}) {
     }
 
     // subscribe() mora biti zadnji
-    channel.subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        // console.log(`Realtime subscribed for project: ${projectId}`)
+    //
+    // Greške se MORAJU vidjeti. Sve pretplate dijele jedan kanal, pa jedna
+    // tablica koja nije u supabase_realtime publikaciji ruši i sve ostale —
+    // aplikacija tada radi, samo tiho prestane primati poruke uživo. Točno to
+    // se dogodilo kad je `items` dodan u pretplatu prije nego u publikaciju.
+    channel.subscribe((status, err) => {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        console.error(
+          `[realtime] pretplata za projekt ${projectId}: ${status}`,
+          err ?? '(bez detalja — provjeri je li svaka tablica u supabase_realtime publikaciji)',
+        )
       }
     })
   }
