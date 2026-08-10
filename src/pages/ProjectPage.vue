@@ -136,7 +136,14 @@ const messagesUpdateChannel = supabase
   .subscribe()
 
 onMounted(async () => {
+  // Dubinski link preskače Home, pa popis projekata nikad nije dohvaćen — bez
+  // ovoga nema naziva projekta ni članova za dodjelu, i stranica izgleda prazno
+  // iako sadržaj postoji. Time se "nemam pristup" i "nije učitano" prestaju
+  // doimati isto.
+  const projectUnknown = !projectsStore.projects.some((p) => p.id === projectId)
+
   await Promise.all([
+    projectUnknown ? projectsStore.fetchProjects() : Promise.resolve(),
     itemsStore.fetchItems(projectId),
     notifStore.fetchUnread(),
     chatStore.fetchMessages({ projectId, channel: 'main' }),
