@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia'
+import { defineStore, acceptHMRUpdate } from 'pinia'
 import { supabase } from 'src/boot/supabase'
 import { useAuthStore } from './auth'
 import { isOnline } from 'src/composables/useNetwork'
@@ -132,3 +132,7 @@ export const useNotificationsStore = defineStore('notifications', {
     },
   },
 })
+
+if (import.meta.hot) {
+  import.meta.hot.accept(acceptHMRUpdate(useNotificationsStore, import.meta.hot))
+}
