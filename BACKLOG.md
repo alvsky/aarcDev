@@ -94,6 +94,9 @@ Sučelje (nakon što baza stoji)
 - kartica "Tim" u podnožju konačno vodi na ekran organizacije (sad je mrtva)
 - gost NE vidi sekciju ni karticu Tim
 - prekidač vidljivosti projekta (samo admin/owner)
+  🟠 B21b. Stanje "nemaš pristup" na ProjectPage. Kad RLS ispravno ne vrati projekt, stranica
+  se otvori prazna i bez naslova — izgleda kao kvar, a zapravo radi ispravno. Treba jasna
+  poruka + povratak na Home. Uočeno pri testiranju B9–B11.
   🟠 B22. Badge preko organizacija: u aplikaciji samo tekuća, na ikoni zbroj svih, točkica na
   prebacivaču kad druga organizacija ima nepročitano. ⚠️ nakon B20.
   🟠 B23. Prvi ulazak: ako postoji pozivnica na taj e-mail → ulazi u tu organizaciju, inače se
