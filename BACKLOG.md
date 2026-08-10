@@ -56,11 +56,11 @@ biti okidač, ne WITH CHECK — pravilo se tiče PRIJELAZA, a WITH CHECK vidi sa
 bi članu blokirao i obično preimenovanje već podijeljenog projekta.
 🔴 B11. profiles SELECT → vlastiti redak ili suradnik iz iste organizacije. Sad je USING (true)
 = otvoren adresar e-mailova cijelog sustava.
-🔴 B12. org_members i project_members: pisanje zabranjeno svima. Sve kroz SECURITY DEFINER
+✅ B12. (2026-08-10) org_members i project_members: pisanje zabranjeno svima. Sve kroz SECURITY DEFINER
 RPC-e: accept_invitation, set_member_role, remove_member — svaki provjerava ulogu
 pozivatelja. Zatvara sadašnju rupu (WITH CHECK (true) → svatko si doda članstvo i
 postavi role='owner').
-🔴 B13. Okidač: organizacija uvijek mora imati barem jednog ownera. Zadnji owner se ne može
+✅ B13. (2026-08-10) Okidač: organizacija uvijek mora imati barem jednog ownera. Zadnji owner se ne može
 razvlastiti ni izaći. Server-side, ne klijentski (pouka iz B18).
 🟠 B14. get_unread_total: maknuti parametar p_user_id, koristiti auth.uid() iznutra — sad je
 SECURITY DEFINER s korisnikovim ID-em iz poziva bez provjere. (upsert_message_read je
@@ -82,7 +82,9 @@ test u projektu. ⚠️ vidi E1 (Vitest).
 🔴 B18. Regresija nakon zatezanja: manual profile joins, realtime događaji, item_message_counts
 view (security_invoker — mijenja se ponašanje kad politike postanu stroge!), edge funkcija
 (service role zaobilazi RLS — OK), offline keš.
-🟠 B19. Server-side provjera zadnjeg vlasnika u delete_own_account() (sad samo klijentski).
+🟠 B19. delete_own_account(): provjera zadnjeg vlasnika JE od B13 na poslužitelju (okidač
+odbija kaskadno brisanje zadnjeg vlasnika). Preostaje samo da aplikacija tu iznimku uhvati i
+pokaže čitljivu poruku umjesto sirove Postgres greške.
 
 Sučelje (nakon što baza stoji)
 🟠 B20. Home i ekran organizacije — makro po specifikaciji u docs/multi-tenancy.md
@@ -94,6 +96,12 @@ Sučelje (nakon što baza stoji)
 - kartica "Tim" u podnožju konačno vodi na ekran organizacije (sad je mrtva)
 - gost NE vidi sekciju ni karticu Tim
 - prekidač vidljivosti projekta (samo admin/owner)
+  🟠 B20b. MemberDialog: postavke obavijesti sada se smiju mijenjati SAMO na vlastitom retku
+  (politika + column grant). Sučelje ih još nudi na svakom članu, pa bi tuđi prekidač tiho
+  padao. Prikazati izbornik samo na vlastitom retku. ⚠️ prije nego se dira MemberDialog.
+  🟠 B20c. projectsStore.addMember traži profil po e-mailu i ubacuje redak u project_members.
+  Nova politika to odbija ako osoba nije član organizacije — što je ispravno. Zamijeniti
+  odabirom iz adresara organizacije; pozivanje izvana ide kroz pozivnice (B21).
   🟠 B21b. Stanje "nemaš pristup" na ProjectPage. Kad RLS ispravno ne vrati projekt, stranica
   se otvori prazna i bez naslova — izgleda kao kvar, a zapravo radi ispravno. Treba jasna
   poruka + povratak na Home. Uočeno pri testiranju B9–B11.
