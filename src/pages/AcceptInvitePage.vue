@@ -12,6 +12,11 @@
             <q-spinner size="32px" color="primary" />
           </q-card-section>
 
+          <q-card-section v-else-if="loadError" class="text-center">
+            <q-icon name="error_outline" size="40px" color="negative" class="q-mb-sm" />
+            <div class="text-body2 text-negative">{{ loadError }}</div>
+          </q-card-section>
+
           <q-card-section v-else-if="!invite" class="text-center">
             <q-icon name="link_off" size="40px" color="grey-5" class="q-mb-sm" />
             <div class="text-body2 text-grey-7">{{ $t('invite.notFound') }}</div>
@@ -98,6 +103,11 @@ const orgsStore = useOrgsStore()
 const loading = ref(true)
 const accepting = ref(false)
 const invite = ref(null)
+// Odvojeno od "invite je null" (= pozivnica stvarno ne postoji/istekla je).
+// Bez ovoga bi svaka greška poziva — npr. RPC koji nedostaje jer migracija
+// nije puštena — izgledala korisniku identično kao "pozivnica ne postoji",
+// pa se pravi uzrok ne bi dao razlikovati od stvarno nevažećeg linka.
+const loadError = ref(null)
 
 const emailMatches = computed(
   () => authStore.user?.email?.toLowerCase() === invite.value?.email?.toLowerCase(),
@@ -131,6 +141,9 @@ async function accept() {
 onMounted(async () => {
   try {
     invite.value = await orgsStore.getInvitationPreview(route.params.token)
+  } catch (e) {
+    console.error('[invite] getInvitationPreview:', e)
+    loadError.value = e.message
   } finally {
     loading.value = false
   }
