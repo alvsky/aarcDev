@@ -21,40 +21,40 @@ NIJE tajna (klijentska konfiguracija, ionako se isporučuje u aplikaciji i vadi 
 rotacija nema smisla; ograničenje je jedina stvarna mjera. Alert zatvoriti kao "won't fix".
 ⚠️ Bitnije od toga: Supabase anon ključ je jednako javan i bezopasan SAMO ako RLS radi —
 danas ne radi, što je razlog za ostatak ove sekcije.
-🔴 B1. Snimka baze prije početka. RLS promjene tiho lome realtime (realtime poštuje RLS) i nema
+✅ B1. (2026-08-10) Snimka baze prije početka. RLS promjene tiho lome realtime (realtime poštuje RLS) i nema
 ih se lako vratiti unatrag. ⚠️ vidi F2 — idealno na staging okolini prvo.
 🔴 B2. Auth postavke iz dashboarda u config.toml (sad ima 11 redaka, samo sekciju za edge
 funkciju) — inače okolina nije reproducibilna.
 
 Shema
-🔴 B3. Tablice organizations, org_members, invitations. RLS uključen, bez ijedne politike
+✅ B3. (2026-08-09) Tablice organizations, org_members, invitations. RLS uključen, bez ijedne politike
 (zadano-zabranjeno).
-🔴 B4. projects: dodati org_id (zasad nullable) i visibility text default 'org'. NOVI projekti
+✅ B4. (2026-08-09) projects: dodati org_id (zasad nullable) i visibility text default 'org'. NOVI projekti
 se kreiraju kao 'private' — prebacivanje na 'org' je admin radnja (vidi matricu u docs).
-🔴 B5. Backfill: jedna organizacija za postojeće podatke, svi postojeći korisnici kao članovi,
+✅ B5. (2026-08-09) Backfill: jedna organizacija za postojeće podatke, svi postojeći korisnici kao članovi,
 ti kao owner. ⚠️ nakon B3, B4.
-🔴 B6. org_id → NOT NULL. ⚠️ nakon B5.
+✅ B6. (2026-08-10) org_id → NOT NULL. ⚠️ nakon B5.
 
 Funkcije za prava
-🔴 B7. can_access_project(pid), is_org_member(oid), is_org_admin(oid), is_org_owner(oid) —
+✅ B7. (2026-08-10) can_access_project(pid), is_org_member(oid), is_org_admin(oid), is_org_owner(oid) —
 sve s `stable` i `set search_path = public`. Indeksi: org_members(user_id, org_id),
 projects(org_id), project_members(user_id, project_id).
 ⚠️ Funkcija ima granu `om.role in ('owner','admin')` — admini vide SVE projekte svoje
 organizacije, i privatne. Bez toga član može stvoriti projekt koji njegov vlasnik ne vidi.
-🔴 B8. Popraviti i postojeće is_member/is_owner istim modifikatorima (sad su VOLATILE bez
+✅ B8. (2026-08-10) Popraviti i postojeće is_member/is_owner istim modifikatorima (sad su VOLATILE bez
 search_path — i performansni i sigurnosni problem).
 
 Politike
-🔴 B9. Sadržaj (messages, message_reactions) → svaka politika postaje
+✅ B9. (2026-08-10) Sadržaj (messages, message_reactions) → svaka politika postaje
 can_access_project(project_id). Zamjenjuje sve USING (true). items to već ima od M2, pa je
 ovo samo dovođenje ostatka na istu razinu.
-🔴 B10. projects INSERT → is_org_member(org_id) AND (visibility='private' OR
+✅ B10. (2026-08-10) projects INSERT → is_org_member(org_id) AND (visibility='private' OR
 is_org_admin(org_id)). Sad je WITH CHECK (true), pa bi bilo tko mogao ubaciti projekt u tuđu
 organizaciju. Lako se previdi.
-🔴 B10b. Okidač BEFORE UPDATE na projects: promjena visibility samo za admina/ownera. Mora
+✅ B10b. (2026-08-10) Okidač BEFORE UPDATE na projects: promjena visibility samo za admina/ownera. Mora
 biti okidač, ne WITH CHECK — pravilo se tiče PRIJELAZA, a WITH CHECK vidi samo novi redak pa
 bi članu blokirao i obično preimenovanje već podijeljenog projekta.
-🔴 B11. profiles SELECT → vlastiti redak ili suradnik iz iste organizacije. Sad je USING (true)
+✅ B11. (2026-08-10) profiles SELECT → vlastiti redak ili suradnik iz iste organizacije. Sad je USING (true)
 = otvoren adresar e-mailova cijelog sustava.
 ✅ B12. (2026-08-10) org_members i project_members: pisanje zabranjeno svima. Sve kroz SECURITY DEFINER
 RPC-e: accept_invitation, set_member_role, remove_member — svaki provjerava ulogu
@@ -67,10 +67,12 @@ SECURITY DEFINER s korisnikovim ID-em iz poziva bez provjere. (upsert_message_re
 obrisan 2026-08-08 uz M3, pa je pola ovoga već zatvoreno.)
 
 Posljedice modela
-🔴 B15. get_unread_total i edge funkcija (push-on-message, popis primatelja) rade INNER JOIN na
-project_members → s izračunatim pristupom članovi bez retka dobivaju nulu nepročitanih i
-nikakav push. Prepisati na LEFT JOIN s podrazumijevanim vrijednostima. ⚠️ veliko
-preklapanje s D1 — razmisliti o zajedničkoj izvedbi.
+🔴 B15. ŽIVO OD 2026-08-10 — notificationsStore.fetchUnread, get_unread_total i edge funkcija
+(popis primatelja) sve voze iz project_members. Radi samo zato što postojeći projekti imaju
+te retke od prije. Čim se napravi NOVI projekt vidljiv organizaciji, ostali članovi nemaju
+redak → nula nepročitanih i nikakav push, bez ijedne greške. Prepisati na "članovi
+organizacije koji imaju pristup", uz project_members samo kao izvor osobnih postavki
+(LEFT JOIN + podrazumijevane vrijednosti). ⚠️ veliko preklapanje s D1.
 🟠 B16. Storage: politike u migraciju (sad postoje samo u dashboardu, neverzionirane), putanja
 → ${projectId}/${userId}/${uuid}.jpg, avatari u zasebnu kantu. Sadašnja putanja ne sadrži
 projekt pa je projektno ograničenje nemoguće napisati. ⚠️ postojeći objekti imaju stare
