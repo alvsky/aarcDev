@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { supabase } from 'src/boot/supabase'
-import { useAuthStore } from './auth'
 import { isOnline } from 'src/composables/useNetwork'
 
 export const useProjectsStore = defineStore('projects', {
@@ -64,33 +63,28 @@ export const useProjectsStore = defineStore('projects', {
       }))
     },
 
+    // Sve ide kroz create_project RPC (jedna transakcija). Raniji postupak
+    // "ubaci → dohvati najnoviji → dodaj sebe" imao je utrku, a nakon
+    // organizacija se ni ne bi mogao dovršiti: projekt nastaje privatan, pa ga
+    // vlastiti tvorac ne može pročitati dok nema članski redak.
     async createProject({ name, description, color }) {
-      const auth = useAuthStore()
+      const { useOrgsStore } = await import('./orgs')
+      const orgs = useOrgsStore()
+      if (!orgs.current) await orgs.fetchOrgs()
 
-      // 1. Insert projekt — bez ikakvog select
-      const { error } = await supabase
-        .from('projects')
-        .insert({ name, description, color, created_by: auth.user.id })
+      const orgId = orgs.current?.id
+      if (!orgId) throw new Error('Nema odabrane organizacije')
 
+      const { data: newId, error } = await supabase.rpc('create_project', {
+        p_org: orgId,
+        p_name: name,
+        p_description: description ?? null,
+        p_color: color ?? null,
+      })
       if (error) throw error
 
-      // 2. Dohvati zadnje kreirani projekt
-      const { data: project } = await supabase
-        .from('projects')
-        .select('id')
-        .eq('created_by', auth.user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-
-      // 3. Dodaj kao owner
-      await supabase.from('project_members').insert({
-        project_id: project.id,
-        user_id: auth.user.id,
-        role: 'owner',
-      })
-
       await this.fetchProjects()
+      return newId
     },
 
     async updateProject(id, updates) {
