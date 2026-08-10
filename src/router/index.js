@@ -28,8 +28,10 @@ const routes = [
       {
         path: '/project/:id',
         component: () => import('src/pages/ProjectPage.vue'),
+        // ProjectPage ne koristi ove djecu-rute — sam crta q-tabs i panele. Rute
+        // stoje za I1 (kartice u URL-u). Preusmjeravanje na /ideas je maknuto jer
+        // je adresa tvrdila jedno, a ekran pokazivao drugo (uvijek chat).
         children: [
-          { path: '', redirect: (to) => `/project/${to.params.id}/ideas` },
           { path: 'ideas', component: () => import('src/pages/IdeasPage.vue') },
           { path: 'bugs', component: () => import('src/pages/BugsPage.vue') },
           { path: 'tbi', component: () => import('src/pages/TbiPage.vue') },
