@@ -164,6 +164,9 @@ async function send() {
   // (nakon slanja bi redak već postojao i izgledalo bi kao da je oduvijek).
   const wasFollowing = projectsStore.isFollowing(props.projectId)
 
+  const hadImage = !!pendingImage.value
+  let attachmentUploaded = false
+
   try {
     let attachmentUrl = null
     let attachmentType = null
@@ -177,6 +180,7 @@ async function send() {
       attachmentUrl = uploaded.path
       attachmentType = uploaded.type
       attachmentName = uploaded.name
+      attachmentUploaded = true
     }
 
     await chatStore.sendMessage({
@@ -218,8 +222,16 @@ async function send() {
         ],
       })
     }
-  } catch {
-    $q.notify({ type: 'negative', message: t('chat.attachmentFail') })
+  } catch (err) {
+    // Prije je svaka greška (i pad chatStore.sendMessage, ne samo uploada)
+    // krivila sliku — zavaravalo je dijagnozu čim je razlog bio bilo što
+    // drugo (RLS, mreža...). Sad kriva samo ono što je stvarno palo.
+    console.error('[chat] slanje poruke nije uspjelo:', err)
+    const message =
+      hadImage && !attachmentUploaded
+        ? t('chat.attachmentFail')
+        : (err?.message ?? t('chat.sendFailed'))
+    $q.notify({ type: 'negative', message })
   } finally {
     sending.value = false
   }
