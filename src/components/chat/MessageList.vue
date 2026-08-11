@@ -258,7 +258,26 @@ const activeMessage = ref(null)
 const editingId = ref(null)
 const editBody = ref('')
 
-const commonEmojis = ['👍', '👎', '❤️', '😂', '😮', '😢', '🎉', '🔥', '✅', '❌']
+const commonEmojis = [
+  '👍',
+  '👎',
+  '❤️',
+  '😂',
+  '😮',
+  '🤔',
+  '😢',
+  '🥳',
+  '😱',
+  '🫣',
+  '🤭',
+  '🫠',
+  '🍻',
+  '👀',
+  '🎉',
+  '🔥',
+  '✅',
+  '❌',
+]
 
 const actionsMenuRef = ref(null)
 const actionsMenu = ref(false)
@@ -397,7 +416,10 @@ function cancelEdit() {
 async function confirmDelete(id) {
   // Offline brisanje ne prolazi na serveru (poruka se vrati) — spriječi ga
   if (blockedOffline('chat.offlineNoDelete')) return
-  const ok = await confirmDestructive({ title: t('common.delete'), message: t('chat.deleteConfirm') })
+  const ok = await confirmDestructive({
+    title: t('common.delete'),
+    message: t('chat.deleteConfirm'),
+  })
   if (!ok) return
   emit('delete', id)
 }

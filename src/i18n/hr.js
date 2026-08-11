@@ -77,6 +77,12 @@ export default {
     title: 'Organizacija',
     members: 'Članovi',
     rename: 'Preimenuj organizaciju',
+    stats: 'Statistika',
+    statsProjects: 'Projekti',
+    statsIdeas: 'Ideje',
+    statsBugs: 'Bugovi',
+    statsTasks: 'Zadaci',
+    statsAssigned: 'Dodijeljeno',
     role: {
       owner: 'Vlasnik',
       admin: 'Admin',

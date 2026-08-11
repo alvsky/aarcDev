@@ -48,8 +48,23 @@
         <q-separator class="q-mx-md q-mb-md" />
 
         <!-- Članovi -->
-        <div class="q-px-md q-mb-xs text-subtitle2 org-section-label">
-          {{ $t('org.members') }} ({{ orgsStore.members.length }})
+        <div class="row items-center q-px-md q-mb-xs">
+          <div class="text-subtitle2 org-section-label">
+            {{ $t('org.members') }} ({{ orgsStore.members.length }})
+          </div>
+          <q-space />
+          <!-- Statistika samo za ownera (RPC to i sama provjerava) — svi
+               ostali vide isključivo osnovne podatke ispod. -->
+          <q-btn
+            v-if="orgsStore.isOwner"
+            flat
+            dense
+            size="sm"
+            icon="query_stats"
+            :color="showStats ? 'primary' : 'grey-6'"
+            :label="$t('org.stats')"
+            @click="toggleStats"
+          />
         </div>
         <q-list separator>
           <q-item v-for="member in orgsStore.members" :key="member.user_id">
@@ -70,6 +85,13 @@
                 <span class="member-name">{{ member.profiles?.full_name }}</span>
               </q-item-label>
               <q-item-label caption class="member-email">{{ member.profiles?.email }}</q-item-label>
+              <q-item-label v-if="showStats" caption class="member-stats">
+                {{ $t('org.statsProjects') }}: {{ statsFor(member).projects_count }} ·
+                {{ $t('org.statsIdeas') }}: {{ statsFor(member).ideas_created }} ·
+                {{ $t('org.statsBugs') }}: {{ statsFor(member).bugs_created }} ·
+                {{ $t('org.statsTasks') }}: {{ statsFor(member).tasks_created }} ·
+                {{ $t('org.statsAssigned') }}: {{ statsFor(member).assigned_count }}
+              </q-item-label>
             </q-item-section>
 
             <q-item-section side>
@@ -278,6 +300,28 @@ function promptNewOrg() {
 
 const org = computed(() => orgsStore.current)
 
+const showStats = ref(false)
+const EMPTY_STATS = {
+  projects_count: 0,
+  ideas_created: 0,
+  bugs_created: 0,
+  tasks_created: 0,
+  assigned_count: 0,
+}
+function statsFor(member) {
+  return orgsStore.memberStats[member.user_id] ?? EMPTY_STATS
+}
+async function toggleStats() {
+  showStats.value = !showStats.value
+  if (showStats.value && org.value) {
+    try {
+      await orgsStore.fetchMemberStats(org.value.id)
+    } catch (e) {
+      $q.notify({ type: 'negative', message: e.message })
+    }
+  }
+}
+
 function roleColor(role) {
   return { owner: 'primary', admin: 'accent', member: 'grey-6', guest: 'grey-4' }[role] ?? 'grey-6'
 }
@@ -453,6 +497,11 @@ onMounted(() => {
 
 .member-email {
   font-size: 11px !important;
+}
+
+.member-stats {
+  font-size: 11px !important;
+  color: var(--aarc-muted);
 }
 
 .member-avatar-section {

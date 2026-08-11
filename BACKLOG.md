@@ -243,6 +243,14 @@ H. Suradnja i onboarding
 🟠 H1. Invite flow: pozivnica emailom/linkom, pending stanje, prihvat nakon registracije (sad član mora već imati račun).
 🟢 H2. Notifikacija "dodan si u projekt".
 🟢 H3. Per-user postavke notifikacija finije od badge_enabled (npr. samo mentioni, samo threadovi u kojima sudjelujem).
+✅ H4. (2026-08-11) Statistika po članu organizacije na OrgPage. Nova RPC org_member_stats
+(20260814150000_org_member_stats.sql) — SAMO owner (RPC sama baca ako nisi, ADMIN namjerno
+isključen za sad — može se proširiti kasnije po potrebi), agregira po korisniku: broj
+projekata u kojima je aktivan (prijavio nešto ili mu je nešto dodijeljeno — ne project_members,
+to je od B25 pretplata, ne aktivnost), broj prijavljenih ideja/bugova/zadataka, broj
+dodijeljenih stavki. Toggle gumb "Statistika" u zaglavlju popisa članova (vidljiv samo owneru),
+dohvat lijen (tek na klik). Ostali članovi i dalje vide samo osnovne podatke
+(avatar/ime/email/uloga) kao i prije.
 
 I. Navigacija i UX
 ✅ I1. (2026-08-10) Router refaktor: tabovi u URL-u. Jedna ruta

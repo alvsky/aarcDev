@@ -77,6 +77,12 @@ export default {
     title: 'Organization',
     members: 'Members',
     rename: 'Rename organization',
+    stats: 'Stats',
+    statsProjects: 'Projects',
+    statsIdeas: 'Ideas',
+    statsBugs: 'Bugs',
+    statsTasks: 'Tasks',
+    statsAssigned: 'Assigned',
     role: {
       owner: 'Owner',
       admin: 'Admin',

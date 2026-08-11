@@ -29,6 +29,10 @@ export const useOrgsStore = defineStore('orgs', {
     members: [],
     // Pozivnice na čekanju za tekuću organizaciju — vidljivo samo adminu.
     invitations: [],
+    // Statistika po članu (projects_count/ideas_created/bugs_created/
+    // tasks_created/assigned_count), keyed by user_id — samo owner, vidi
+    // fetchMemberStats.
+    memberStats: {},
   }),
 
   getters: {
@@ -161,6 +165,16 @@ export const useOrgsStore = defineStore('orgs', {
 
       const byId = new Map((profiles ?? []).map((p) => [p.id, p]))
       this.members = (rows ?? []).map((r) => ({ ...r, profiles: byId.get(r.user_id) ?? null }))
+    },
+
+    // Samo owner (RPC sama provjerava, baca ako nisi) — ostali članovi vide
+    // samo osnovne podatke iz fetchMembers/members. Odvojeno od fetchMembers
+    // jer je puno rjeđe potrebno i skuplje za izračunati.
+    async fetchMemberStats(orgId) {
+      if (!isOnline() || !orgId) return
+      const { data, error } = await supabase.rpc('org_member_stats', { p_org: orgId })
+      if (error) throw error
+      this.memberStats = Object.fromEntries((data ?? []).map((row) => [row.user_id, row]))
     },
 
     setCurrent(orgId) {
