@@ -57,7 +57,7 @@ async function load(path) {
 
   if (!isOnline()) return
 
-  const url = await getSignedUrl(path)
+  const url = await getSignedUrl(path, 'avatars')
   imgSrc.value = url
   if (url) {
     fetch(url)

@@ -10,60 +10,76 @@
             </div>
           </q-card-section>
 
-          <q-card-section class="q-gutter-sm">
-            <q-input
-              v-if="!isLogin"
-              v-model="form.fullName"
-              :label="$t('auth.fullName')"
-              outlined
-              dense
-              :rules="[(v) => !!v || $t('common.required')]"
-            />
-            <q-input
-              v-model="form.email"
-              :label="$t('auth.email')"
-              type="email"
-              outlined
-              dense
-              :rules="[(v) => !!v || $t('common.required')]"
-            />
-            <q-input
-              v-model="form.password"
-              :label="$t('auth.password')"
-              :type="showPass ? 'text' : 'password'"
-              outlined
-              dense
-              :rules="[(v) => !!v || $t('common.required')]"
-            >
-              <template #append>
-                <q-icon
-                  :name="showPass ? 'visibility_off' : 'visibility'"
-                  class="cursor-pointer"
-                  @click="showPass = !showPass"
-                />
-              </template>
-            </q-input>
-
-            <div v-if="errorMsg" class="text-negative text-caption">
-              {{ errorMsg }}
-            </div>
-          </q-card-section>
-
-          <q-card-section class="q-pt-none q-gutter-sm">
+          <!-- G2: signUp() dok "Confirm email" čeka potvrdu ne vraća sesiju —
+               nema koga prijaviti ni što stvarati (organizaciju), samo
+               uputiti na mail. -->
+          <q-card-section v-if="awaitingConfirmation" class="text-center q-gutter-sm">
+            <q-icon name="mark_email_read" size="40px" color="primary" />
+            <div class="text-body2">{{ $t('auth.checkEmail', { email: form.email }) }}</div>
             <q-btn
-              :label="isLogin ? $t('auth.loginBtn') : $t('auth.registerBtn')"
-              color="primary"
-              class="full-width"
-              :loading="loading"
-              @click="submit"
-            />
-            <q-btn
-              :label="isLogin ? $t('auth.noAccount') : $t('auth.hasAccount')"
               flat
-              class="full-width text-grey-6"
-              @click="toggle"
+              color="primary"
+              :label="$t('auth.backToLogin')"
+              @click="awaitingConfirmation = false"
             />
           </q-card-section>
+
+          <q-form v-else ref="formRef" @submit.prevent="submit">
+            <q-card-section class="q-gutter-sm">
+              <q-input
+                v-if="!isLogin"
+                v-model="form.fullName"
+                :label="$t('auth.fullName')"
+                outlined
+                dense
+                :rules="[(v) => !!v?.trim() || $t('common.required')]"
+              />
+              <q-input
+                v-model="form.email"
+                :label="$t('auth.email')"
+                type="email"
+                outlined
+                dense
+                :rules="[(v) => !!v || $t('common.required')]"
+              />
+              <q-input
+                v-model="form.password"
+                :label="$t('auth.password')"
+                :type="showPass ? 'text' : 'password'"
+                outlined
+                dense
+                :rules="[(v) => !!v || $t('common.required')]"
+              >
+                <template #append>
+                  <q-icon
+                    :name="showPass ? 'visibility_off' : 'visibility'"
+                    class="cursor-pointer"
+                    @click="showPass = !showPass"
+                  />
+                </template>
+              </q-input>
+
+              <div v-if="errorMsg" class="text-negative text-caption">
+                {{ errorMsg }}
+              </div>
+            </q-card-section>
+
+            <q-card-section class="q-pt-none q-gutter-sm">
+              <q-btn
+                type="submit"
+                :label="isLogin ? $t('auth.loginBtn') : $t('auth.registerBtn')"
+                color="primary"
+                class="full-width"
+                :loading="loading"
+              />
+              <q-btn
+                :label="isLogin ? $t('auth.noAccount') : $t('auth.hasAccount')"
+                flat
+                class="full-width text-grey-6"
+                @click="toggle"
+              />
+            </q-card-section>
+          </q-form>
         </q-card>
       </q-page>
     </q-page-container>
@@ -74,15 +90,19 @@
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from 'src/stores/auth'
+import { useOrgsStore } from 'src/stores/orgs'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const orgsStore = useOrgsStore()
 
+const formRef = ref(null)
 const isLogin = ref(true)
 const showPass = ref(false)
 const loading = ref(false)
 const errorMsg = ref('')
+const awaitingConfirmation = ref(false)
 
 const form = reactive({
   fullName: '',
@@ -101,12 +121,27 @@ function toggle() {
 
 async function submit() {
   errorMsg.value = ''
+  const valid = await formRef.value.validate()
+  if (!valid) return
   loading.value = true
   try {
     if (isLogin.value) {
       await authStore.login(form.email, form.password)
     } else {
-      await authStore.register(form.email, form.password, form.fullName)
+      const { session } = await authStore.register(form.email, form.password, form.fullName)
+      if (!session) {
+        awaitingConfirmation.value = true
+        return
+      }
+      // B23: bez pozivnice novi korisnik nema nijednu organizaciju. Preko
+      // /invite/:token članstvo osigurava accept_invitation na
+      // AcceptInvitePage (poslije ovog redirecta), pa se ovdje tada ništa
+      // ne stvara — inače bi svaki pozvani dobio i suvišnu vlastitu org.
+      const cameFromInvite =
+        typeof route.query.redirect === 'string' && route.query.redirect.startsWith('/invite/')
+      if (!cameFromInvite) {
+        await orgsStore.createOrg(form.fullName)
+      }
     }
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
     router.push(redirect)

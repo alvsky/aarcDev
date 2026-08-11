@@ -39,17 +39,13 @@ const routes = [
         meta: { auth: true },
       },
       {
-        path: '/project/:id',
+        // I1: kartica je dio adrese (bez toga se ne da linkati/deep-linkati na
+        // konkretan tab). Nema djece-ruta koje bi renderao vue-router — ProjectPage
+        // i dalje sam crta q-tabs + keep-alive panele (isti razlog kao prije: gubitak
+        // keep-alivea preko pravog nested router-viewa nije vrijedio prepravke), samo
+        // čita/piše :tab kroz svoj v-model. Izostavljen :tab → zadano 'chat'.
+        path: '/project/:id/:tab(chat|bugs|ideas|tbi)?',
         component: () => import('src/pages/ProjectPage.vue'),
-        // ProjectPage ne koristi ove djecu-rute — sam crta q-tabs i panele. Rute
-        // stoje za I1 (kartice u URL-u). Preusmjeravanje na /ideas je maknuto jer
-        // je adresa tvrdila jedno, a ekran pokazivao drugo (uvijek chat).
-        children: [
-          { path: 'ideas', component: () => import('src/pages/IdeasPage.vue') },
-          { path: 'bugs', component: () => import('src/pages/BugsPage.vue') },
-          { path: 'tbi', component: () => import('src/pages/TbiPage.vue') },
-          { path: 'chat', component: () => import('src/pages/ChatPage.vue') },
-        ],
       },
     ],
   },

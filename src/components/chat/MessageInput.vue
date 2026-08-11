@@ -176,6 +176,7 @@ async function send() {
       const uploaded = await uploadImage(pendingImage.value, {
         maxWidth: 1440,
         quality: 0.65,
+        pathPrefix: props.projectId,
       })
       attachmentUrl = uploaded.path
       attachmentType = uploaded.type

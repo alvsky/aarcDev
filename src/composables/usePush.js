@@ -1,6 +1,12 @@
 import { Capacitor } from '@capacitor/core'
 import { useNotificationsStore } from 'src/stores/notifications'
 import { useAuthStore } from 'src/stores/auth'
+import router from 'src/router'
+
+// I2: kind postoji samo na payloadu za NOVE stavke (edge funkcija šalje ga
+// na items INSERT), pa je stage uvijek početni — dovoljno da bug/idea/task
+// jednoznačno odredi karticu bez dodatnog upita bazi.
+const KIND_TAB = { bug: 'bugs', task: 'tbi', idea: 'ideas' }
 
 // Token može stići prije prijave (init se pokreće na startu aplikacije) —
 // tada ga čuvamo ovdje i registriramo tek kad se korisnik prijavi.
@@ -96,6 +102,18 @@ export function usePush() {
 
     PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
       console.log('Push action performed:', action)
+      const data = action.notification?.data ?? {}
+      const projectId = data.projectId
+      if (!projectId) return
+
+      // I1: tab i meta (item/channel) su sad dio same adrese — ItemListPanel/
+      // ChatPage čitaju query kad se mountaju i briše je čim potroše (vidi
+      // njihove watchere), da se isti skok ne ponovi kod idućeg običnog ulaska.
+      const tab = data.itemId ? (KIND_TAB[data.kind] ?? 'ideas') : 'chat'
+      const query = data.itemId
+        ? { item: data.itemId }
+        : { channel: data.channel ?? 'main' }
+      router.push({ path: `/project/${projectId}/${tab}`, query })
     })
   }
 

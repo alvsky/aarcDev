@@ -85,7 +85,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useProjectsStore } from 'src/stores/projects'
 import { useItemsStore } from 'src/stores/items'
 import { useChatStore } from 'src/stores/chat'
@@ -100,8 +100,23 @@ import MemberDialog from 'src/components/shared/MemberDialog.vue'
 import AppHeader from 'src/components/shared/AppHeader.vue'
 
 const route = useRoute()
+const router = useRouter()
 const projectId = route.params.id
-const tab = ref('chat')
+
+// I1: kartica živi u URL-u (route.params.tab), ne u lokalnom stanju — tako
+// push deep-link (usePush.js) i običan klik na projekt prolaze isti put, i
+// tab preživi refresh/dijeljeni link. Postavljanje ide kroz router.replace
+// (ne push) da svaki dodir taba ne buši povijest natrag-gumba.
+const tab = computed({
+  get: () => route.params.tab || 'chat',
+  set: (newTab) => {
+    if (newTab === tab.value) return
+    // Ručna promjena taba svjesno odbacuje query (item/channel deep-link) —
+    // ta meta vrijedi samo za navigaciju KOJA je donijela deep-link, ne za
+    // svaki idući klik na taj tab.
+    router.replace(`/project/${projectId}/${newTab}`)
+  },
+})
 
 // ProjectPage.vue - watch samo fetchUnread, ne markRead
 watch(tab, async (newTab) => {

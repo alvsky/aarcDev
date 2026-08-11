@@ -162,11 +162,22 @@ caller-supplied `p_user_id` with no `auth.uid()` check.
 
 ## Storage
 
-Single bucket **`chat-attachments`** holds both chat attachments and idea/bug/TBI
-screenshots. Object paths: `${userId}/${timestamp}.jpg` (images are compressed client-side to
-JPEG before upload). The DB stores the **path**, not a URL; the client fetches 1-hour signed
-URLs on display. Deleting a chat message or an idea/bug/TBI item removes its storage object
-and its local IndexedDB image-cache blob (client-side, in the respective store's delete action).
+Two private buckets (B16, 2026-08-10 — policies live in
+`supabase/migrations/20260814100000_storage_policies.sql`, not just the dashboard):
+
+- **`chat-attachments`** — chat attachments and idea/bug/TBI screenshots. Path
+  `${projectId}/${userId}/${uuid}.jpg` — the leading `projectId` is what lets RLS scope reads to
+  `can_access_project(projectId)` and writes to your own subfolder; the old `${userId}/${file}`
+  path (pre-B16) couldn't express that.
+- **`avatars`** — profile pictures, not project-scoped. Path `${userId}/${uuid}.jpg`; read policy
+  mirrors `profiles_select` (`can_see_profile`) — own avatar or a same-org collaborator's.
+
+Images are compressed client-side to JPEG before upload (`useImageUpload.js`). The DB stores the
+**path**, not a URL; the client fetches 1-hour signed URLs on display (`getSignedUrl(path,
+bucket)`). Deleting a chat message, an idea/bug/TBI item, or replacing an avatar removes its
+storage object and its local IndexedDB image-cache blob (client-side) — delete policy only
+allows removing your own subfolder, so an org admin deleting someone else's item leaves their
+screenshot orphaned (known, see BACKLOG E3).
 
 ## Conventions for schema changes
 

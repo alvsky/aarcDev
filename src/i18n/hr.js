@@ -19,6 +19,9 @@ export default {
     registerBtn: 'Registriraj se',
     noAccount: 'Nemaš račun?',
     hasAccount: 'Već imaš račun?',
+    checkEmail:
+      'Poslali smo potvrdu na {email}. Otvori mail i klikni link da aktiviraš račun, pa se vrati ovamo i prijavi se.',
+    backToLogin: 'Natrag na prijavu',
   },
   invite: {
     title: 'Pozivnica',
@@ -240,6 +243,14 @@ export default {
     deleteAccountWarn:
       'Ti si jedini vlasnik ovih projekata: {projects}. Obriši ih ili dodaj drugog vlasnika prije brisanja računa.',
     deleteAccountSuccess: 'Račun je obrisan.',
+    changePassword: 'Promijeni lozinku',
+    currentPassword: 'Trenutna lozinka',
+    newPassword: 'Nova lozinka',
+    confirmPassword: 'Ponovi novu lozinku',
+    passwordMismatch: 'Nova lozinka i ponovljena lozinka se ne podudaraju.',
+    passwordTooShort: 'Lozinka mora imati barem 6 znakova.',
+    passwordWrongCurrent: 'Trenutna lozinka nije točna.',
+    passwordChanged: 'Lozinka je promijenjena.',
     languages: {
       hr: 'Hrvatski',
       en: 'English',

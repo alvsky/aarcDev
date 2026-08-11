@@ -74,8 +74,10 @@ Before making changes, always read:
   `notif_messages`/`notif_ideas`/`notif_bugs`/`notif_tbi` narrow it per category.
 - Push fires on message INSERT **and** item INSERT (two DB webhooks → the same
   `push-on-message` Edge Function, which branches on `payload.table`).
-- Storage: one private bucket `chat-attachments` (`${userId}/${timestamp}.jpg`, client-side
-  JPEG compression, 1-h signed URLs).
+- Storage: two private buckets (B16) — `chat-attachments` (`${projectId}/${userId}/${uuid}.jpg`,
+  RLS via `can_access_project`) and `avatars` (`${userId}/${uuid}.jpg`, RLS via
+  `can_see_profile`). Client-side JPEG compression, 1-h signed URLs. Policies are in
+  `supabase/migrations/20260814100000_storage_policies.sql`, not just the dashboard.
 - iOS FCM token arrives via AppDelegate.swift → `localStorage['fcmToken']` polling bridge
   (Android uses the normal Capacitor listener). Web builds use no-op mocks aliased in
   quasar.config.js **only when `!ctx.mode.capacitor`** — native builds must get the real

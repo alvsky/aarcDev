@@ -49,15 +49,22 @@
 
 <script setup>
 import { ref, onMounted, onActivated, nextTick } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useChatStore } from 'src/stores/chat'
 import { useNotificationsStore } from 'src/stores/notifications'
 import ChatPanel from 'src/components/chat/ChatPanel.vue'
 
 const props = defineProps({ projectId: String })
 
+const router = useRouter()
+const route = useRoute()
 const chatStore = useChatStore()
 const notifStore = useNotificationsStore()
-const channel = ref('main')
+// I1/I2: ?channel=... u adresi (npr. iz push notifikacije) bira početni
+// kanal umjesto uvijek 'main'; query se odmah čisti da se refresh/dijeljeni
+// link ne otvara stalno na istom mjestu.
+const channel = ref(route.query.channel === 'offtopic' ? 'offtopic' : 'main')
+if (route.query.channel) router.replace({ query: {} })
 
 const chatPanelRef = ref(null)
 

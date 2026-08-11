@@ -71,6 +71,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useItemsStore } from 'src/stores/items'
@@ -97,6 +98,8 @@ const props = defineProps({
 
 const $q = useQuasar()
 const { t } = useI18n()
+const route = useRoute()
+const router = useRouter()
 const itemsStore = useItemsStore()
 const projectsStore = useProjectsStore()
 const orgsStore = useOrgsStore()
@@ -186,6 +189,25 @@ async function onThreadClosed() {
   threadItem.value = null
   await itemsStore.fetchItems(props.projectId)
 }
+
+// I1/I2: deep-link na stavku (?item=<id> u adresi, npr. iz push notifikacije).
+// Namjerno se ne provjerava kojoj kartici link cilja — dovoljno je da je
+// stavka stvarno u OVOM (već po vrsti filtriranom) popisu; ostale kartice
+// je jednostavno neće imati pa im watcher ništa neće napraviti. Query se
+// briše čim se stvarno otvori (router.replace, ne push — ne treba nova
+// stavka u povijesti za nešto što se dogodilo automatski).
+watch(
+  () => [route.query.item, props.items],
+  () => {
+    const itemId = route.query.item
+    if (!itemId) return
+    const item = props.items.find((i) => i.id === itemId)
+    if (!item) return
+    router.replace({ query: {} })
+    openThread(item)
+  },
+  { immediate: true },
+)
 
 function confirmDelete(item) {
   if (blockedOffline()) return

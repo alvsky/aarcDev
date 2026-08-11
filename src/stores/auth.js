@@ -70,12 +70,31 @@ export const useAuthStore = defineStore('auth', {
       if (error) throw error
     },
 
+    // Vraća { session } — session je null dok "Confirm email" čeka potvrdu
+    // (G2). Pozivatelj (LoginPage) mora provjeriti prije nego pretpostavi da
+    // je korisnik odmah prijavljen.
     async register(email, password, fullName) {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: { data: { full_name: fullName } },
       })
+      if (error) throw error
+      return { session: data.session }
+    },
+
+    // Traži trenutnu lozinku prije promjene — supabase.auth.updateUser() sam
+    // po sebi ne provjerava staru lozinku (dovoljna je aktivna sesija), pa bi
+    // bez ove provjere netko s otetom/otvorenom sesijom mogao promijeniti
+    // lozinku i istisnuti pravog vlasnika bez da je ikad znao staru.
+    async changePassword(currentPassword, newPassword) {
+      const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email: this.user.email,
+        password: currentPassword,
+      })
+      if (reauthError) throw { type: 'wrong_current' }
+
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
       if (error) throw error
     },
 

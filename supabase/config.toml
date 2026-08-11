@@ -1,3 +1,30 @@
+project_id = "uwtmnbliuuoqkmwjwzid"
+
+# B2: Auth postavke prepisane iz dashboarda (2026-08-11) da okolina bude
+# reproducibilna iz koda, ne samo ručno klikana. Ovaj zapis SAM PO SEBI ne
+# mijenja ništa na živom projektu — primijenio bi se tek eksplicitnim
+# `supabase config push`, koji namjerno nismo pokrenuli.
+[auth]
+enabled = true
+site_url = "https://www.vitkadesign.com/aarc.html"
+# Prazno je namjerno — potvrdna stranica je statična ("gotovo je, vrati se u
+# app"), ne dio SPA-a koji bi trebao preuzeti sesiju iz linka, pa nema
+# potrebe za posebnim unosom po okolini (localhost/produkcija/mobitel).
+additional_redirect_urls = []
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+# Uključeno 2026-08-11 (bilo isključeno zbog limita besplatnog plana na
+# built-in slanju — vidi BACKLOG G2). Za mali tim dovoljno; SMTP provider
+# (Gmail) postavljen izravno u dashboardu, ne ovdje.
+enable_confirmations = true
+
+# ⚠️ Minimalna duljina lozinke i rate limiti NISU potvrđeni s dashboarda —
+# ostavljeni na CLI zadanoj vrijednosti (6). Provjeriti i ažurirati ako se
+# stvarna postavka razlikuje (Authentication → Settings/Sessions).
+minimum_password_length = 6
 
 [functions.push-on-message]
 enabled = true

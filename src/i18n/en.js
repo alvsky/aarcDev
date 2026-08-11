@@ -19,6 +19,9 @@ export default {
     registerBtn: 'Create account',
     noAccount: "Don't have an account?",
     hasAccount: 'Already have an account?',
+    checkEmail:
+      'We sent a confirmation to {email}. Open it and click the link to activate your account, then come back and log in.',
+    backToLogin: 'Back to login',
   },
   invite: {
     title: 'Invitation',
@@ -240,6 +243,14 @@ export default {
     deleteAccountWarn:
       'You are the only owner of these projects: {projects}. Delete them or add another owner before deleting your account.',
     deleteAccountSuccess: 'Account deleted.',
+    changePassword: 'Change password',
+    currentPassword: 'Current password',
+    newPassword: 'New password',
+    confirmPassword: 'Repeat new password',
+    passwordMismatch: 'New password and repeated password do not match.',
+    passwordTooShort: 'Password must be at least 6 characters.',
+    passwordWrongCurrent: 'Current password is incorrect.',
+    passwordChanged: 'Password changed.',
     languages: {
       hr: 'Croatian',
       en: 'English',

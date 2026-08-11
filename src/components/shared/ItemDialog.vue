@@ -134,7 +134,11 @@ const priorityOptions = computed(() =>
 // koristiti nazive stupaca. Ako slike nema, oba su prazna i postojeća se ne dira.
 async function uploadScreenshot() {
   if (!pendingImage.value) return { create: {}, update: {} }
-  const uploaded = await uploadImage(pendingImage.value, { maxWidth: 1280, quality: 0.6 })
+  const uploaded = await uploadImage(pendingImage.value, {
+    maxWidth: 1280,
+    quality: 0.6,
+    pathPrefix: props.projectId,
+  })
   return {
     create: {
       screenshotUrl: uploaded.path,

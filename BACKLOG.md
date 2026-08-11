@@ -23,8 +23,13 @@ rotacija nema smisla; ograničenje je jedina stvarna mjera. Alert zatvoriti kao 
 danas ne radi, što je razlog za ostatak ove sekcije.
 ✅ B1. (2026-08-10) Snimka baze prije početka. RLS promjene tiho lome realtime (realtime poštuje RLS) i nema
 ih se lako vratiti unatrag. ⚠️ vidi F2 — idealno na staging okolini prvo.
-🔴 B2. Auth postavke iz dashboarda u config.toml (sad ima 11 redaka, samo sekciju za edge
-funkciju) — inače okolina nije reproducibilna.
+✅ B2. (2026-08-11) Auth postavke iz dashboarda u config.toml: project_id, site_url
+(vitkadesign.com/aarc.html — statična potvrdna stranica, vidi G2), additional_redirect_urls
+(namjerno prazno — ista stranica za svaku okolinu, ne treba unos po localhost/prod/mobitel),
+jwt_expiry (3600), enable_confirmations (uključeno 2026-08-11, ranije isključeno zbog limita
+besplatnog plana). ⚠️ minimum_password_length i rate limiti NISU potvrđeni s dashboarda —
+ostavljeni na CLI defaultu (6), označeno komentarom u datoteci. Zapis sam po sebi ne mijenja
+živi projekt (treba eksplicitni `supabase config push`).
 
 Shema
 ✅ B3. (2026-08-09) Tablice organizations, org_members, invitations. RLS uključen, bez ijedne politike
@@ -73,14 +78,33 @@ te retke od prije. Čim se napravi NOVI projekt vidljiv organizaciji, ostali čl
 redak → nula nepročitanih i nikakav push, bez ijedne greške. Prepisati na "članovi
 organizacije koji imaju pristup", uz project_members samo kao izvor osobnih postavki
 (LEFT JOIN + podrazumijevane vrijednosti). ⚠️ veliko preklapanje s D1.
-🟠 B16. Storage: politike u migraciju (sad postoje samo u dashboardu, neverzionirane), putanja
-→ ${projectId}/${userId}/${uuid}.jpg, avatari u zasebnu kantu. Sadašnja putanja ne sadrži
-projekt pa je projektno ograničenje nemoguće napisati. ⚠️ postojeći objekti imaju stare
-putanje — treba odluka: migrirati ih ili podnijeti prekid na dev podacima.
+✅ B16. (2026-08-10) Storage: politike u migraciju
+(supabase/migrations/20260814100000_storage_policies.sql). Nova putanja
+chat-attachments/${projectId}/${userId}/${uuid}.jpg — RLS napokon može provjeriti
+can_access_project(projectId) (stara putanja bez projekta to nije dopuštala); INSERT/DELETE
+traže vlastitu podmapu. Avatari preseljeni u zaseban avatars bucket, ${userId}/${uuid}.jpg,
+vidljivost prati can_see_profile (isto pravilo kao profiles_select) umjesto da dijele
+bucket/politike s chat prilozima. Oba bucketa dobila file_size_limit + allowed_mime_types
+(image/jpeg — jedino što compressImage ikad proizvede). ⚠️ SVJESNO bez migracije postojećih
+objekata — dev okruženje, prihvaćen prekid (stari screenshotovi/avatari mogu postati
+nedostupni dok se ponovno ne uploadaju; retci u bazi nisu dirani). useImageUpload.js sad prima
+bucket/pathPrefix; svi pozivatelji (MessageInput, ItemDialog, ProfilePage) ažurirani.
 
 Provjera
-🔴 B17. Testovi izolacije: korisnik A ne vidi ništa iz organizacije korisnika B. Najvrjedniji
-test u projektu. ⚠️ vidi E1 (Vitest).
+🟡 B17. (2026-08-10, trenutno ne prolazi) Testovi izolacije: korisnik A ne vidi ništa iz
+organizacije korisnika B. ⚠️ Otkad je "Confirm email" uključen (2026-08-11, B2/G2)
+`tests/helpers.js#createTestUser` više ne dobiva sesiju odmah nakon `signUp()` pa test puca.
+Pravo rješenje: service_role Admin API (`createUser({ email_confirm: true })`) za test
+korisnike, zaobiđe potvrdu SAMO za njih. Odgođeno na izričit zahtjev — vratiti se uz G2.
+Vitest uveden (E1 dobio infrastrukturu, ali ne i planirane unit testove čiste logike — to je
+zaseban zadatak). tests/helpers.js (izolirani klijent po test korisniku, bez localStora u
+Node-u, best-effort čišćenje brisanjem organizacije — org_id/project_id FK-ovi su ON DELETE
+CASCADE pa se povlači sve) + tests/rls-isolation.test.js: dvije potpuno odvojene
+org/korisnika, 14 provjera iz kuta korisnika B (liste, izravan .eq('id'), update/delete/insert,
+profiles, org_members, invitations, set_project_member_role/remove_org_member RPC-ovi) + jedna
+kontrolna da vlasnik i dalje vidi vlastito. `pnpm test`. Integracijski protiv pravog dev
+Supabase projekta (⚠️ ne lokalni — nema Dockera/supabase start u repou), pa svako pokretanje
+stvori i obriše prave test korisnike/organizacije ondje.
 🔴 B18. Regresija nakon zatezanja: manual profile joins, realtime događaji, item_message_counts
 view (security_invoker — mijenja se ponašanje kad politike postanu stroge!), edge funkcija
 (service role zaobilazi RLS — OK), offline keš.
@@ -129,17 +153,20 @@ list: popis organizacija s bedžom nepročitanog, "Nova organizacija", "Postavke
   ima nepročitano (notifStore.orgUnread). Badge na ikoni aplikacije je zbroj svih organizacija
   otkad postoji — fetchUnread/syncBadge nikad nisu filtrirali po organizaciji, samo po
   RLS-vidljivim projektima.
-  🟢 B23. Prvi ulazak: ako postoji pozivnica na taj e-mail → ulazi u tu organizaciju, inače se
-  automatski stvori organizacija nazvana po korisniku. ⚠️ nakon B21 (pozivnice). Do tada
-  novoregistrirani korisnik nema organizaciju — provjeriti signup flow.
+  ✅ B23. (2026-08-10) Prvi ulazak: LoginPage.submit() nakon uspješne registracije provjerava
+  je li redirect `/invite/:token` (dolazi preko pozivnice — accept_invitation na
+  AcceptInvitePage će stvoriti članstvo poslije ovog redirecta) i SAMO ako nije, zove
+  orgsStore.createOrg(form.fullName) — nova organizacija nazvana po punom imenu, s
+  korisnikom kao ownerom (create_organization RPC, isti obrazac kao create_project).
   ✅ B24. (riješeno ranije, uz B9–B11 — backlog samo nije bio ažuriran) projects DELETE:
   is_org_admin(org_id) or created_by = auth.uid().
-  🟡 B21. (2026-08-13) Pozivnice IZGRAĐENE, svjesno prije G2 — na izričit zahtjev, prihvaćen
-  rizik za mali povjerljivi tim. get_invitation_preview RPC (novi, anon+authenticated: pregled
-  bez prijave preko tokena) + OrgPage obrazac za slanje/povlačenje + kopirljiv link
-  (`/#/invite/:token`, nema slanja e-mailova — K4) + AcceptInvitePage (grana na
+  ✅ B21. (2026-08-13, potvrđeno 2026-08-10) Pozivnice IZGRAĐENE, svjesno prije G2 — na izričit
+  zahtjev, prihvaćen rizik za mali povjerljivi tim. get_invitation_preview RPC (novi,
+  anon+authenticated: pregled bez prijave preko tokena) + OrgPage obrazac za slanje/povlačenje +
+  kopirljiv link (`/#/invite/:token`, nema slanja e-mailova — K4) + AcceptInvitePage (grana na
   neprijavljen/kriva adresa/ispravna adresa) + LoginPage `redirect`+`email` query da token
-  preživi prijavu/registraciju.
+  preživi prijavu/registraciju. End-to-end potvrđeno s pravim računom (registracija preko
+  invite linka → ulazak u "vitka d.o.o." kao member).
   🔴 PRIJE JAVNOG IZLASKA: bez G2 se netko može registrirati tuđom (nepotvrđenom) adresom i
   preuzeti tuđu pozivnicu — accept_invitation uspoređuje e-mail sesije s pozivnicom, ali ta
   provjera vrijedi onoliko koliko vrijedi da je adresa stvarno vlasnikova. Zatvoriti s G2 prije
@@ -190,7 +217,17 @@ F. Okoline i deploy
 
 G. Autentikacija i računi
 🟠 G1. Reset lozinke (Supabase reset flow + stranica).
-🟠 G2. Email verifikacija pri registraciji.
+🟠 G2. Email verifikacija pri registraciji. Djelomično: "Confirm email" ponovno uključen u
+dashboardu 2026-08-11 (config.toml, vidi B2), statična potvrdna stranica na
+vitkadesign.com/aarc.html. LoginPage.vue popravljen (2026-08-11) da ne pretpostavlja sesiju
+odmah nakon signUp() — provjerava `session`, prikazuje "provjeri email" umjesto pucanja na
+createOrg/redirectu. Gmail custom SMTP isprobano i ODBAČENO 2026-08-11 — vraća 500 na
+signUp (razlog nije do App Passworda, do same Gmail SMTP prirode za transakcijski mail, Supabase
+i sam upozorava "designed for personal rather than transactional"); ugrađeni Supabase mailer
+radi ispravno i za sad je dovoljan. Pravi SMTP servis (Postmark/Resend i sl.) treba tek pred
+javni izlazak. Preostaje: `emailRedirectTo` eksplicitno pri signUp() (trenutno oslonjen na
+Site URL default — dovoljno dok postoji samo jedna potvrdna stranica). B17 testovi trenutno ne
+prolaze zbog ovoga (vidi B17).
 🟢 G3. Transfer ownershipa projekta (UI + pravila; preduvjet za elegantno brisanje računa).
 ✅ G4. Upload avatara (riješeno 2026-08-07) — UserAvatar komponenta (foto ili inicijali, skalira s postavkom veličine teksta preko --aarc-font-scale), upload/promjena/uklanjanje na Profilu, avatar_url dodan u sve profile select()-e i zamijenjeno svih 6 mjesta prikaza (MessageList, MemberDialog, ProjectsPage ×3, ProfilePage).
 
@@ -200,8 +237,22 @@ H. Suradnja i onboarding
 🟢 H3. Per-user postavke notifikacija finije od badge_enabled (npr. samo mentioni, samo threadovi u kojima sudjelujem).
 
 I. Navigacija i UX
-🟠 I1. Router refaktor: tabovi u URL-u (/project/:id/chat itd. — rute-djeca već postoje, samo ih iskoristiti), thread u URL-u za deep-link.
-🟠 I2. Push notifikacija otvara konkretan projekt/thread (payload projectId/channel već putuje; pushNotificationActionPerformed listener postoji, samo loga). ⚠️ nakon I1.
+✅ I1. (2026-08-10) Router refaktor: tabovi u URL-u. Jedna ruta
+`/project/:id/:tab(chat|bugs|ideas|tbi)?` (zamijenila neiskorištene djecu-rute — ProjectPage i
+dalje sam crta q-tabs + keep-alive panele, isti razlog kao prije: gubitak keep-alivea preko
+pravog nested router-viewa nije vrijedio prepravke; ovo samo čini tab dijelom adrese). ProjectPage
+`tab` je sad writable computed nad `route.params.tab` (get) / `router.replace` (set, ne push —
+tab-switch ne buši povijest). Thread/kanal u URL-u kroz `?item=`/`?channel=` query — ItemListPanel
+i ChatPage ih čitaju pri mountu i odmah briše (router.replace) čim potroše. Usput POJEDNOSTAVLJEN
+I2: `notifStore.pendingDeepLink` (privremeno rješenje dok I1 nije postojao) uklonjen —
+usePush.js sad gradi URL izravno (`router.push({ path, query })`).
+✅ I2. (2026-08-10, pojednostavljeno nakon I1) Push notifikacija otvara konkretan
+projekt/thread. pushNotificationActionPerformed (usePush.js) čita payload (projectId +
+itemId/kind ili channel) i pozove router.push na `/project/:id/:tab?item=`/`?channel=`.
+ItemListPanel otvara ThreadDialog čim stavka stvarno stigne u (već po vrsti filtriran)
+items prop, ChatPage čita ?channel pri mountu — oba brišu query čim ga potroše. (Prvotna
+verzija je ovo rješavala preko privremenog notifStore.pendingDeepLink jer I1 još nije
+postojao; maknuto kad je I1 stigao.)
 🟢 I3. Offline UX: indikator mreže, disable slanja bez mreže, queue za neposlane poruke.
 🟢 I4. Loading/skeleton stanja umjesto praznih lista tijekom fetcha.
 🟢 I5. Potvrdni dijalozi ujednačiti (brisanje poruke/itema/projekta).
@@ -238,6 +289,13 @@ odvojene kvote, lakše predati dalje. ⚠️ prije javnog izlaska.
 🟢 L2. TestFlight + Play internal track pipeline.
 🟢 L3. Finalizacija ikona/splash za obje platforme.
 🟢 L4. Provjeriti ponašanje badge-a kad je badge_enabled isključen za sve projekte.
+🟢 L8. (zapaženo 2026-08-10 tijekom I2 testiranja) Broj na ikonici aplikacije uz Xcode-debug
+build ne ažurira se dok je app u pozadini/zatvorena — vidljiv tek nakon otvaranja appa (JS
+`notifStore.syncBadge()` preko @capawesome/capacitor-badge). Push payload nosi i nativni
+`apns.payload.aps.badge` koji bi iOS trebao primijeniti sam bez appa; postavke uređaja
+(Settings → Notifications → Badges) potvrđeno uključene, pa uzrok vjerojatnije Xcode-debug
+kvirka nego stvarni bug. Provjeriti na pravoj instalaciji (TestFlight/ad-hoc, ⚠️ nakon L2) prije
+nego se ovo tretira kao pravi zadatak za popraviti.
 M. Model stavke — spajanje u jednu tablicu
 Model i obrazloženje: docs/item-model.md. Razlog: ideja i njezin TBI danas su dva retka s dva
 threada, iz čega izravno slijedi sedam zasebnih grešaka (uključujući badge koji se ne da

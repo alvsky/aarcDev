@@ -54,7 +54,15 @@ export function useImageUpload() {
   const uploading = ref(false)
   const error = ref(null)
 
-  async function uploadImage(file, { maxWidth = 1920, quality = 0.8 } = {}) {
+  // bucket/pathPrefix: B16 — putanja mora nositi projectId da RLS na
+  // storage.objects uopće može provjeriti can_access_project (stara putanja
+  // ${userId}/${file} to nije dopuštala). Avatari nisu projektni pa nemaju
+  // pathPrefix i žive u zasebnom 'avatars' bucketu (vidljivost prati
+  // can_see_profile, ne can_access_project).
+  async function uploadImage(
+    file,
+    { maxWidth = 1920, quality = 0.8, bucket = 'chat-attachments', pathPrefix = null } = {},
+  ) {
     if (!file || !file.type.startsWith('image/')) {
       throw new Error('Nije slika')
     }
@@ -68,14 +76,13 @@ export function useImageUpload() {
       // Komprimiraj
       const compressed = await compressImage(file, maxWidth, quality)
 
-      const path = `${auth.user.id}/${Date.now()}.jpg`
+      const folder = pathPrefix ? `${pathPrefix}/${auth.user.id}` : auth.user.id
+      const path = `${folder}/${crypto.randomUUID()}.jpg`
 
-      const { error: uploadError } = await supabase.storage
-        .from('chat-attachments')
-        .upload(path, compressed, {
-          contentType: 'image/jpeg',
-          upsert: false,
-        })
+      const { error: uploadError } = await supabase.storage.from(bucket).upload(path, compressed, {
+        contentType: 'image/jpeg',
+        upsert: false,
+      })
 
       if (uploadError) throw uploadError
 
@@ -92,10 +99,8 @@ export function useImageUpload() {
     }
   }
 
-  async function getSignedUrl(path) {
-    const { data, error } = await supabase.storage
-      .from('chat-attachments')
-      .createSignedUrl(path, 3600)
+  async function getSignedUrl(path, bucket = 'chat-attachments') {
+    const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 3600)
     if (error) {
       console.error('getSignedUrl error:', error)
       return null

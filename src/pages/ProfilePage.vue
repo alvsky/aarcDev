@@ -117,6 +117,50 @@
           </q-card>
         </div>
 
+        <!-- Promjena lozinke -->
+        <div class="q-px-md q-mb-md">
+          <q-card flat bordered class="profile-card">
+            <q-card-section>
+              <div class="text-subtitle2 q-mb-sm profile-name">{{ $t('settings.changePassword') }}</div>
+              <div class="q-gutter-sm">
+                <q-input
+                  v-model="passwordForm.current"
+                  :label="$t('settings.currentPassword')"
+                  type="password"
+                  outlined
+                  dense
+                  autocomplete="current-password"
+                />
+                <q-input
+                  v-model="passwordForm.next"
+                  :label="$t('settings.newPassword')"
+                  type="password"
+                  outlined
+                  dense
+                  autocomplete="new-password"
+                />
+                <q-input
+                  v-model="passwordForm.confirm"
+                  :label="$t('settings.confirmPassword')"
+                  type="password"
+                  outlined
+                  dense
+                  autocomplete="new-password"
+                />
+              </div>
+            </q-card-section>
+            <q-card-actions align="right">
+              <q-btn
+                color="primary"
+                :label="$t('settings.changePassword')"
+                :loading="changingPassword"
+                :disable="!passwordForm.current || !passwordForm.next || !passwordForm.confirm"
+                @click="changePassword"
+              />
+            </q-card-actions>
+          </q-card>
+        </div>
+
         <!-- Projekti -->
         <div class="q-px-md q-mb-md">
           <div class="text-subtitle2 text-weight-medium profile-name q-mb-sm">
@@ -196,6 +240,8 @@ const itemsStore = useItemsStore()
 const { uploadImage } = useImageUpload()
 
 const savingProfile = ref(false)
+const changingPassword = ref(false)
+const passwordForm = ref({ current: '', next: '', confirm: '' })
 const deleting = ref(false)
 const avatarInput = ref(null)
 const uploadingAvatar = ref(false)
@@ -232,9 +278,9 @@ async function onAvatarSelected(e) {
   uploadingAvatar.value = true
   try {
     const previousPath = authStore.profile?.avatar_url
-    const uploaded = await uploadImage(file, { maxWidth: 256, quality: 0.7 })
+    const uploaded = await uploadImage(file, { maxWidth: 256, quality: 0.7, bucket: 'avatars' })
     await authStore.updateProfile({ avatar_url: uploaded.path })
-    await discardReplacedScreenshot(previousPath, uploaded.path)
+    await discardReplacedScreenshot(previousPath, uploaded.path, 'avatars')
     $q.notify({ type: 'positive', message: t('settings.saved') })
   } catch (err) {
     $q.notify({ type: 'negative', message: err.message })
@@ -250,7 +296,7 @@ async function removeAvatar() {
   uploadingAvatar.value = true
   try {
     await authStore.updateProfile({ avatar_url: null })
-    await supabase.storage.from('chat-attachments').remove([previousPath])
+    await supabase.storage.from('avatars').remove([previousPath])
     await removeCachedImage(previousPath)
     $q.notify({ type: 'positive', message: t('settings.saved') })
   } catch (err) {
@@ -269,6 +315,29 @@ async function saveProfile() {
     $q.notify({ type: 'negative', message: e.message })
   } finally {
     savingProfile.value = false
+  }
+}
+
+async function changePassword() {
+  if (passwordForm.value.next !== passwordForm.value.confirm) {
+    $q.notify({ type: 'negative', message: t('settings.passwordMismatch') })
+    return
+  }
+  if (passwordForm.value.next.length < 6) {
+    $q.notify({ type: 'negative', message: t('settings.passwordTooShort') })
+    return
+  }
+
+  changingPassword.value = true
+  try {
+    await authStore.changePassword(passwordForm.value.current, passwordForm.value.next)
+    passwordForm.value = { current: '', next: '', confirm: '' }
+    $q.notify({ type: 'positive', message: t('settings.passwordChanged') })
+  } catch (e) {
+    const message = e.type === 'wrong_current' ? t('settings.passwordWrongCurrent') : e.message
+    $q.notify({ type: 'negative', message })
+  } finally {
+    changingPassword.value = false
   }
 }
 
