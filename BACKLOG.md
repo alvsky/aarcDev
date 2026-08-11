@@ -262,8 +262,19 @@ items prop, ChatPage čita ?channel pri mountu — oba brišu query čim ga potr
 verzija je ovo rješavala preko privremenog notifStore.pendingDeepLink jer I1 još nije
 postojao; maknuto kad je I1 stigao.)
 🟢 I3. Offline UX: indikator mreže, disable slanja bez mreže, queue za neposlane poruke.
-🟢 I4. Loading/skeleton stanja umjesto praznih lista tijekom fetcha.
-🟢 I5. Potvrdni dijalozi ujednačiti (brisanje poruke/itema/projekta).
+✅ I4. (2026-08-11) Loading/skeleton stanja umjesto praznih lista tijekom fetcha. Novi
+loading/isLoading getteri u projects/items/chat storovima — namjerno samo dok je popis STVARNO
+prazan (prvi fetch bez keša), ne na svaki refetch, jer su sva tri storea persistana pa bi
+skeleton preko već prikazanog keširanog sadržaja samo treperio bez svrhe. q-skeleton redci na
+Homeu (projekti), ItemListPanel (ideje/bugovi/tbi) i MessageList (chat, novi `loading` prop kroz
+ChatPanel).
+✅ I5. (2026-08-11) Potvrdni dijalozi ujednačeni. Svih 8 mjesta (item/projekt/poruka/organizacija
+član/vlasništvo/napuštanje/brisanje/pozivnica) već je vizualno bilo identično (title/message/ok
+crveno/cancel) — pravi problem je bio kopipejstan blok na 8 mjesta, ne nedosljednost. Novi
+useConfirmDialog.js#confirmDestructive vraća Promise<boolean> umjesto .onOk() callbacka
+(`if (!(await confirmDestructive({...}))) return`), jedno mjesto umjesto osam.
+✅ I7. (2026-08-11) Pretraga i sortiranje na Homeu — traka se pojavljuje tek s >5 projekata
+(kod par projekata samo šum), filtrira po nazivu, sort prebacuje nepročitano-prvo ↔ abecedno.
 🟢 I6. UserAvatar (src/components/shared/UserAvatar.vue) — inicijali unutar kruga vizualno nisu točno centrirani (blago pomaknuti udesno), primijećeno i na jednoslovnim i dvoslovnim inicijalima. Isprobano: `<span>` umjesto raw teksta u `<template v-else>` (uklonilo susjedne prazne text-node-ove) — pomak i dalje vidljiv pa uzrok nije bio (samo) to. Vrijedi kad se vrati na ovo: provjeriti je li riječ o CSS boxu (q-avatar__content flex-center) ili o optičkom centriranju fonta (glyph ink vs advance-width box), pa po potrebi ručno kompenzirati (npr. mali transform/padding nudge).
 
 J. TBI modul — proširenja

@@ -227,6 +227,7 @@ import { useAuthStore } from 'src/stores/auth'
 import { useProjectsStore } from 'src/stores/projects'
 import { useItemsStore } from 'src/stores/items'
 import { useImageUpload } from 'src/composables/useImageUpload'
+import { useConfirmDialog } from 'src/composables/useConfirmDialog'
 import { discardReplacedScreenshot } from 'src/utils/screenshots'
 import { removeCachedImage } from 'src/utils/imageCache'
 import { supabase } from 'src/boot/supabase'
@@ -234,6 +235,7 @@ import { supabase } from 'src/boot/supabase'
 const router = useRouter()
 const $q = useQuasar()
 const { t } = useI18n()
+const { confirmDestructive } = useConfirmDialog()
 const authStore = useAuthStore()
 const projectsStore = useProjectsStore()
 const itemsStore = useItemsStore()
@@ -346,32 +348,32 @@ async function logout() {
   router.push('/login')
 }
 
-function confirmDelete() {
-  $q.dialog({
+async function confirmDelete() {
+  const ok = await confirmDestructive({
     title: t('settings.deleteAccount'),
     message: t('settings.deleteAccountConfirm'),
-    ok: { label: t('common.confirm'), color: 'negative' },
-    cancel: t('common.cancel'),
-  }).onOk(async () => {
-    deleting.value = true
-    try {
-      await authStore.deleteAccount()
-      router.push('/login')
-      $q.notify({ type: 'positive', message: t('settings.deleteAccountSuccess') })
-    } catch (e) {
-      if (e.type === 'sole_owner') {
-        $q.notify({
-          type: 'warning',
-          message: t('settings.deleteAccountWarn', { projects: e.projects.join(', ') }),
-          timeout: 5000,
-        })
-      } else {
-        $q.notify({ type: 'negative', message: e.message })
-      }
-    } finally {
-      deleting.value = false
-    }
+    okLabel: t('common.confirm'),
   })
+  if (!ok) return
+
+  deleting.value = true
+  try {
+    await authStore.deleteAccount()
+    router.push('/login')
+    $q.notify({ type: 'positive', message: t('settings.deleteAccountSuccess') })
+  } catch (e) {
+    if (e.type === 'sole_owner') {
+      $q.notify({
+        type: 'warning',
+        message: t('settings.deleteAccountWarn', { projects: e.projects.join(', ') }),
+        timeout: 5000,
+      })
+    } else {
+      $q.notify({ type: 'negative', message: e.message })
+    }
+  } finally {
+    deleting.value = false
+  }
 }
 </script>
 

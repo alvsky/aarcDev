@@ -28,17 +28,47 @@
             {{ $t('projects.title') }}
           </div>
 
+          <!-- Tražilica + sortiranje se pojave tek s dovoljno projekata da
+               vrijede prostora — kod jednog-dva projekta samo su šum. -->
+          <div v-if="orgProjects.length > 5" class="row items-center q-gutter-sm q-mb-md">
+            <q-input
+              v-model="search"
+              dense
+              outlined
+              clearable
+              :placeholder="$t('projects.search')"
+              class="col"
+            >
+              <template #prepend><q-icon name="search" size="18px" /></template>
+            </q-input>
+            <q-btn
+              flat
+              dense
+              size="sm"
+              icon="sort"
+              color="grey-6"
+              :label="sortBy === 'unread' ? $t('projects.sortByUnread') : $t('projects.sortByName')"
+              @click="sortBy = sortBy === 'unread' ? 'name' : 'unread'"
+            />
+          </div>
+
+          <!-- I4: skeleton dok se prvi put puni keš, ne na svaki refetch —
+               projectsStore.loading + prazan popis znači "još nema ničega". -->
+          <div v-if="projectsStore.loading && !orgProjects.length" class="project-list">
+            <q-skeleton v-for="n in 3" :key="n" type="rect" height="86px" class="project-row" />
+          </div>
+
           <div
-            v-if="!orgProjects.length"
+            v-else-if="!visibleProjects.length"
             class="text-center q-mt-xl"
             style="color: var(--aarc-muted)"
           >
-            {{ $t('projects.noProjects') }}
+            {{ orgProjects.length ? $t('projects.noSearchResults') : $t('projects.noProjects') }}
           </div>
 
-          <div class="project-list">
+          <div v-else class="project-list">
             <div
-              v-for="project in orgProjects"
+              v-for="project in visibleProjects"
               :key="project.id"
               class="project-row cursor-pointer"
               :style="{
@@ -176,7 +206,6 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useProjectsStore } from 'src/stores/projects'
 import { useOrgsStore } from 'src/stores/orgs'
@@ -186,16 +215,17 @@ import { useRealtime } from 'src/composables/useRealtime'
 import AppHeader from 'src/components/shared/AppHeader.vue'
 import UserAvatar from 'src/components/shared/UserAvatar.vue'
 import { useOfflineGuard } from 'src/composables/useOfflineGuard'
+import { useConfirmDialog } from 'src/composables/useConfirmDialog'
 import ProjectDialog from 'src/components/shared/ProjectDialog.vue'
 import { useItemsStore } from 'src/stores/items'
 
 const itemsStore = useItemsStore()
-const $q = useQuasar()
 const { t } = useI18n()
 const projectsStore = useProjectsStore()
 const orgsStore = useOrgsStore()
 const notifStore = useNotificationsStore()
 const { blockedOffline } = useOfflineGuard()
+const { confirmDestructive } = useConfirmDialog()
 const authStore = useAuthStore()
 
 const dialog = ref(false)
@@ -209,6 +239,28 @@ const realtimeCleanups = ref([])
 const orgProjects = computed(() =>
   projectsStore.projects.filter((p) => p.org_id === orgsStore.currentId),
 )
+
+const search = ref('')
+const sortBy = ref('unread')
+
+const visibleProjects = computed(() => {
+  const q = search.value?.trim().toLowerCase()
+  let list = q ? orgProjects.value.filter((p) => p.name?.toLowerCase().includes(q)) : orgProjects.value
+
+  const sorted = [...list]
+  if (sortBy.value === 'unread') {
+    // Nepročitano prvo (najviše na vrhu), inače abecedno — stabilno i
+    // predvidljivo kad je više projekata bez ičega novog.
+    sorted.sort(
+      (a, b) =>
+        notifStore.projectTotal(b.id) - notifStore.projectTotal(a.id) ||
+        a.name.localeCompare(b.name),
+    )
+  } else {
+    sorted.sort((a, b) => a.name.localeCompare(b.name))
+  }
+  return sorted
+})
 
 const otherOrgsUnread = computed(() =>
   orgsStore.orgs.some((o) => o.id !== orgsStore.currentId && notifStore.orgUnread(o.id) > 0),
@@ -256,16 +308,11 @@ function openDialog(project = null) {
   dialog.value = true
 }
 
-function confirmDelete(project) {
+async function confirmDelete(project) {
   if (blockedOffline()) return
-  $q.dialog({
-    title: t('projects.delete'),
-    message: project.name,
-    ok: { label: t('common.delete'), color: 'negative' },
-    cancel: t('common.cancel'),
-  }).onOk(async () => {
-    await projectsStore.deleteProject(project.id)
-  })
+  const ok = await confirmDestructive({ title: t('projects.delete'), message: project.name })
+  if (!ok) return
+  await projectsStore.deleteProject(project.id)
 }
 
 // Adresar tekuće organizacije prati prebacivanje — i prvi dolazak (immediate),

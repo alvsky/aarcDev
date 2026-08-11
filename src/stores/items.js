@@ -21,10 +21,13 @@ export const useItemsStore = defineStore('items', {
 
   state: () => ({
     items: [],
+    // I4: skeleton umjesto prazne liste, samo dok stvarno nema ničega u kešu.
+    loadingProjects: {},
   }),
 
   getters: {
     byProject: (state) => (projectId) => state.items.filter((i) => i.project_id === projectId),
+    isLoading: (state) => (projectId) => !!state.loadingProjects[projectId],
 
     // Getteri vraćaju DOMENU kartice (što joj uopće pripada). Skrivanje
     // zatvorenih je stvar filtra u sučelju, ne domene — inače bi stavka s
@@ -59,17 +62,22 @@ export const useItemsStore = defineStore('items', {
       // Offline: zadrži keširano stanje
       if (!isOnline()) return
       const auth = useAuthStore()
+      this.loadingProjects[projectId] = true
 
       const { data, error } = await supabase
         .from('items')
         .select('*')
         .eq('project_id', projectId)
         .order('created_at', { ascending: false })
-      if (error) throw error
+      if (error) {
+        this.loadingProjects[projectId] = false
+        throw error
+      }
 
       if (!data?.length) {
         // Makni samo ovaj projekt — stavke drugih projekata ostaju (invarijanta 6)
         this.items = this.items.filter((i) => i.project_id !== projectId)
+        this.loadingProjects[projectId] = false
         return
       }
 
@@ -117,6 +125,7 @@ export const useItemsStore = defineStore('items', {
       })
 
       this.items = [...this.items.filter((i) => i.project_id !== projectId), ...mapped]
+      this.loadingProjects[projectId] = false
     },
 
     async createItem({

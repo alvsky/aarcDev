@@ -153,6 +153,7 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { supabase } from 'src/boot/supabase'
 import { useOfflineGuard } from 'src/composables/useOfflineGuard'
+import { useConfirmDialog } from 'src/composables/useConfirmDialog'
 import UserAvatar from './UserAvatar.vue'
 
 const props = defineProps({
@@ -164,6 +165,7 @@ const emit = defineEmits(['update:modelValue'])
 const $q = useQuasar()
 const { t } = useI18n()
 const { blockedOffline } = useOfflineGuard()
+const { confirmDestructive } = useConfirmDialog()
 const projectsStore = useProjectsStore()
 const orgsStore = useOrgsStore()
 const notifStore = useNotificationsStore()
@@ -221,20 +223,18 @@ async function addMember(userId) {
   }
 }
 
-function confirmRemove(member) {
+async function confirmRemove(member) {
   if (blockedOffline()) return
-  $q.dialog({
+  const ok = await confirmDestructive({
     title: t('projects.removeMemberTitle'),
     message: t('projects.removeMemberConfirm', { name: member.profiles?.full_name }),
-    ok: { label: t('common.delete'), color: 'negative' },
-    cancel: t('common.cancel'),
-  }).onOk(async () => {
-    try {
-      await projectsStore.removeMember(props.projectId, member.user_id)
-    } catch (e) {
-      $q.notify({ type: 'negative', message: e.message })
-    }
   })
+  if (!ok) return
+  try {
+    await projectsStore.removeMember(props.projectId, member.user_id)
+  } catch (e) {
+    $q.notify({ type: 'negative', message: e.message })
+  }
 }
 
 async function setRole(member, role) {

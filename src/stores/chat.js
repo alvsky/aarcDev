@@ -19,11 +19,14 @@ export const useChatStore = defineStore('chat', {
   state: () => ({
     threads: {},
     outbox: [],
+    // I4: skeleton umjesto prazne liste, samo dok stvarno nema ničega u kešu.
+    loadingThreads: {},
   }),
 
   getters: {
     threadMessages: (state) => (key) => state.threads[key] ?? [],
     threadCount: (state) => (key) => state.threads[key]?.length ?? 0,
+    isLoadingThread: (state) => (key) => !!state.loadingThreads[key],
   },
 
   actions: {
@@ -36,49 +39,53 @@ export const useChatStore = defineStore('chat', {
 
     async fetchMessages({ projectId, itemId = null, channel = 'main' }) {
       const key = this.threadKey({ projectId, itemId, channel })
+      this.loadingThreads[key] = true
+      try {
+        let query = supabase
+          .from('messages')
+          .select('*')
+          .eq('project_id', projectId)
+          .order('created_at', { ascending: true })
 
-      let query = supabase
-        .from('messages')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('created_at', { ascending: true })
+        if (itemId) query = query.eq('item_id', itemId)
+        else query = query.is('item_id', null).eq('channel', channel)
 
-      if (itemId) query = query.eq('item_id', itemId)
-      else query = query.is('item_id', null).eq('channel', channel)
+        const { data, error } = await query
+        // Offline/mrežni pad: zadrži keširani thread umjesto bacanja greške
+        if (error) {
+          if (isNetworkError(error)) return
+          throw error
+        }
 
-      const { data, error } = await query
-      // Offline/mrežni pad: zadrži keširani thread umjesto bacanja greške
-      if (error) {
-        if (isNetworkError(error)) return
-        throw error
+        // Optimistične (outbox) poruke ovog threada — fetch ih ne smije pobrisati iz prikaza
+        const pendingMsgs = (this.threads[key] ?? []).filter((m) => m.pending || m.failed)
+
+        if (!data?.length) {
+          this.threads[key] = pendingMsgs
+          return
+        }
+
+        const userIds = [...new Set(data.map((m) => m.author_id).filter(Boolean))]
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name, avatar_url')
+          .in('id', userIds)
+
+        // Na kraju fetchMessages, prije this.threads[key] = ...
+        const messageIds = data.map((m) => m.id)
+        const reactions = await this.fetchReactions(messageIds)
+
+        this.threads[key] = [
+          ...data.map((m) => ({
+            ...m,
+            profiles: profiles?.find((p) => p.id === m.author_id) ?? null,
+            reactions: reactions[m.id] ?? [],
+          })),
+          ...pendingMsgs,
+        ]
+      } finally {
+        this.loadingThreads[key] = false
       }
-
-      // Optimistične (outbox) poruke ovog threada — fetch ih ne smije pobrisati iz prikaza
-      const pendingMsgs = (this.threads[key] ?? []).filter((m) => m.pending || m.failed)
-
-      if (!data?.length) {
-        this.threads[key] = pendingMsgs
-        return
-      }
-
-      const userIds = [...new Set(data.map((m) => m.author_id).filter(Boolean))]
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name, avatar_url')
-        .in('id', userIds)
-
-      // Na kraju fetchMessages, prije this.threads[key] = ...
-      const messageIds = data.map((m) => m.id)
-      const reactions = await this.fetchReactions(messageIds)
-
-      this.threads[key] = [
-        ...data.map((m) => ({
-          ...m,
-          profiles: profiles?.find((p) => p.id === m.author_id) ?? null,
-          reactions: reactions[m.id] ?? [],
-        })),
-        ...pendingMsgs,
-      ]
     },
 
     async sendMessage(payload) {

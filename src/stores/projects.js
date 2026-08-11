@@ -8,6 +8,9 @@ export const useProjectsStore = defineStore('projects', {
 
   state: () => ({
     projects: [],
+    // I4: skeleton umjesto prazne liste — samo dok STVARNO nema ničega u
+    // kešu, ne na svaki refetch (persist već drži projects preko sesija).
+    loading: false,
   }),
 
   getters: {
@@ -28,14 +31,19 @@ export const useProjectsStore = defineStore('projects', {
     async fetchProjects() {
       // Offline: zadrži keširano stanje
       if (!isOnline()) return
+      this.loading = true
       const { data: projects, error } = await supabase
         .from('projects')
         .select('*')
         .order('created_at', { ascending: false })
-      if (error) throw error
+      if (error) {
+        this.loading = false
+        throw error
+      }
 
       if (!projects?.length) {
         this.projects = []
+        this.loading = false
         return
       }
 
@@ -72,6 +80,7 @@ export const useProjectsStore = defineStore('projects', {
             profiles: profiles.find((pr) => pr.id === m.user_id) ?? null,
           })),
       }))
+      this.loading = false
     },
 
     // Sve ide kroz create_project RPC (jedna transakcija). Raniji postupak

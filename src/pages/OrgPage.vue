@@ -234,12 +234,14 @@ import { useOrgsStore } from 'src/stores/orgs'
 import { useAuthStore } from 'src/stores/auth'
 import { useNotificationsStore } from 'src/stores/notifications'
 import { useFormatDate } from 'src/composables/useFormatDate'
+import { useConfirmDialog } from 'src/composables/useConfirmDialog'
 import AppHeader from 'src/components/shared/AppHeader.vue'
 import UserAvatar from 'src/components/shared/UserAvatar.vue'
 
 const router = useRouter()
 const $q = useQuasar()
 const { t } = useI18n()
+const { confirmDestructive } = useConfirmDialog()
 const orgsStore = useOrgsStore()
 const authStore = useAuthStore()
 const notifStore = useNotificationsStore()
@@ -309,61 +311,56 @@ function changeRole(member, role) {
   })
 }
 
-function confirmTransferOwner(member) {
-  $q.dialog({
+async function confirmTransferOwner(member) {
+  const ok = await confirmDestructive({
     title: t('org.makeOwner'),
     message: t('org.transferOwnerConfirm', { name: member.profiles?.full_name }),
-    ok: { label: t('common.confirm'), color: 'negative' },
-    cancel: t('common.cancel'),
-  }).onOk(() => changeRole(member, 'owner'))
+    okLabel: t('common.confirm'),
+  })
+  if (ok) changeRole(member, 'owner')
 }
 
-function confirmRemove(member) {
-  $q.dialog({
+async function confirmRemove(member) {
+  const ok = await confirmDestructive({
     title: t('org.removeMember'),
     message: t('org.removeMemberConfirm', { name: member.profiles?.full_name }),
-    ok: { label: t('common.delete'), color: 'negative' },
-    cancel: t('common.cancel'),
-  }).onOk(async () => {
-    try {
-      await orgsStore.removeMember(org.value.id, member.user_id)
-    } catch (e) {
-      $q.notify({ type: 'negative', message: e.message })
-    }
   })
+  if (!ok) return
+  try {
+    await orgsStore.removeMember(org.value.id, member.user_id)
+  } catch (e) {
+    $q.notify({ type: 'negative', message: e.message })
+  }
 }
 
-function confirmLeave() {
-  $q.dialog({
+async function confirmLeave() {
+  const ok = await confirmDestructive({
     title: t('org.leave'),
     message: t('org.leaveConfirm', { name: org.value?.name }),
-    ok: { label: t('common.confirm'), color: 'negative' },
-    cancel: t('common.cancel'),
-  }).onOk(async () => {
-    try {
-      await orgsStore.removeMember(org.value.id, authStore.user.id)
-      router.push('/')
-    } catch (e) {
-      // Najčešći uzrok: zadnji vlasnik (B13/B19) — poruka iz baze je već čitljiva.
-      $q.notify({ type: 'negative', message: e.message })
-    }
+    okLabel: t('common.confirm'),
   })
+  if (!ok) return
+  try {
+    await orgsStore.removeMember(org.value.id, authStore.user.id)
+    router.push('/')
+  } catch (e) {
+    // Najčešći uzrok: zadnji vlasnik (B13/B19) — poruka iz baze je već čitljiva.
+    $q.notify({ type: 'negative', message: e.message })
+  }
 }
 
-function confirmDeleteOrg() {
-  $q.dialog({
+async function confirmDeleteOrg() {
+  const ok = await confirmDestructive({
     title: t('org.deleteOrg'),
     message: t('org.deleteOrgConfirm', { name: org.value?.name }),
-    ok: { label: t('common.delete'), color: 'negative' },
-    cancel: t('common.cancel'),
-  }).onOk(async () => {
-    try {
-      await orgsStore.deleteOrg(org.value.id)
-      router.push('/')
-    } catch (e) {
-      $q.notify({ type: 'negative', message: e.message })
-    }
   })
+  if (!ok) return
+  try {
+    await orgsStore.deleteOrg(org.value.id)
+    router.push('/')
+  } catch (e) {
+    $q.notify({ type: 'negative', message: e.message })
+  }
 }
 
 async function sendInvite() {
@@ -392,19 +389,17 @@ async function copyInviteLink(token, notify = true) {
   if (notify) $q.notify({ type: 'positive', message: t('org.linkCopied') })
 }
 
-function confirmRevokeInvite(inv) {
-  $q.dialog({
+async function confirmRevokeInvite(inv) {
+  const ok = await confirmDestructive({
     title: t('org.revokeInvite'),
     message: t('org.revokeInviteConfirm', { email: inv.email }),
-    ok: { label: t('common.delete'), color: 'negative' },
-    cancel: t('common.cancel'),
-  }).onOk(async () => {
-    try {
-      await orgsStore.revokeInvitation(inv.id)
-    } catch (e) {
-      $q.notify({ type: 'negative', message: e.message })
-    }
   })
+  if (!ok) return
+  try {
+    await orgsStore.revokeInvitation(inv.id)
+  } catch (e) {
+    $q.notify({ type: 'negative', message: e.message })
+  }
 }
 
 watch(

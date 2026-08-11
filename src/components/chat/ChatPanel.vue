@@ -5,6 +5,7 @@
     <MessageList
       ref="listRef"
       :messages="shownMessages"
+      :loading="chatStore.isLoadingThread(chatStore.threadKey(threadIds))"
       class="col"
       @delete="onDelete"
       @react="(msgId, emoji) => chatStore.toggleReaction(msgId, emoji)"

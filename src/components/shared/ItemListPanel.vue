@@ -38,11 +38,21 @@
       />
     </div>
 
-    <div v-if="!visible.length" class="text-center text-grey-5 q-mt-xl">
+    <!-- I4: skeleton dok se prvi put puni keš za ovaj projekt, ne na svaki refetch. -->
+    <q-list v-if="itemsStore.isLoading(projectId) && !items.length">
+      <q-item v-for="n in 3" :key="n">
+        <q-item-section>
+          <q-skeleton type="text" width="60%" />
+          <q-skeleton type="text" width="35%" />
+        </q-item-section>
+      </q-item>
+    </q-list>
+
+    <div v-else-if="!visible.length" class="text-center text-grey-5 q-mt-xl">
       {{ emptyText }}
     </div>
 
-    <q-list>
+    <q-list v-else>
       <ItemCard
         v-for="item in visible"
         :key="item.id"
@@ -72,7 +82,6 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useItemsStore } from 'src/stores/items'
 import { useProjectsStore } from 'src/stores/projects'
@@ -80,6 +89,7 @@ import { useOrgsStore } from 'src/stores/orgs'
 import { useChatStore } from 'src/stores/chat'
 import { useNotificationsStore } from 'src/stores/notifications'
 import { useOfflineGuard } from 'src/composables/useOfflineGuard'
+import { useConfirmDialog } from 'src/composables/useConfirmDialog'
 import ItemCard from './ItemCard.vue'
 import ItemDialog from './ItemDialog.vue'
 import ThreadDialog from 'src/components/chat/ThreadDialog.vue'
@@ -96,7 +106,6 @@ const props = defineProps({
   group: { type: String, default: 'items' },
 })
 
-const $q = useQuasar()
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
@@ -131,6 +140,7 @@ watch(
 )
 const notifStore = useNotificationsStore()
 const { blockedOffline } = useOfflineGuard()
+const { confirmDestructive } = useConfirmDialog()
 
 const dialog = ref(false)
 const activeItem = ref(null)
@@ -209,15 +219,9 @@ watch(
   { immediate: true },
 )
 
-function confirmDelete(item) {
+async function confirmDelete(item) {
   if (blockedOffline()) return
-  $q.dialog({
-    title: t('common.delete'),
-    message: item.title,
-    ok: { label: t('common.delete'), color: 'negative' },
-    cancel: t('common.cancel'),
-  }).onOk(async () => {
-    await itemsStore.deleteItem(item.id)
-  })
+  if (!(await confirmDestructive({ title: t('common.delete'), message: item.title }))) return
+  await itemsStore.deleteItem(item.id)
 }
 </script>

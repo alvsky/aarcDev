@@ -1,7 +1,15 @@
 <template>
   <div class="message-list-wrapper">
     <div ref="listEl" class="message-list q-pa-sm">
-      <div v-if="!messages.length" class="text-center text-grey-5 q-mt-xl">
+      <!-- I4: skeleton dok se prvi put puni keš za ovaj thread, ne na svaki refetch. -->
+      <div v-if="loading && !messages.length" class="q-pa-sm">
+        <div v-for="n in 3" :key="n" class="msg-row q-mb-sm" :class="{ 'msg-own': n === 2 }">
+          <q-skeleton type="QAvatar" size="32px" v-if="n !== 2" class="msg-avatar flex-shrink-0" />
+          <q-skeleton type="rect" height="36px" :width="n === 2 ? '140px' : '180px'" />
+        </div>
+      </div>
+
+      <div v-else-if="!messages.length" class="text-center text-grey-5 q-mt-xl">
         {{ $t('chat.noMessages') }}
       </div>
 
@@ -221,21 +229,22 @@
 
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onActivated } from 'vue'
-import { useQuasar } from 'quasar'
 import { useAuthStore } from 'src/stores/auth'
 import { useFormatDate } from 'src/composables/useFormatDate'
 import { useChatStore } from 'src/stores/chat'
 import { useOfflineGuard } from 'src/composables/useOfflineGuard'
+import { useConfirmDialog } from 'src/composables/useConfirmDialog'
 import { useI18n } from 'vue-i18n'
 import ChatImage from './ChatImage.vue'
 import UserAvatar from 'src/components/shared/UserAvatar.vue'
 
 const props = defineProps({
   messages: { type: Array, default: () => [] },
+  loading: { type: Boolean, default: false },
 })
 const emit = defineEmits(['delete', 'react', 'scrolled-to-bottom', 'reply'])
 
-const $q = useQuasar()
+const { confirmDestructive } = useConfirmDialog()
 const authStore = useAuthStore()
 const formatDate = useFormatDate()
 const chatStore = useChatStore()
@@ -385,17 +394,12 @@ function cancelEdit() {
   editBody.value = ''
 }
 
-function confirmDelete(id) {
+async function confirmDelete(id) {
   // Offline brisanje ne prolazi na serveru (poruka se vrati) — spriječi ga
   if (blockedOffline('chat.offlineNoDelete')) return
-  $q.dialog({
-    title: t('common.delete'),
-    message: t('chat.deleteConfirm'),
-    ok: { label: t('common.delete'), color: 'negative' },
-    cancel: t('common.cancel'),
-  }).onOk(() => {
-    emit('delete', id)
-  })
+  const ok = await confirmDestructive({ title: t('common.delete'), message: t('chat.deleteConfirm') })
+  if (!ok) return
+  emit('delete', id)
 }
 
 async function saveEdit(id) {
