@@ -20,11 +20,11 @@
     "@capacitor/cli": "^8.4.2",
     "@capacitor/core": "^8.4.2",
     "@capacitor/push-notifications": "^8.1.2",
-    "@quasar/extras": "^2.0.0",
+    "@quasar/extras": "^2.0.3",
     "@supabase/supabase-js": "^2.110.7",
     "localforage": "^1.10.0",
     "pinia": "^3.0.1",
-    "quasar": "^2.21.1",
+    "quasar": "^2.24.0",
     "vue": "^3.5.22",
     "vue-i18n": "^11.3.0",
     "vue-router": "^5.0.6"
@@ -32,7 +32,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.4",
     "@intlify/unplugin-vue-i18n": "^11.0.0",
-    "@quasar/app-vite": "^3.0.0",
+    "@quasar/app-vite": "^3.5.0",
     "@vue/eslint-config-prettier": "^10.2.0",
     "autoprefixer": "^10.4.27",
     "dotenv": "^17.4.2",
