@@ -34,12 +34,17 @@
 - All schema changes must be implemented as migrations.
 - Prefer RLS over frontend authorization.
 - Reuse existing queries whenever possible.
-- After creating/editing a migration file, ALWAYS say so as its own plain
-  sentence outside any code block — e.g. "⚠️ Napravljena nova migracija,
-  treba `supabase db push` prije testiranja." Never leave `supabase db push`
-  as just a line inside a bash snippet; it gets skipped over. This has
-  already caused two silent bugs (`organizations_update` policies,
-  `get_invitation_preview`) where the fix was written but never applied.
+- After creating/editing a migration file, ALWAYS flag it as its own
+  standalone paragraph — a whole separate block set off by blank lines
+  before and after, not folded into a sentence inside a larger paragraph of
+  other text. e.g.:
+
+  ⚠️ Napravljena nova migracija, treba `supabase db push` prije testiranja.
+
+  Never leave `supabase db push` as just a line inside a bash snippet, and
+  never bury it mid-paragraph — both get skipped over. This has already
+  caused silent bugs (`organizations_update` policies, `get_invitation_preview`)
+  where the fix was written but never applied.
 
 ---
 
