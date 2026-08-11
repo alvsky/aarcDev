@@ -45,6 +45,12 @@
   never bury it mid-paragraph — both get skipped over. This has already
   caused silent bugs (`organizations_update` policies, `get_invitation_preview`)
   where the fix was written but never applied.
+  That paragraph must contain ONLY the push instruction — no caveats, no
+  "also check X", no follow-up sentences tacked onto the same block, even
+  ones that feel short. Anything else goes in a separate paragraph before
+  or after it. Diluting the block with extra text is the same mistake as
+  burying it — the user flagged this happening again on 2026-08-12 even
+  after this rule already existed.
 
 ---
 
