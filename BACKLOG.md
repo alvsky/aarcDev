@@ -300,6 +300,12 @@ dimenzije. Usput očišćen UserAvatar.vue natrag na goli Quasar (uklonjeni glyp
 prop, `.avatar-initials` span/CSS, `object-position`/`width`/`height` override na img — ništa
 od toga nije bilo pravi uzrok, samo šum) — ostavljen samo `object-fit: cover` (jedino što
 Quasar stvarno ne postavlja sam, bez njega bi se pravokutna slika razvukla).
+✅ I9. (2026-08-11) Reveal + clear na password poljima, clearable na tekstualnim poljima kroz
+app. Profile promjena lozinke (3 polja) dobila oko-ikonu (isti obrazac kao LoginPage), sva tri
++ `clearable`. `clearable` dodan i na: LoginPage (ime/email/lozinka), ProjectDialog
+(naziv/opis), ItemDialog (naslov), OrgPage (invite email). Namjerno preskočeno: chat composer
+(MessageInput) i inline uređivanje poruke (MessageList) — X gumb bi ondje samo smetao uz
+postojeći tok (autogrow, slanje na Enter).
 
 J. TBI modul — proširenja
 🟢 J1. Due date + sortiranje po prioritetu/roku.

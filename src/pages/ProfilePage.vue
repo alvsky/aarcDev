@@ -96,7 +96,13 @@
             <q-card-section>
               <div class="text-subtitle2 q-mb-sm profile-name">{{ $t('settings.profile') }}</div>
               <div class="q-gutter-sm">
-                <q-input v-model="form.full_name" :label="$t('settings.fullName')" outlined dense />
+                <q-input
+                  v-model="form.full_name"
+                  :label="$t('settings.fullName')"
+                  outlined
+                  dense
+                  clearable
+                />
                 <q-input
                   :model-value="authStore.user?.email"
                   :label="$t('auth.email')"
@@ -128,27 +134,54 @@
                 <q-input
                   v-model="passwordForm.current"
                   :label="$t('settings.currentPassword')"
-                  type="password"
+                  :type="showCurrent ? 'text' : 'password'"
                   outlined
                   dense
+                  clearable
                   autocomplete="current-password"
-                />
+                >
+                  <template #append>
+                    <q-icon
+                      :name="showCurrent ? 'visibility_off' : 'visibility'"
+                      class="cursor-pointer"
+                      @click="showCurrent = !showCurrent"
+                    />
+                  </template>
+                </q-input>
                 <q-input
                   v-model="passwordForm.next"
                   :label="$t('settings.newPassword')"
-                  type="password"
+                  :type="showNext ? 'text' : 'password'"
                   outlined
                   dense
+                  clearable
                   autocomplete="new-password"
-                />
+                >
+                  <template #append>
+                    <q-icon
+                      :name="showNext ? 'visibility_off' : 'visibility'"
+                      class="cursor-pointer"
+                      @click="showNext = !showNext"
+                    />
+                  </template>
+                </q-input>
                 <q-input
                   v-model="passwordForm.confirm"
                   :label="$t('settings.confirmPassword')"
-                  type="password"
+                  :type="showConfirm ? 'text' : 'password'"
                   outlined
                   dense
+                  clearable
                   autocomplete="new-password"
-                />
+                >
+                  <template #append>
+                    <q-icon
+                      :name="showConfirm ? 'visibility_off' : 'visibility'"
+                      class="cursor-pointer"
+                      @click="showConfirm = !showConfirm"
+                    />
+                  </template>
+                </q-input>
               </div>
             </q-card-section>
             <q-card-actions align="right">
@@ -246,6 +279,9 @@ const { uploadImage } = useImageUpload()
 const savingProfile = ref(false)
 const changingPassword = ref(false)
 const passwordForm = ref({ current: '', next: '', confirm: '' })
+const showCurrent = ref(false)
+const showNext = ref(false)
+const showConfirm = ref(false)
 const deleting = ref(false)
 const avatarInput = ref(null)
 const uploadingAvatar = ref(false)

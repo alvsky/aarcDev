@@ -17,6 +17,7 @@
           outlined
           dense
           autofocus
+          clearable
           :rules="[(v) => !!v || $t('common.required')]"
         />
 

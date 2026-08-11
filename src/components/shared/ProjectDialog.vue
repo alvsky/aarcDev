@@ -18,6 +18,7 @@
           outlined
           dense
           autofocus
+          clearable
           :rules="[(v) => !!v || $t('common.required')]"
         />
 
@@ -27,6 +28,7 @@
           outlined
           dense
           autogrow
+          clearable
           type="textarea"
           rows="3"
         />

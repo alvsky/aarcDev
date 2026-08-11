@@ -127,6 +127,7 @@
                 type="email"
                 outlined
                 dense
+                clearable
                 class="col"
                 @keydown.enter="sendInvite"
               />

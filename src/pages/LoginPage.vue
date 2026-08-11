@@ -32,6 +32,7 @@
                 :label="$t('auth.fullName')"
                 outlined
                 dense
+                clearable
                 :rules="[(v) => !!v?.trim() || $t('common.required')]"
               />
               <q-input
@@ -40,6 +41,7 @@
                 type="email"
                 outlined
                 dense
+                clearable
                 :rules="[(v) => !!v || $t('common.required')]"
               />
               <q-input
@@ -48,6 +50,7 @@
                 :type="showPass ? 'text' : 'password'"
                 outlined
                 dense
+                clearable
                 :rules="[(v) => !!v || $t('common.required')]"
               >
                 <template #append>
