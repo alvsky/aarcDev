@@ -388,6 +388,13 @@ thread_message_counts i privremene mape. ⚠️ tek kad M3–M5 rade.
 ✅ M7. (2026-08-09) Usklađena dokumentacija nakon M6: CLAUDE.md invarijante 3, 4 i 8, docs/database.md,
 docs/workflows.md (tvrdi da lista ideja prikazuje i promovirane — kod to ne radi).
 
+N. Bugovi — proširenja
+🟢 N1. (zapisano 2026-08-11) Platforma kod prijave buga — korisnik pri prijavi buga treba moći
+navesti na kojoj se platformi dogodio (iOS/Android/Web). Vjerojatno nova kolona na `items`
+(npr. `platform text`, samo za kind='bug', konvencija bez CHECK-a kao i ostale takve kolone —
+invarijanta 8 u CLAUDE.md) + polje u ItemDialog.vue vidljivo samo za bugove + prikaz na
+ItemCard.vue (badge/ikona uz stage/priority).
+
 Preporučeni redoslijed ako želiš vodilju
 Odmah, prije bilo čega: A1–A2 (git), zatim B1–B3 (RLS).
 Sljedeći sloj: C2 (atomarni createProject), D1–D3 (unread + kanali), E1–E3.
