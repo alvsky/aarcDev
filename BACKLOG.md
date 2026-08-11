@@ -281,7 +281,9 @@ popisa, neovisno o odabranom sortiranju (nepročitano/naziv) — to mu je i svrh
 "more" izbornika na kartici projekta.
 🟢 Ideja za kasnije (zapisano 2026-08-11, NE raditi sad): pravi drag-and-drop (slobodan
 redoslijed, ne samo prikvačeno/ne) — razmatrano kao mogući premium/plaćeni feature ako app
-ikad dobije komercijalne pakete pretplate. Prikvačeno bi tad išlo u istu kategoriju.
+ikad dobije komercijalne pakete pretplate. **I8 (Prikvačeno) je već izgrađen i dostupan svima
+(2026-08-11)** — potvrđeno da je namjera da se ONO, kad tierovi jednog dana postoje, premjesti
+iza premium provjere zajedno s drag-and-dropom, ne da ostane besplatno zauvijek.
 🟢 Ideja za kasnije (zapisano 2026-08-11, NE raditi sad, ista kategorija — mogući
 premium/plaćeni feature): cropper za avatar prije uploada (drag/zoom unutar kružnog okvira,
 canvas crta poziciju koju korisnik odabere prije kompresije u useImageUpload.js — ne treba
