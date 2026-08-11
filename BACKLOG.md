@@ -4,7 +4,13 @@ Organizirano po temama, ne po mjesecima — svaka točka je samostalan zadatak k
 A. Git i higijena projekta
 ✅ A1. Napraviti pravi inicijalni commit postojećeg stanja (riješeno 2026-08-08, commit c1d4857).
 ✅ A2. Postaviti remote repozitorij (GitHub) i push (riješeno 2026-08-08, https://github.com/alvsky/aarcDev).
-🟠 A3. Dogovoriti granu-po-featureu workflow (main uvijek buildabilan).
+✅ A3. (2026-08-11) Dogovoren workflow. `feature/item-model` je davno prestala biti "jedan
+feature" (42 commita, sav stvaran rad zadnjih dana) dok je `main` stajao zamrznut od 8.8. —
+spojeno (fast-forward) u main, stara grana obrisana. Ubuduće: kratkotrajne grane po
+zadatku/BACKLOG točki (`feature/<kratko-ime>` ili `fix/<kratko-ime>`), granane iz main-a,
+spojene i obrisane čim taj zadatak radi — ne ostaviti granu da živi tjednima i prikupi
+nepovezane promjene. main ostaje uvijek buildabilan; veći/rizičniji rad (poput multi-tenancy
+migracije) i dalje ide na svoju granu dok se ne potvrdi da radi.
 ✅ A4. Obrisati mrtve datoteke (riješeno 2026-08-08, commit df0f18c): BugCard-copy.vue, app-copy.scss, router/index-copy.js, example-store.js, src/i18n/en-US/. IndexPage.vue i SecondPage.vue su već obrisani.
 🟢 A5. Ukloniti debug console.log iz storova i stranica (chat edit, project delete, demote, push flow, kompresija slika).
 
