@@ -88,23 +88,21 @@ export const useChatStore = defineStore('chat', {
       }
     },
 
-    // K3 (djelomično) — pretraga sadržaja poruka. Namjerno ILIKE, ne pravi
-    // Postgres FTS (tsvector/GIN indeks): rezultati se ne pamte u stateu
-    // (samo vraćeni pozivatelju), pretraga je opcionalna (korisnik je mora
-    // uključiti) i ide tek na eksplicitan upit, pa je sken bez indeksa
-    // prihvatljivo "jeftin" za sad. Ako ikad postane sporo na pravom
-    // volumenu poruka, zamijeniti pravim FTS-om — RLS ostaje ista.
+    // K3 (djelomično) — pretraga sadržaja poruka. Namjerno ILIKE (uz
+    // unaccent — vidi search_messages RPC), ne pravi Postgres FTS
+    // (tsvector/GIN indeks): rezultati se ne pamte u stateu (samo vraćeni
+    // pozivatelju), pretraga je opcionalna (korisnik je mora uključiti) i
+    // ide tek na eksplicitan upit, pa je sken bez indeksa prihvatljivo
+    // "jeftin" za sad. Ako ikad postane sporo na pravom volumenu poruka,
+    // zamijeniti pravim FTS-om — RLS ostaje ista (RPC je SECURITY INVOKER).
     async searchMessages(projectId, query) {
       const q = query?.trim()
       if (!q) return []
 
-      const { data, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('project_id', projectId)
-        .ilike('body', `%${q}%`)
-        .order('created_at', { ascending: false })
-        .limit(30)
+      const { data, error } = await supabase.rpc('search_messages', {
+        p_project: projectId,
+        p_query: q,
+      })
       if (error) throw error
       if (!data?.length) return []
 

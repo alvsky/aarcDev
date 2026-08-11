@@ -97,6 +97,7 @@ import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useItemsStore } from 'src/stores/items'
 import { useChatStore } from 'src/stores/chat'
+import { normalizeSearch } from 'src/utils/text'
 import UserAvatar from './UserAvatar.vue'
 
 const props = defineProps({
@@ -125,12 +126,12 @@ function kindIcon(kind) {
 // faza — uključujući gotove/odbijene. To je i svrha: "je li ovo već bilo?"
 // ne pita samo o aktivnom radu.
 const itemResults = computed(() => {
-  const q = query.value.trim().toLowerCase()
+  const q = normalizeSearch(query.value.trim())
   if (!q) return []
   return itemsStore
     .byProject(props.projectId)
     .filter(
-      (i) => i.title?.toLowerCase().includes(q) || i.description?.toLowerCase().includes(q),
+      (i) => normalizeSearch(i.title).includes(q) || normalizeSearch(i.description).includes(q),
     )
 })
 

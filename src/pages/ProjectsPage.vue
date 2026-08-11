@@ -236,6 +236,7 @@ import { useOfflineGuard } from 'src/composables/useOfflineGuard'
 import { useConfirmDialog } from 'src/composables/useConfirmDialog'
 import ProjectDialog from 'src/components/shared/ProjectDialog.vue'
 import { useItemsStore } from 'src/stores/items'
+import { normalizeSearch } from 'src/utils/text'
 
 const itemsStore = useItemsStore()
 const { t } = useI18n()
@@ -262,8 +263,8 @@ const search = ref('')
 const sortBy = ref('unread')
 
 const visibleProjects = computed(() => {
-  const q = search.value?.trim().toLowerCase()
-  let list = q ? orgProjects.value.filter((p) => p.name?.toLowerCase().includes(q)) : orgProjects.value
+  const q = normalizeSearch(search.value?.trim())
+  let list = q ? orgProjects.value.filter((p) => normalizeSearch(p.name).includes(q)) : orgProjects.value
 
   const sorted = [...list]
   // Prikvačeno uvijek na vrhu, neovisno o odabranom sortiranju — to je

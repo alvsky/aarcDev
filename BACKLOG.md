@@ -303,7 +303,11 @@ Poruke: OPCIONALNO (checkbox, zadano isključeno) — chatStore.searchMessages, 
 (ne pravi Postgres FTS/tsvector) jer se rezultati ne pamte u stateu i pretraga ide tek na
 eksplicitan upit — sken bez indeksa prihvatljivo "jeftin" za sad; nadograditi na pravi FTS
 ako ikad postane sporo na pravom volumenu. Klik na rezultat vodi na točan tab/thread/kanal
-kroz isti query-param mehanizam kao I1/I2 (`?item=`/`?channel=`). Usput popravljen manji gap iz
+kroz isti query-param mehanizam kao I1/I2 (`?item=`/`?channel=`). Dijakritika (2026-08-11):
+src/utils/text.js#normalizeSearch (NFD + skidanje kombinirajućih znakova) za klijentsku
+pretragu stavki I Home popisa projekata; poruke idu preko nove search_messages RPC funkcije
+(20260814130000_search_unaccent.sql, unaccent ekstenzija) jer supabase-js .ilike() ne zna
+omotati stupac u SQL funkciju. Usput popravljen manji gap iz
 I1/I2: ChatPage je ?channel= čitao samo jednom pri mountu — kod keep-alive ponovne aktivacije
 (korisnik već bio na chatu, pa se vrati preko pretrage/notifikacije na drugi kanal) to se
 gubilo; sad se čita i u onActivated.
