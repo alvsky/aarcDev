@@ -197,6 +197,15 @@ export default {
     sortByNewest: 'Newest',
     showClosed: 'Show closed',
   },
+  search: {
+    title: 'Search',
+    placeholder: 'Search title or description…',
+    hint: 'Type to search ideas, bugs and TBI items — including closed ones.',
+    includeMessages: 'Also search chat messages',
+    items: 'Items',
+    messages: 'Messages',
+    noResults: 'No results.',
+  },
   chat: {
     title: 'Discussion',
     placeholder: 'Write a message…',

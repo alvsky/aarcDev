@@ -7,6 +7,7 @@
       :settings="!notFound"
     >
       <template v-if="!notFound" #actions>
+        <q-btn flat round dense icon="search" color="white" @click="searchDialog = true" />
         <q-btn flat round dense icon="group" color="white" @click="memberDialog = true" />
       </template>
       <template v-if="!notFound" #tabs>
@@ -80,6 +81,7 @@
     </q-page-container>
 
     <MemberDialog v-if="!notFound" v-model="memberDialog" :project-id="projectId" />
+    <ProjectSearchDialog v-if="!notFound" v-model="searchDialog" :project-id="projectId" />
   </q-layout>
 </template>
 
@@ -97,6 +99,7 @@ import BugsPage from './BugsPage.vue'
 import TbiPage from './TbiPage.vue'
 import ChatPage from './ChatPage.vue'
 import MemberDialog from 'src/components/shared/MemberDialog.vue'
+import ProjectSearchDialog from 'src/components/shared/ProjectSearchDialog.vue'
 import AppHeader from 'src/components/shared/AppHeader.vue'
 
 const route = useRoute()
@@ -126,6 +129,7 @@ watch(tab, async (newTab) => {
 })
 
 const memberDialog = ref(false)
+const searchDialog = ref(false)
 const loading = ref(true)
 
 const projectsStore = useProjectsStore()

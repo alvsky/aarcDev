@@ -296,7 +296,17 @@ J. TBI modul — proširenja
 K. Chat — proširenja
 🟢 K1. Push i za nove ideje/bugove/TBI iteme (sad samo poruke okidaju edge function).
 🟢 K2. Mention (@ime) + push na mention.
-🟢 K3. Pretraga poruka i itema (Postgres FTS je dovoljan).
+✅ K3. (2026-08-11) Pretraga stavki i poruka — nova ProjectSearchDialog.vue (ikona u zaglavlju
+projekta). Stavke: klijentska pretraga po naslovu/opisu preko itemsStore.byProject — namjerno
+SVE faze uključujući gotovo/odbijeno (svrha je "je li ovo već bilo?", ne samo aktivan rad).
+Poruke: OPCIONALNO (checkbox, zadano isključeno) — chatStore.searchMessages, obična ILIKE
+(ne pravi Postgres FTS/tsvector) jer se rezultati ne pamte u stateu i pretraga ide tek na
+eksplicitan upit — sken bez indeksa prihvatljivo "jeftin" za sad; nadograditi na pravi FTS
+ako ikad postane sporo na pravom volumenu. Klik na rezultat vodi na točan tab/thread/kanal
+kroz isti query-param mehanizam kao I1/I2 (`?item=`/`?channel=`). Usput popravljen manji gap iz
+I1/I2: ChatPage je ?channel= čitao samo jednom pri mountu — kod keep-alive ponovne aktivacije
+(korisnik već bio na chatu, pa se vrati preko pretrage/notifikacije na drugi kanal) to se
+gubilo; sad se čita i u onActivated.
 🟢 K4. Ne-slikovni prilozi (PDF i sl.) — kolone attachment_type/name to već predviđaju.
 
 L. Native / mobilno

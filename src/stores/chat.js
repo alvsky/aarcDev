@@ -88,6 +88,38 @@ export const useChatStore = defineStore('chat', {
       }
     },
 
+    // K3 (djelomično) — pretraga sadržaja poruka. Namjerno ILIKE, ne pravi
+    // Postgres FTS (tsvector/GIN indeks): rezultati se ne pamte u stateu
+    // (samo vraćeni pozivatelju), pretraga je opcionalna (korisnik je mora
+    // uključiti) i ide tek na eksplicitan upit, pa je sken bez indeksa
+    // prihvatljivo "jeftin" za sad. Ako ikad postane sporo na pravom
+    // volumenu poruka, zamijeniti pravim FTS-om — RLS ostaje ista.
+    async searchMessages(projectId, query) {
+      const q = query?.trim()
+      if (!q) return []
+
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .eq('project_id', projectId)
+        .ilike('body', `%${q}%`)
+        .order('created_at', { ascending: false })
+        .limit(30)
+      if (error) throw error
+      if (!data?.length) return []
+
+      const userIds = [...new Set(data.map((m) => m.author_id).filter(Boolean))]
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .in('id', userIds)
+
+      return data.map((m) => ({
+        ...m,
+        profiles: profiles?.find((p) => p.id === m.author_id) ?? null,
+      }))
+    },
+
     async sendMessage(payload) {
       const {
         projectId,

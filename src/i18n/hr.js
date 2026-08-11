@@ -197,6 +197,15 @@ export default {
     sortByNewest: 'Najnovije',
     showClosed: 'Prikaži i zatvorene',
   },
+  search: {
+    title: 'Pretraga',
+    placeholder: 'Pretraži naslov ili opis…',
+    hint: 'Upiši pojam za pretragu ideja, bugova i TBI stavki — uključujući zatvorene.',
+    includeMessages: 'Pretraži i poruke u chatu',
+    items: 'Stavke',
+    messages: 'Poruke',
+    noResults: 'Nema rezultata.',
+  },
   chat: {
     title: 'Rasprava',
     placeholder: 'Napiši poruku…',

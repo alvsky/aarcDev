@@ -91,7 +91,15 @@ onMounted(async () => {
   await loadChannel(channel.value)
 })
 
+// keep-alive: ako je ChatPage već bila posjećena (mount se ne ponavlja),
+// ?channel= iz nove navigacije (npr. rezultat pretrage) mora se pokupiti
+// ovdje — jednokratno čitanje pri postavljanju komponente to ne bi vidjelo.
 onActivated(async () => {
+  const target = route.query.channel
+  if (target && target !== channel.value) {
+    channel.value = target === 'offtopic' ? 'offtopic' : 'main'
+    router.replace({ query: {} })
+  }
   await loadChannel(channel.value)
 })
 </script>
