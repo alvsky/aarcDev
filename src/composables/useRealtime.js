@@ -2,8 +2,15 @@ import { supabase } from 'src/boot/supabase'
 
 export function useRealtime(projectId, handlers = {}) {
   let channel = null
+  // CLOSED je i normalan status kad MI namjerno zatvorimo kanal (odlazak s
+  // projekta, unmount, HMR u devu) — ne samo kad realtime stvarno padne.
+  // Bez ove zastavice svaki obični odlazak s projekta ispisivao bi lažnu
+  // grešku u konzoli, prekrivajući stvarne (CHANNEL_ERROR/TIMED_OUT, ili
+  // CLOSED koji MI nismo tražili).
+  let intentionalClose = false
 
   function setup() {
+    intentionalClose = false
     channel = supabase.channel(`project:${projectId}`)
 
     const tables = [
@@ -29,6 +36,7 @@ export function useRealtime(projectId, handlers = {}) {
     // aplikacija tada radi, samo tiho prestane primati poruke uživo. Točno to
     // se dogodilo kad je `items` dodan u pretplatu prije nego u publikaciju.
     channel.subscribe((status, err) => {
+      if (status === 'CLOSED' && intentionalClose) return
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
         console.error(
           `[realtime] pretplata za projekt ${projectId}: ${status}`,
@@ -40,6 +48,7 @@ export function useRealtime(projectId, handlers = {}) {
 
   function teardown() {
     if (channel) {
+      intentionalClose = true
       supabase.removeChannel(channel)
       channel = null
     }
