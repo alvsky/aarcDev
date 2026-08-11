@@ -23,6 +23,14 @@ const emptyProject = () => ({
   newTbi: 0,
 })
 
+// D2: fetchUnread() se zove nakon skoro svakog realtime eventa — u naletu
+// poruka (npr. netko šalje deset zaredom) to je deset identičnih poziva u
+// par sekundi. Modul-scope (ne this.*) jer se dijeli preko svih poziva bez
+// obzira odakle stižu; svi pozivatelji koji su unutar prozora ipak dobiju
+// pravi rezultat, samo dijele jedan stvarni mrežni poziv.
+let debounceTimer = null
+let pendingFetch = null
+
 export const useNotificationsStore = defineStore('notifications', {
   persist: ['unread'],
 
@@ -61,7 +69,23 @@ export const useNotificationsStore = defineStore('notifications', {
   },
 
   actions: {
-    async fetchUnread() {
+    // Javna metoda — debounce (D2). Svi pozivatelji unutar 400ms prozora
+    // dijele jedan stvarni fetch i svi se razriješe kad on završi.
+    fetchUnread() {
+      if (!pendingFetch) {
+        pendingFetch = new Promise((resolve) => {
+          clearTimeout(debounceTimer)
+          debounceTimer = setTimeout(async () => {
+            await this._doFetchUnread()
+            pendingFetch = null
+            resolve()
+          }, 400)
+        })
+      }
+      return pendingFetch
+    },
+
+    async _doFetchUnread() {
       const auth = useAuthStore()
       if (!auth.user) return
       // Offline: zadrži keširano stanje (prazan odgovor bi pobrisao badge)

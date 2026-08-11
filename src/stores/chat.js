@@ -281,9 +281,14 @@ export const useChatStore = defineStore('chat', {
         .flat()
         .find((m) => m.id === id)
 
-      // Obriši sliku iz Storagea i lokalnog keša ako postoji
+      // Obriši sliku iz Storagea i lokalnog keša ako postoji. E3: neuspjeh
+      // (npr. RLS tiho odbije) prije je prošao bez traga — DB redak bi
+      // nestao kao da je uspjelo, a objekt ostao siroče u Storageu.
       if (msg?.attachment_url) {
-        await supabase.storage.from('chat-attachments').remove([msg.attachment_url])
+        const { error: storageError } = await supabase.storage
+          .from('chat-attachments')
+          .remove([msg.attachment_url])
+        if (storageError) console.error('[storage] brisanje priloga poruke:', storageError)
         await removeCachedImage(msg.attachment_url)
       }
 

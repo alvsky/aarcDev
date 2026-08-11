@@ -183,7 +183,14 @@ export const useItemsStore = defineStore('items', {
       const item = this.items.find((i) => i.id === id)
       const projectId = item?.project_id
       if (item?.screenshot_url) {
-        await supabase.storage.from('chat-attachments').remove([item.screenshot_url])
+        // E3: ne provjeriti error ovdje znači da bi admin koji briše tuđu
+        // stavku (dozvoljeno, B24) mislio da je screenshot obrisan dok RLS
+        // tiho odbija (vlastita mapa, vidi storage_policies) — sad se to
+        // barem vidi u konzoli umjesto potpune tišine.
+        const { error: storageError } = await supabase.storage
+          .from('chat-attachments')
+          .remove([item.screenshot_url])
+        if (storageError) console.error('[storage] brisanje screenshota stavke:', storageError)
         await removeCachedImage(item.screenshot_url)
       }
       const { error } = await supabase.from('items').delete().eq('id', id)

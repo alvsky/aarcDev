@@ -167,6 +167,9 @@ const messagesUpdateChannel = supabase
       event: 'UPDATE',
       schema: 'public',
       table: 'messages',
+      // D3: bez ovoga svaki klijent prima UPDATE evente za SVAKI projekt na
+      // koji je itko pretplaćen, ne samo za ovaj.
+      filter: `project_id=eq.${projectId}`,
     },
     async (payload) => {
       console.log('Message UPDATE:', payload.new?.id, payload.new?.body)
@@ -195,6 +198,9 @@ onMounted(async () => {
   ])
   setup()
 
+  // D3: message_reactions nema project_id (samo message_id) pa Realtime
+  // filter ovdje ne može ograničiti po projektu bez denormalizacije sheme
+  // (poznato ograničenje, ostavljeno — messages UPDATE gore je popravljen).
   reactionsChannel = supabase
     .channel(`reactions:${projectId}`)
     .on(

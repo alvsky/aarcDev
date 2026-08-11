@@ -113,9 +113,14 @@ profiles, org_members, invitations, set_project_member_role/remove_org_member RP
 kontrolna da vlasnik i dalje vidi vlastito. `pnpm test`. Integracijski protiv pravog dev
 Supabase projekta (⚠️ ne lokalni — nema Dockera/supabase start u repou), pa svako pokretanje
 stvori i obriše prave test korisnike/organizacije ondje.
-🔴 B18. Regresija nakon zatezanja: manual profile joins, realtime događaji, item_message_counts
-view (security_invoker — mijenja se ponašanje kad politike postanu stroge!), edge funkcija
-(service role zaobilazi RLS — OK), offline keš.
+✅ B18. (2026-08-11) Regresija nakon zatezanja — provjereno, sve točke i dalje vrijede:
+manual profile joins (invarijanta 1, dosljedno kroz cijelu sesiju — orgs/projects/items/chat
+store), realtime događaji (B17 testovi + stvarno testiranje s dva računa preko cijele sesije,
+RLS ispravno ograničava postgres_changes), item_message_counts view potvrđeno ima
+`security_invoker = true` (20260808140000_item_message_counts.sql) pa broji samo poruke koje
+querying korisnik stvarno smije vidjeti preko RLS-a na messages — točno namjeravano ponašanje,
+edge funkcija (service_role zaobilazi RLS namjerno, OK), offline keš (per-user hydracija,
+clearAll na logout, testirano kroz stvarno korištenje s dva računa).
 ✅ B19. (2026-08-11) delete_own_account(): provjera zadnjeg vlasnika JE od B13 na poslužitelju
 (okidač odbija kaskadno brisanje zadnjeg vlasnika). ProfilePage.vue sad hvata tu specifičnu
 iznimku (prepoznaje po sadržaju poruke — nema zaseban errcode) i prikazuje prevedenu poruku
@@ -199,7 +204,11 @@ list: popis organizacija s bedžom nepročitanog, "Nova organizacija", "Postavke
   poruke) — čeka B20 (ekran/postavke projekta).
 
 C. Baza — konzistentnost
-🟠 C1. CHECK constrainti za preostale statusne kolone: project_members.role, push_tokens.platform, messages.channel. (items.kind/stage/priority ih imaju od M2.)
+✅ C1. (2026-08-11) CHECK constrainti za preostale statusne kolone
+(20260814160000_status_check_constraints.sql): project_members.role (owner/member),
+push_tokens.platform (ios/android/web), messages.channel (main/offtopic ili null za
+threadove). Vrijednosti potvrđene pretragom koda, ne pogađanjem. (items.kind/stage/priority ih
+već imaju od M2.)
 ✅ C2. (2026-08-10) Atomarni create_project RPC — projekt + owner u jednoj transakciji. Uklonjena utrka i "projekt bez ownera"; usput jedini način da tvorac privatnog projekta uopće vidi ono što je upravo stvorio.
 🟠 C3. Prijeći na inkrementalne migracije (svaka promjena = nova migracija; schema.sql ostaje kao dump referenca).
 ✅ C4. Drop legacy tablica bug_reads i idea_reads (riješeno 2026-08-09 uz M6).
@@ -208,15 +217,27 @@ C. Baza — konzistentnost
 
 D. Performanse i skalabilnost
 ✅ D1. (2026-08-10) Server-side unread: get_unread() vraća gotove retke; klijent više ne dohvaća sve poruke. Pravilo "jedna stavka jedan badge" preseljeno u SQL (item_tab_new / item_tab_thread).
-🟠 D2. Debounce/throttle fetchUnread() poziva (sad se zove nakon skoro svakog realtime eventa). Samostalno izvedivo i prije D1.
-🟠 D3. Filtrirati realtime kanale za message UPDATE i message_reactions po project_id (sad slušaju sve projekte).
+✅ D2. (2026-08-11) Debounce fetchUnread() (400ms) — svi pozivatelji unutar prozora dijele
+jedan stvarni RPC poziv i svi se razriješe kad on završi (notifications.js, javna metoda samo
+koordinira, _doFetchUnread radi stvarni posao). Poziva se nakon skoro svakog realtime eventa,
+pa je nalet od deset poruka prije bio deset identičnih poziva.
+✅ D3. (2026-08-11, djelomično) Filtriran messages UPDATE realtime kanal po project_id
+(ProjectPage.vue). message_reactions kanal NIJE filtriran — ta tablica nema project_id stupac
+(samo message_id), Realtime filter ne može ograničiti po projektu bez denormalizacije sheme;
+ostavljeno kao poznato ograničenje, prevelik zahvat za sad.
 🟢 D4. Paginacija poruka u threadovima (sad se učitava cijeli thread; limit + "učitaj starije").
 🟢 D5. Batch dohvat signed URL-ova za slike (sad jedan poziv po slici).
 
 E. Testovi i kvaliteta
 🟠 E1. Uvesti Vitest; prvi testovi za čistu logiku: threadKey(), unread agregacija i pravilo "jedna stavka jedan badge" (tabForNewItem/tabForThread), is_new pravila, prijelazi faza.
 🟠 E2. GitHub Actions: lint:check + testovi na svaki push. ⚠️ nakon A2, E1.
-🟠 E3. Ujednačen error handling: centralni wrapper oko store akcija + Quasar Notify za korisnika (sad greške uglavnom nestaju u konzoli). Konkretan primjer: `supabase.storage.from('chat-attachments').remove()` se poziva na više mjesta (brisanje buga/ideje/screenshota, uklanjanje avatara) i nigdje se ne provjerava vraćeni `error` — neuspjeh (npr. RLS odbije brisanje) prođe tiho, DB zapis se ažurira kao da je uspjelo, a objekt ostane sirotica u Storageu.
+🟠 E3. (2026-08-11, djelomično) Centralni wrapper oko store akcija + Quasar Notify za
+korisnika i dalje NIJE napravljen (veći zahvat, ostaje otvoreno). Konkretan primjer iz opisa
+JE popravljen: sva 4 mjesta koja zovu Storage `.remove()` (chat.js, items.js,
+utils/screenshots.js, ProfilePage.vue) sad provjeravaju vraćeni `error` i loguju ga — prije je
+neuspjeh (npr. RLS tiho odbije) prošao bez traga, DB zapis se ažurirao kao da je uspjelo, a
+objekt ostao siroče u Storageu. utils/screenshots.js je usput imao i pravi bug: try/catch nikad
+nije hvatao ništa jer `.remove()` vraća `{error}`, ne baca.
 🟢 E4. Error reporting u produkciji (Sentry ili sličan).
 🟢 E5. Playwright dim-test: login → kreiraj projekt → pošalji poruku → prihvati ideju.
 

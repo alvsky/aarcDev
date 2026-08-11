@@ -336,7 +336,8 @@ async function removeAvatar() {
   uploadingAvatar.value = true
   try {
     await authStore.updateProfile({ avatar_url: null })
-    await supabase.storage.from('avatars').remove([previousPath])
+    const { error: storageError } = await supabase.storage.from('avatars').remove([previousPath])
+    if (storageError) console.error('[storage] brisanje avatara:', storageError)
     await removeCachedImage(previousPath)
     $q.notify({ type: 'positive', message: t('settings.saved') })
   } catch (err) {
