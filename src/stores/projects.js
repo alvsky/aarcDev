@@ -70,6 +70,19 @@ export const useProjectsStore = defineStore('projects', {
         profiles = data ?? []
       }
 
+      // Prikvačeno — osobna oznaka, vidi je samo vlasnik (project_user_state,
+      // isti obrazac kao "Pratim" na stavkama).
+      const auth = useAuthStore()
+      const { data: pins } = await supabase
+        .from('project_user_state')
+        .select('project_id, pinned_at')
+        .eq('user_id', auth.user.id)
+        .in(
+          'project_id',
+          projects.map((p) => p.id),
+        )
+      const pinnedAtById = new Map((pins ?? []).map((p) => [p.project_id, p.pinned_at]))
+
       // Spoji sve
       this.projects = projects.map((p) => ({
         ...p,
@@ -79,8 +92,30 @@ export const useProjectsStore = defineStore('projects', {
             ...m,
             profiles: profiles.find((pr) => pr.id === m.user_id) ?? null,
           })),
+        pinned: !!pinnedAtById.get(p.id),
       }))
       this.loading = false
+    },
+
+    // Osobna oznaka "Prikvačeno" — isti obrazac kao items.toggleWatch
+    // (optimistično + rollback na grešku).
+    async togglePin(projectId) {
+      const auth = useAuthStore()
+      const idx = this.projects.findIndex((p) => p.id === projectId)
+      if (idx === -1) return
+
+      const next = this.projects[idx].pinned ? null : new Date().toISOString()
+      const previous = this.projects[idx].pinned
+      this.projects[idx] = { ...this.projects[idx], pinned: !!next }
+
+      const { error } = await supabase.from('project_user_state').upsert(
+        { user_id: auth.user.id, project_id: projectId, pinned_at: next },
+        { onConflict: 'user_id,project_id' },
+      )
+      if (error) {
+        this.projects[idx] = { ...this.projects[idx], pinned: previous }
+        throw error
+      }
     },
 
     // Sve ide kroz create_project RPC (jedna transakcija). Raniji postupak

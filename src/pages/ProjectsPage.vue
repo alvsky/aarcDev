@@ -83,6 +83,14 @@
               <div class="row-main">
                 <div class="row items-center no-wrap">
                   <q-icon
+                    v-if="project.pinned"
+                    name="push_pin"
+                    size="12px"
+                    class="pin-icon q-mr-xs"
+                  >
+                    <q-tooltip>{{ $t('projects.pinned') }}</q-tooltip>
+                  </q-icon>
+                  <q-icon
                     v-if="project.visibility === 'private'"
                     name="lock"
                     size="12px"
@@ -122,6 +130,12 @@
                 <q-btn flat dense round icon="more_vert" size="sm" color="grey" @click.stop>
                   <q-menu auto-close>
                     <q-list dense style="min-width: 140px">
+                      <q-item clickable @click.stop="projectsStore.togglePin(project.id)">
+                        <q-item-section side><q-icon name="push_pin" /></q-item-section>
+                        <q-item-section>{{
+                          project.pinned ? $t('projects.unpin') : $t('projects.pin')
+                        }}</q-item-section>
+                      </q-item>
                       <q-item clickable @click.stop="openDialog(project)">
                         <q-item-section side><q-icon name="edit" /></q-item-section>
                         <q-item-section>{{ $t('common.edit') }}</q-item-section>
@@ -248,16 +262,20 @@ const visibleProjects = computed(() => {
   let list = q ? orgProjects.value.filter((p) => p.name?.toLowerCase().includes(q)) : orgProjects.value
 
   const sorted = [...list]
+  // Prikvačeno uvijek na vrhu, neovisno o odabranom sortiranju — to je
+  // svrha "Prikvačeno" (uvijek pri ruci), ne još jedan način sortiranja.
+  const byPinned = (a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0)
   if (sortBy.value === 'unread') {
     // Nepročitano prvo (najviše na vrhu), inače abecedno — stabilno i
     // predvidljivo kad je više projekata bez ičega novog.
     sorted.sort(
       (a, b) =>
+        byPinned(a, b) ||
         notifStore.projectTotal(b.id) - notifStore.projectTotal(a.id) ||
         a.name.localeCompare(b.name),
     )
   } else {
-    sorted.sort((a, b) => a.name.localeCompare(b.name))
+    sorted.sort((a, b) => byPinned(a, b) || a.name.localeCompare(b.name))
   }
   return sorted
 })
@@ -452,6 +470,11 @@ onUnmounted(() => {
 /* Na kartici projekta (--aarc-surface pozadina), ne u zaglavlju */
 .lock-icon {
   color: var(--aarc-muted);
+  flex-shrink: 0;
+}
+
+.pin-icon {
+  color: var(--aarc-primary);
   flex-shrink: 0;
 }
 </style>

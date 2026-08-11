@@ -273,6 +273,15 @@ ChatPanel).
 crveno/cancel) — pravi problem je bio kopipejstan blok na 8 mjesta, ne nedosljednost. Novi
 useConfirmDialog.js#confirmDestructive vraća Promise<boolean> umjesto .onOk() callbacka
 (`if (!(await confirmDestructive({...}))) return`), jedno mjesto umjesto osam.
+✅ I8. (2026-08-11) Prikvačeni projekti na Homeu. Nova tablica project_user_state
+(supabase/migrations/20260814120000_project_pins.sql) — isti obrazac kao item_user_state
+("Pratim"): osobno, po korisniku, odvojeno od project_members jer taj redak (otkad je B25
+pretplata) ne postoji za svaki projekt kojem korisnik ima pristup. Prikvačeni uvijek na vrhu
+popisa, neovisno o odabranom sortiranju (nepročitano/naziv) — to mu je i svrha. Toggle iz
+"more" izbornika na kartici projekta.
+🟢 Ideja za kasnije (zapisano 2026-08-11, NE raditi sad): pravi drag-and-drop (slobodan
+redoslijed, ne samo prikvačeno/ne) — razmatrano kao mogući premium/plaćeni feature ako app
+ikad dobije komercijalne pakete pretplate. Prikvačeno bi tad išlo u istu kategoriju.
 ✅ I7. (2026-08-11) Pretraga i sortiranje na Homeu — traka se pojavljuje tek s >5 projekata
 (kod par projekata samo šum), filtrira po nazivu, sort prebacuje nepročitano-prvo ↔ abecedno.
 🟢 I6. UserAvatar (src/components/shared/UserAvatar.vue) — inicijali unutar kruga vizualno nisu točno centrirani (blago pomaknuti udesno), primijećeno i na jednoslovnim i dvoslovnim inicijalima. Isprobano: `<span>` umjesto raw teksta u `<template v-else>` (uklonilo susjedne prazne text-node-ove) — pomak i dalje vidljiv pa uzrok nije bio (samo) to. Vrijedi kad se vrati na ovo: provjeriti je li riječ o CSS boxu (q-avatar__content flex-center) ili o optičkom centriranju fonta (glyph ink vs advance-width box), pa po potrebi ručno kompenzirati (npr. mali transform/padding nudge).
