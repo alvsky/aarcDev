@@ -52,6 +52,15 @@
           <q-badge :color="stageColor" outline>
             {{ $t(`items.stage.${item.stage}`) }}
           </q-badge>
+          <!-- N1: samo za bugove, samo kad je poznata -->
+          <q-icon
+            v-if="item.kind === 'bug' && item.platform"
+            :name="platformIcon"
+            size="14px"
+            class="q-ml-xs"
+          >
+            <q-tooltip>{{ $t(`bugs.platformName.${item.platform}`) }}</q-tooltip>
+          </q-icon>
         </q-item-label>
       </q-item-section>
 
@@ -317,6 +326,10 @@ const stageColor = computed(
 
 const prioColor = computed(
   () => ({ high: 'negative', med: 'warning', low: 'positive' })[props.item.priority] ?? 'grey',
+)
+
+const platformIcon = computed(
+  () => ({ ios: 'phone_iphone', android: 'android', web: 'public' })[props.item.platform] ?? 'devices',
 )
 
 // Prijelazi kroz store da by/at stupci ostanu ispravni — običan update ih ne bi popunio.

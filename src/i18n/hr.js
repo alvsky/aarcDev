@@ -138,6 +138,12 @@ export default {
       med: 'srednji',
       high: 'visok',
     },
+    platform: 'Platforma',
+    platformName: {
+      ios: 'iOS',
+      android: 'Android',
+      web: 'Web',
+    },
     screenshot: 'Screenshot',
     addScreenshot: 'Dodaj sliku',
     pasteScreenshot: 'Zalijepi',

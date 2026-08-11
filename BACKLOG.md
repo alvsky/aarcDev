@@ -389,11 +389,12 @@ thread_message_counts i privremene mape. ⚠️ tek kad M3–M5 rade.
 docs/workflows.md (tvrdi da lista ideja prikazuje i promovirane — kod to ne radi).
 
 N. Bugovi — proširenja
-🟢 N1. (zapisano 2026-08-11) Platforma kod prijave buga — korisnik pri prijavi buga treba moći
-navesti na kojoj se platformi dogodio (iOS/Android/Web). Vjerojatno nova kolona na `items`
-(npr. `platform text`, samo za kind='bug', konvencija bez CHECK-a kao i ostale takve kolone —
-invarijanta 8 u CLAUDE.md) + polje u ItemDialog.vue vidljivo samo za bugove + prikaz na
-ItemCard.vue (badge/ikona uz stage/priority).
+✅ N1. (2026-08-11) Platforma kod prijave buga. Nova kolona `items.platform` (text, CHECK
+ios/android/web — items već lomi "bez CHECK-a" konvenciju za vlastiti rječnik, isti obrazac
+ovdje). ItemDialog.vue: q-select vidljiv samo za kind='bug', pri stvaranju novog buga
+unaprijed popunjen preko `Capacitor.getPlatform()` (na webu vraća 'web', poklapa se s
+CHECK-om), korisnik ga može promijeniti. ItemCard.vue prikazuje malu ikonu
+(phone_iphone/android/public) uz prioritet/fazu, samo kad je platforma poznata.
 
 Preporučeni redoslijed ako želiš vodilju
 Odmah, prije bilo čega: A1–A2 (git), zatim B1–B3 (RLS).

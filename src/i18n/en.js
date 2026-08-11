@@ -138,6 +138,12 @@ export default {
       med: 'medium',
       high: 'high',
     },
+    platform: 'Platform',
+    platformName: {
+      ios: 'iOS',
+      android: 'Android',
+      web: 'Web',
+    },
     screenshot: 'Screenshot',
     addScreenshot: 'Add image',
     pasteScreenshot: 'Paste',

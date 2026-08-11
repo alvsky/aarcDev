@@ -58,6 +58,18 @@
           emit-value
           map-options
         />
+
+        <!-- N1: samo za bugove — unaprijed popunjeno stvarnom platformom -->
+        <q-select
+          v-if="kind === 'bug'"
+          v-model="form.platform"
+          :label="$t('bugs.platform')"
+          outlined
+          dense
+          :options="platformOptions"
+          emit-value
+          map-options
+        />
       </q-card-section>
 
       <q-card-actions align="right">
@@ -77,6 +89,7 @@
 import { ref, computed, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
+import { Capacitor } from '@capacitor/core'
 import { useImageUpload } from 'src/composables/useImageUpload'
 import { useItemsStore } from 'src/stores/items'
 import ScreenshotUpload from './ScreenshotUpload.vue'
@@ -102,7 +115,11 @@ const open = computed({
   set: (v) => emit('update:modelValue', v),
 })
 
-const form = ref({ title: '', description: '', priority: 'med' })
+const form = ref({ title: '', description: '', priority: 'med', platform: null })
+
+// Web vraća 'web' — poklapa se s CHECK vrijednostima na items.platform, pa
+// nema posebnog slučaja za taj otvor.
+const detectedPlatform = Capacitor.getPlatform()
 
 // Reset forme pri otvaranju
 watch(
@@ -116,6 +133,9 @@ watch(
         title: props.item?.title ?? '',
         description: props.item?.description ?? '',
         priority: props.item?.priority ?? 'med',
+        // Pri uređivanju zadrži postojeću vrijednost; pri stvaranju novog
+        // buga unaprijed popuni stvarnom platformom (korisnik može promijeniti).
+        platform: props.item?.id ? (props.item?.platform ?? null) : detectedPlatform,
       }
     }
   },
@@ -128,6 +148,10 @@ const dialogTitle = computed(() => {
 
 const priorityOptions = computed(() =>
   ['low', 'med', 'high'].map((p) => ({ label: t(`bugs.priority.${p}`), value: p })),
+)
+
+const platformOptions = computed(() =>
+  ['ios', 'android', 'web'].map((p) => ({ label: t(`bugs.platformName.${p}`), value: p })),
 )
 
 // Upload screenshot ako postoji. Vraća isti podatak u dva oblika: `create` prati
@@ -159,12 +183,16 @@ async function save() {
   try {
     const screenshot = await uploadScreenshot()
 
+    // platform vrijedi samo za bugove — ostale vrste ga jednostavno nemaju.
+    const platform = props.kind === 'bug' ? form.value.platform : null
+
     // Jedna putanja za sve vrste — prije tri gotovo iste grane.
     if (props.item?.id) {
       await itemsStore.updateItem(props.item.id, {
         title: form.value.title,
         description: form.value.description,
         priority: form.value.priority,
+        platform,
         ...screenshot.update,
       })
     } else {
@@ -174,6 +202,7 @@ async function save() {
         title: form.value.title,
         description: form.value.description,
         priority: form.value.priority,
+        platform,
         ...screenshot.create,
       })
     }

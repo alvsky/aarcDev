@@ -139,6 +139,7 @@ export const useItemsStore = defineStore('items', {
       screenshotUrl = null,
       screenshotType = null,
       screenshotName = null,
+      platform = null,
     }) {
       const auth = useAuthStore()
       const now = new Date().toISOString()
@@ -156,6 +157,7 @@ export const useItemsStore = defineStore('items', {
         screenshot_url: screenshotUrl,
         screenshot_type: screenshotType,
         screenshot_name: screenshotName,
+        platform,
       })
       if (error) throw error
       await this.fetchItems(projectId)
