@@ -20,11 +20,13 @@ proći prije nego politike postanu stroge, inače si zaključaš vlastite podatk
 inkrementalne migracije (vidi C3), ne kao ručne izmjene u dashboardu.
 
 Priprema
-🟠 B0. Ograničiti Firebase iOS API ključ (Google Cloud Console → Credentials →
-Application restrictions → iOS apps → bundle ID com.vitka.collabapp; API restrictions →
-samo FCM). GitHub secret scanning ga je prijavio 2026-08-09 u GoogleService-Info.plist —
-NIJE tajna (klijentska konfiguracija, ionako se isporučuje u aplikaciji i vadi iz IPA), pa
-rotacija nema smisla; ograničenje je jedina stvarna mjera. Alert zatvoriti kao "won't fix".
+✅ B0. (2026-08-11) Ograničen Firebase iOS API ključ (Google Cloud Console → Application
+restrictions → iOS apps → bundle ID com.vitka.collabapp; API restrictions → samo Firebase
+Cloud Messaging API, Firebase Installations API, FCM Registration API — sve ostalo isključeno,
+npr. Firebase In-App Messaging koje app ne koristi). GitHub secret scanning alert
+(GoogleService-Info.plist) treba još ručno zatvoriti kao "won't fix" u Security tabu (klijentska
+konfiguracija, ne tajna — rotacija nema smisla, ograničenje ključa je stvarna mjera). Isti
+postupak vrijedi za Android ključ kad L5/L7 dođu na red.
 ⚠️ Bitnije od toga: Supabase anon ključ je jednako javan i bezopasan SAMO ako RLS radi —
 danas ne radi, što je razlog za ostatak ove sekcije.
 ✅ B1. (2026-08-10) Snimka baze prije početka. RLS promjene tiho lome realtime (realtime poštuje RLS) i nema
