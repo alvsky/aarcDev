@@ -13,6 +13,10 @@ site_url = "https://www.vitkadesign.com/aarc.html"
 additional_redirect_urls = []
 jwt_expiry = 3600
 enable_signup = true
+# ⚠️ Minimalna duljina lozinke i rate limiti NISU potvrđeni s dashboarda —
+# ostavljeni na CLI zadanoj vrijednosti (6). Provjeriti i ažurirati ako se
+# stvarna postavka razlikuje (Authentication → Settings/Sessions).
+minimum_password_length = 6
 
 [auth.email]
 enable_signup = true
@@ -20,11 +24,6 @@ enable_signup = true
 # built-in slanju — vidi BACKLOG G2). Za mali tim dovoljno; SMTP provider
 # (Gmail) postavljen izravno u dashboardu, ne ovdje.
 enable_confirmations = true
-
-# ⚠️ Minimalna duljina lozinke i rate limiti NISU potvrđeni s dashboarda —
-# ostavljeni na CLI zadanoj vrijednosti (6). Provjeriti i ažurirati ako se
-# stvarna postavka razlikuje (Authentication → Settings/Sessions).
-minimum_password_length = 6
 
 [functions.push-on-message]
 enabled = true
