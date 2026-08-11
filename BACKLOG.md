@@ -116,9 +116,11 @@ stvori i obriše prave test korisnike/organizacije ondje.
 🔴 B18. Regresija nakon zatezanja: manual profile joins, realtime događaji, item_message_counts
 view (security_invoker — mijenja se ponašanje kad politike postanu stroge!), edge funkcija
 (service role zaobilazi RLS — OK), offline keš.
-🟠 B19. delete_own_account(): provjera zadnjeg vlasnika JE od B13 na poslužitelju (okidač
-odbija kaskadno brisanje zadnjeg vlasnika). Preostaje samo da aplikacija tu iznimku uhvati i
-pokaže čitljivu poruku umjesto sirove Postgres greške.
+✅ B19. (2026-08-11) delete_own_account(): provjera zadnjeg vlasnika JE od B13 na poslužitelju
+(okidač odbija kaskadno brisanje zadnjeg vlasnika). ProfilePage.vue sad hvata tu specifičnu
+iznimku (prepoznaje po sadržaju poruke — nema zaseban errcode) i prikazuje prevedenu poruku
+(settings.deleteAccountLastOwner) umjesto sirovog hrvatskog teksta iz baze, koji bi engleskom
+korisniku bio nerazumljiv jer zaobilazi i18n.
 
 Sučelje (nakon što baza stoji)
 ✅ B20. (2026-08-11) Home i ekran organizacije, po specifikaciji u docs/multi-tenancy.md
@@ -240,7 +242,6 @@ prolaze zbog ovoga (vidi B17).
 ✅ G4. Upload avatara (riješeno 2026-08-07) — UserAvatar komponenta (foto ili inicijali, skalira s postavkom veličine teksta preko --aarc-font-scale), upload/promjena/uklanjanje na Profilu, avatar_url dodan u sve profile select()-e i zamijenjeno svih 6 mjesta prikaza (MessageList, MemberDialog, ProjectsPage ×3, ProfilePage).
 
 H. Suradnja i onboarding
-🟠 H1. Invite flow: pozivnica emailom/linkom, pending stanje, prihvat nakon registracije (sad član mora već imati račun).
 🟢 H2. Notifikacija "dodan si u projekt".
 🟢 H3. Per-user postavke notifikacija finije od badge_enabled (npr. samo mentioni, samo threadovi u kojima sudjelujem).
 ✅ H4. (2026-08-11) Statistika po članu organizacije na OrgPage. Nova RPC org_member_stats

@@ -270,6 +270,8 @@ export default {
     deleteAccountConfirm: 'Are you sure? This action is permanent.',
     deleteAccountWarn:
       'You are the only owner of these projects: {projects}. Delete them or add another owner before deleting your account.',
+    deleteAccountLastOwner:
+      'You are the sole owner of your organization. Transfer ownership to someone else before deleting your account.',
     deleteAccountSuccess: 'Account deleted.',
     changePassword: 'Change password',
     currentPassword: 'Current password',

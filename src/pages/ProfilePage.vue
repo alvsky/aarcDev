@@ -409,6 +409,13 @@ async function confirmDelete() {
         message: t('settings.deleteAccountWarn', { projects: e.projects.join(', ') }),
         timeout: 5000,
       })
+    } else if (e.message?.includes('barem jednog vlasnika')) {
+      // B19: guard_last_org_owner (server trigger) baca čitljivu poruku, ali
+      // hrvatsku i izvan i18n-a — bez ovoga bi engleski korisnik vidio sirov
+      // hrvatski tekst iz baze. Provjera na projekte (soleOwned, iznad) ne
+      // hvata ovo jer gleda project_members, ne org_members — zadnji vlasnik
+      // organizacije prođe taj predček, pa ga uhvati tek trigger na serveru.
+      $q.notify({ type: 'warning', message: t('settings.deleteAccountLastOwner'), timeout: 5000 })
     } else {
       $q.notify({ type: 'negative', message: e.message })
     }

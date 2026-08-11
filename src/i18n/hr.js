@@ -270,6 +270,8 @@ export default {
     deleteAccountConfirm: 'Jesi li siguran? Ova radnja je nepovratna.',
     deleteAccountWarn:
       'Ti si jedini vlasnik ovih projekata: {projects}. Obriši ih ili dodaj drugog vlasnika prije brisanja računa.',
+    deleteAccountLastOwner:
+      'Ti si jedini vlasnik svoje organizacije. Prenesi vlasništvo na nekoga drugoga prije brisanja računa.',
     deleteAccountSuccess: 'Račun je obrisan.',
     changePassword: 'Promijeni lozinku',
     currentPassword: 'Trenutna lozinka',
