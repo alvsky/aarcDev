@@ -338,8 +338,11 @@ async function changePassword() {
     passwordForm.value = { current: '', next: '', confirm: '' }
     $q.notify({ type: 'positive', message: t('settings.passwordChanged') })
   } catch (e) {
-    const message = e.type === 'wrong_current' ? t('settings.passwordWrongCurrent') : e.message
-    $q.notify({ type: 'negative', message })
+    // Supabase sam vraća čitljivu grešku za pogrešnu trenutnu lozinku
+    // (current_password ide izravno u updateUser(), vidi auth.js) — nema
+    // više našeg posrednog signInWithPassword koraka da bismo je sami
+    // prevodili.
+    $q.notify({ type: 'negative', message: e.message })
   } finally {
     changingPassword.value = false
   }

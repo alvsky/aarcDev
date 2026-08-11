@@ -83,18 +83,15 @@ export const useAuthStore = defineStore('auth', {
       return { session: data.session }
     },
 
-    // Traži trenutnu lozinku prije promjene — supabase.auth.updateUser() sam
-    // po sebi ne provjerava staru lozinku (dovoljna je aktivna sesija), pa bi
-    // bez ove provjere netko s otetom/otvorenom sesijom mogao promijeniti
-    // lozinku i istisnuti pravog vlasnika bez da je ikad znao staru.
+    // current_password ide izravno u updateUser() (supabase-js >= 2.102.0) —
+    // odvojeni signInWithPassword reauth prije ovoga NIJE dovoljan, GoTrue
+    // svejedno traži current_password u samom pozivu i baca "Current
+    // password required when setting new password" bez njega.
     async changePassword(currentPassword, newPassword) {
-      const { error: reauthError } = await supabase.auth.signInWithPassword({
-        email: this.user.email,
-        password: currentPassword,
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+        current_password: currentPassword,
       })
-      if (reauthError) throw { type: 'wrong_current' }
-
-      const { error } = await supabase.auth.updateUser({ password: newPassword })
       if (error) throw error
     },
 

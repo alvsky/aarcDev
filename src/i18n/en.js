@@ -265,7 +265,6 @@ export default {
     confirmPassword: 'Repeat new password',
     passwordMismatch: 'New password and repeated password do not match.',
     passwordTooShort: 'Password must be at least 6 characters.',
-    passwordWrongCurrent: 'Current password is incorrect.',
     passwordChanged: 'Password changed.',
     languages: {
       hr: 'Croatian',

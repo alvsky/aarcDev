@@ -265,7 +265,6 @@ export default {
     confirmPassword: 'Ponovi novu lozinku',
     passwordMismatch: 'Nova lozinka i ponovljena lozinka se ne podudaraju.',
     passwordTooShort: 'Lozinka mora imati barem 6 znakova.',
-    passwordWrongCurrent: 'Trenutna lozinka nije točna.',
     passwordChanged: 'Lozinka je promijenjena.',
     languages: {
       hr: 'Hrvatski',
