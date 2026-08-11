@@ -28,10 +28,13 @@
             {{ $t('projects.title') }}
           </div>
 
-          <!-- Tražilica + sortiranje se pojave tek s dovoljno projekata da
-               vrijede prostora — kod jednog-dva projekta samo su šum. -->
-          <div v-if="orgProjects.length > 5" class="row items-center q-gutter-sm q-mb-md">
+          <!-- Sortiranje je uvijek vidljivo — i s par projekata korisno je
+               odmah znati je li poredak po nepročitanom ili po nazivu.
+               Tražilica se pojavi tek s dovoljno projekata da vrijedi
+               prostora — kod jednog-dva projekta bi bila samo šum. -->
+          <div v-if="orgProjects.length" class="row items-center q-gutter-sm q-mb-md">
             <q-input
+              v-if="orgProjects.length > 5"
               v-model="search"
               dense
               outlined
@@ -41,6 +44,7 @@
             >
               <template #prepend><q-icon name="search" size="18px" /></template>
             </q-input>
+            <q-space v-else />
             <q-btn
               flat
               dense

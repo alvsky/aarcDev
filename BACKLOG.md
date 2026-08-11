@@ -282,8 +282,9 @@ popisa, neovisno o odabranom sortiranju (nepročitano/naziv) — to mu je i svrh
 🟢 Ideja za kasnije (zapisano 2026-08-11, NE raditi sad): pravi drag-and-drop (slobodan
 redoslijed, ne samo prikvačeno/ne) — razmatrano kao mogući premium/plaćeni feature ako app
 ikad dobije komercijalne pakete pretplate. Prikvačeno bi tad išlo u istu kategoriju.
-✅ I7. (2026-08-11) Pretraga i sortiranje na Homeu — traka se pojavljuje tek s >5 projekata
-(kod par projekata samo šum), filtrira po nazivu, sort prebacuje nepročitano-prvo ↔ abecedno.
+✅ I7. (2026-08-11) Pretraga i sortiranje na Homeu — sort gumb uvijek vidljiv čim ima ijedan
+projekt (korisno znati poredak i s par projekata), tražilica se pojavljuje tek s >5 projekata
+(kod par projekata samo šum). Filtrira po nazivu, sort prebacuje nepročitano-prvo ↔ abecedno.
 🟢 I6. UserAvatar (src/components/shared/UserAvatar.vue) — inicijali unutar kruga vizualno nisu točno centrirani (blago pomaknuti udesno), primijećeno i na jednoslovnim i dvoslovnim inicijalima. Isprobano: `<span>` umjesto raw teksta u `<template v-else>` (uklonilo susjedne prazne text-node-ove) — pomak i dalje vidljiv pa uzrok nije bio (samo) to. Vrijedi kad se vrati na ovo: provjeriti je li riječ o CSS boxu (q-avatar__content flex-center) ili o optičkom centriranju fonta (glyph ink vs advance-width box), pa po potrebi ručno kompenzirati (npr. mali transform/padding nudge).
 
 J. TBI modul — proširenja
