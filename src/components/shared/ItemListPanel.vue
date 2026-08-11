@@ -61,6 +61,7 @@
         :members="members"
         :show-kind="showKind"
         :group="group"
+        :expanded="item.id === highlightItemId"
         @edit="openDialog(item)"
         @delete="confirmDelete(item)"
         @open-thread="openThread(item)"
@@ -157,15 +158,17 @@ const TERMINAL = ['done', 'rejected']
 const visible = computed(() => {
   let list = props.items
 
-  if (onlyWatching.value) list = list.filter((i) => i.watching)
+  if (onlyWatching.value) list = list.filter((i) => i.watching || i.id === highlightItemId.value)
 
   if (!showClosed.value) {
-    // Zatvorene se skrivaju, ALI nikad one koje traže pažnju — inače bi nastao
-    // badge koji se ne da otvoriti (uvjet iz notifications.js).
+    // Zatvorene se skrivaju, ALI nikad one koje traže pažnju (uvjet iz
+    // notifications.js) ili su upravo cilj deep-linka — inače bi rezultat
+    // pretrage odveo na karticu i ostavio stavku nevidljivom.
     list = list.filter(
       (i) =>
         !TERMINAL.includes(i.stage) ||
         i.watching ||
+        i.id === highlightItemId.value ||
         notifStore.threadUnread({ projectId: props.projectId, itemId: i.id }) > 0,
     )
   }
@@ -200,12 +203,19 @@ async function onThreadClosed() {
   await itemsStore.fetchItems(props.projectId)
 }
 
-// I1/I2: deep-link na stavku (?item=<id> u adresi, npr. iz push notifikacije).
-// Namjerno se ne provjerava kojoj kartici link cilja — dovoljno je da je
-// stavka stvarno u OVOM (već po vrsti filtriranom) popisu; ostale kartice
-// je jednostavno neće imati pa im watcher ništa neće napraviti. Query se
-// briše čim se stvarno otvori (router.replace, ne push — ne treba nova
-// stavka u povijesti za nešto što se dogodilo automatski).
+// I1/I2/K3: deep-link na stavku (?item=<id> u adresi, npr. iz push
+// notifikacije ili pretrage). Namjerno se ne provjerava kojoj kartici link
+// cilja — dovoljno je da je stavka stvarno u OVOM (već po vrsti
+// filtriranom) popisu; ostale kartice je jednostavno neće imati pa im
+// watcher ništa neće napraviti.
+//
+// highlightItemId (ne izravno router.replace + otvaranje) da izbjegnemo
+// utrku: querty se briše odmah, ali cilj mora preživjeti to brisanje da
+// template zna koju karticu prisilno prikazati (mimo showClosed filtra) i
+// automatski otvoriti — inače bi npr. pretraga našla gotovu ideju, odvela
+// na njezinu karticu, a stavka ostala nevidljiva jer je zatvorena.
+const highlightItemId = ref(null)
+
 watch(
   () => [route.query.item, props.items],
   () => {
@@ -213,8 +223,8 @@ watch(
     if (!itemId) return
     const item = props.items.find((i) => i.id === itemId)
     if (!item) return
+    highlightItemId.value = itemId
     router.replace({ query: {} })
-    openThread(item)
   },
   { immediate: true },
 )

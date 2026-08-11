@@ -311,6 +311,15 @@ omotati stupac u SQL funkciju. Usput popravljen manji gap iz
 I1/I2: ChatPage je ?channel= čitao samo jednom pri mountu — kod keep-alive ponovne aktivacije
 (korisnik već bio na chatu, pa se vrati preko pretrage/notifikacije na drugi kanal) to se
 gubilo; sad se čita i u onActivated.
+Popravci nakon prijavljenog problema (2026-08-11): tabForItem je gledao je li stavka TRENUTNO
+na TBI ploči (accepted_at) umjesto stvarne domene pogleda — gotova ideja koja je nekad bila
+prihvaćena znala je završiti na TBI-u gdje zatvoreno po zadanom ostaje skriveno. Sad se tab
+bira izravno iz kind/stage (task ili aktivna faza → tbi, inače matični pogled). ItemListPanel
+"visible" filter sad uvijek forsira vidljivost cilja deep-linka (highlightItemId), mimo
+showClosed/onlyWatching. ItemCard dobio "expanded" prop — kartica se sama otvori
+(q-expansion-item v-model) i skrola u prikaz čim je cilj deep-linka, umjesto da se automatski
+otvara ThreadDialog (chat) preko nje. Search dijalog čisti svoje polje/checkbox/rezultate čim
+se zatvori (klik na rezultat ili ručno zatvaranje), ne ostaje zaglavljen s prošlim upitom.
 🟢 K4. Ne-slikovni prilozi (PDF i sl.) — kolone attachment_type/name to već predviđaju.
 
 L. Native / mobilno

@@ -2,6 +2,8 @@
   <!-- Jedna kartica za ideje, bugove i zadatke — zamjenjuje IdeaCard/BugCard/TbiCard,
        koje su bile gotovo iste. Vidi docs/item-model.md. -->
   <q-expansion-item
+    ref="expansionRef"
+    v-model="isOpen"
     :group="group"
     expand-separator
     :class="{ 'opacity-5': isTerminal }"
@@ -212,7 +214,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useItemsStore } from 'src/stores/items'
 import { useOrgsStore } from 'src/stores/orgs'
@@ -228,6 +230,9 @@ const props = defineProps({
   // Odvojena q-expansion-item grupa po kartici, da otvaranje na jednoj ne zatvara drugu
   group: { type: String, default: 'items' },
   showKind: { type: Boolean, default: false },
+  // K3: deep-link (pretraga/push) cilja ovu stavku — otvori je odmah bez
+  // da korisnik mora sam kliknuti, i skroluj do nje (dugi popis).
+  expanded: { type: Boolean, default: false },
 })
 
 defineEmits(['edit', 'delete', 'open-thread'])
@@ -238,6 +243,22 @@ const orgsStore = useOrgsStore()
 const authStore = useAuthStore()
 const notifStore = useNotificationsStore()
 const formatDate = useFormatDate()
+
+const isOpen = ref(false)
+const expansionRef = ref(null)
+
+watch(
+  () => props.expanded,
+  (val) => {
+    if (!val) return
+    isOpen.value = true
+    onOpen()
+    nextTick(() => {
+      expansionRef.value?.$el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    })
+  },
+  { immediate: true },
+)
 
 // Mora pratiti items_delete politiku, inače gumb postoji a poziv pada.
 const canDelete = computed(() => props.item.created_by === authStore.user?.id || orgsStore.isAdmin)
