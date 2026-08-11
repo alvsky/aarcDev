@@ -2,9 +2,9 @@
   <!-- size/font-size kao calc() vezan na --aarc-font-scale: kad korisnik promijeni
        veličinu teksta u postavkama, avatar (kutija i inicijali) skalira zajedno s
        ostatkom sučelja bez da komponenta išta sama preračunava. -->
-  <q-avatar :size="boxSize" :font-size="glyphSize" color="primary" text-color="white">
+  <q-avatar :size="boxSize" color="primary" text-color="white">
     <img v-if="imgSrc" :src="imgSrc" :alt="fullName" />
-    <span v-else class="avatar-initials">{{ initials }}</span>
+    <template v-else>{{ initials }}</template>
   </q-avatar>
 </template>
 
@@ -26,9 +26,6 @@ const imgSrc = ref(null)
 let objectUrl = null
 
 const boxSize = computed(() => `calc(${props.size}px * var(--aarc-font-scale, 1))`)
-const glyphSize = computed(
-  () => `calc(${Math.round(props.size * 0.38)}px * var(--aarc-font-scale, 1))`,
-)
 
 const initials = computed(
   () =>
@@ -75,17 +72,11 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-/* Quasar već postavlja width/height: inherit i border-radius: inherit na avatar img;
-   object-fit nije njegov pa ga dodajemo da slika ne izobliči krug. */
+/* object-fit nije Quasarov zadani stil za img unutar q-avatar — bez ovoga bi
+   se pravokutna slika razvukla da popuni krug umjesto da se izreže. Sve
+   ostalo (veličina, centriranje, font-size inicijala) prepušteno je čistom
+   Quasarovom zadanom ponašanju, bez naših dodatnih pravila. */
 img {
   object-fit: cover;
-}
-
-/* q-avatar__content je oko inicijala postavljen kao flex red; bez ovoga je "V" bio
-   sam raw tekstualni čvor u tom redu — sad je u vlastitom bloku pa se centrira
-   pouzdano bez obzira na susjedne (praznotekstne) čvorove koje Vue ostavi u DOM-u. */
-.avatar-initials {
-  display: block;
-  text-align: center;
 }
 </style>

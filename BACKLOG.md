@@ -282,10 +282,24 @@ popisa, neovisno o odabranom sortiranju (nepročitano/naziv) — to mu je i svrh
 🟢 Ideja za kasnije (zapisano 2026-08-11, NE raditi sad): pravi drag-and-drop (slobodan
 redoslijed, ne samo prikvačeno/ne) — razmatrano kao mogući premium/plaćeni feature ako app
 ikad dobije komercijalne pakete pretplate. Prikvačeno bi tad išlo u istu kategoriju.
+🟢 Ideja za kasnije (zapisano 2026-08-11, NE raditi sad, ista kategorija — mogući
+premium/plaćeni feature): cropper za avatar prije uploada (drag/zoom unutar kružnog okvira,
+canvas crta poziciju koju korisnik odabere prije kompresije u useImageUpload.js — ne treba
+nova biblioteka, isti canvas pipeline). Trenutno object-fit:cover reže simetrično oko centra
+FOTOGRAFIJE, ne oko motiva — ako motiv nije centriran na originalnoj slici, izrezan krug to
+neće ispraviti. Glavni trošak je touch drag/pinch-zoom UI na mobitelu, ne sama logika.
 ✅ I7. (2026-08-11) Pretraga i sortiranje na Homeu — sort gumb uvijek vidljiv čim ima ijedan
 projekt (korisno znati poredak i s par projekata), tražilica se pojavljuje tek s >5 projekata
 (kod par projekata samo šum). Filtrira po nazivu, sort prebacuje nepročitano-prvo ↔ abecedno.
-🟢 I6. UserAvatar (src/components/shared/UserAvatar.vue) — inicijali unutar kruga vizualno nisu točno centrirani (blago pomaknuti udesno), primijećeno i na jednoslovnim i dvoslovnim inicijalima. Isprobano: `<span>` umjesto raw teksta u `<template v-else>` (uklonilo susjedne prazne text-node-ove) — pomak i dalje vidljiv pa uzrok nije bio (samo) to. Vrijedi kad se vrati na ovo: provjeriti je li riječ o CSS boxu (q-avatar__content flex-center) ili o optičkom centriranju fonta (glyph ink vs advance-width box), pa po potrebi ručno kompenzirati (npr. mali transform/padding nudge).
+✅ I6. (2026-08-11) UserAvatar centriranje — pravi uzrok NIJE bio font/box-centriranje inicijala
+(sve ranije teorije/zakrpe bile su pogrešan trag), nego `border` na `.profile-avatar`
+(ProfilePage.vue): pravi border ulazi u box-model i remeti Quasarov interni
+`width/height: inherit` lanac unutar q-avatara (`.q-avatar__content`/`img` prestanu biti točno
+100%×100% centrirani). Zamijenjen `box-shadow` prstenom iste boje — čisto vizualan, ne dira
+dimenzije. Usput očišćen UserAvatar.vue natrag na goli Quasar (uklonjeni glyphSize/font-size
+prop, `.avatar-initials` span/CSS, `object-position`/`width`/`height` override na img — ništa
+od toga nije bilo pravi uzrok, samo šum) — ostavljen samo `object-fit: cover` (jedino što
+Quasar stvarno ne postavlja sam, bez njega bi se pravokutna slika razvukla).
 
 J. TBI modul — proširenja
 🟢 J1. Due date + sortiranje po prioritetu/roku.

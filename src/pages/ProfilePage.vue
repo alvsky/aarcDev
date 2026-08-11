@@ -121,7 +121,9 @@
         <div class="q-px-md q-mb-md">
           <q-card flat bordered class="profile-card">
             <q-card-section>
-              <div class="text-subtitle2 q-mb-sm profile-name">{{ $t('settings.changePassword') }}</div>
+              <div class="text-subtitle2 q-mb-sm profile-name">
+                {{ $t('settings.changePassword') }}
+              </div>
               <div class="q-gutter-sm">
                 <q-input
                   v-model="passwordForm.current"
@@ -390,8 +392,12 @@ async function confirmDelete() {
   position: relative;
 }
 
+/* box-shadow umjesto border — pravi border ulazi u box-model i remeti
+   Quasarov interni width/height: inherit lanac unutar q-avatara (sadržaj
+   i img prestanu biti točno centrirani unutar kruga). box-shadow je čisto
+   vizualan, ne dira dimenzije, pa je ista stvar bez te posljedice. */
 .profile-avatar {
-  border: 3px solid var(--aarc-accent);
+  box-shadow: 0 0 0 3px var(--aarc-accent);
 }
 
 .avatar-upload-badge {
