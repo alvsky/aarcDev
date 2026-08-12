@@ -371,12 +371,21 @@ dimenzije. Usput očišćen UserAvatar.vue natrag na goli Quasar (uklonjeni glyp
 prop, `.avatar-initials` span/CSS, `object-position`/`width`/`height` override na img — ništa
 od toga nije bilo pravi uzrok, samo šum) — ostavljen samo `object-fit: cover` (jedino što
 Quasar stvarno ne postavlja sam, bez njega bi se pravokutna slika razvukla).
-✅ I9. (2026-08-11) Reveal + clear na password poljima, clearable na tekstualnim poljima kroz
+✅ I10. (2026-08-11, ispravljen broj — ranije pogrešno također I9) Reveal + clear na password poljima, clearable na tekstualnim poljima kroz
 app. Profile promjena lozinke (3 polja) dobila oko-ikonu (isti obrazac kao LoginPage), sva tri
 + `clearable`. `clearable` dodan i na: LoginPage (ime/email/lozinka), ProjectDialog
 (naziv/opis), ItemDialog (naslov), OrgPage (invite email). Namjerno preskočeno: chat composer
 (MessageInput) i inline uređivanje poruke (MessageList) — X gumb bi ondje samo smetao uz
 postojeći tok (autogrow, slanje na Enter).
+✅ I11. (2026-08-12) Prva iteracija prilagodbe tabletu/desktopu — SAMO ograničena širina
+sadržaja (CSS varijabla --aarc-content-max: 720px), ne puna preraga sučelja. `.q-page` je
+zajednički korijenski element gotovo svake stranice/panela (ProjectsPage, ChatPage,
+ItemListPanel unutar Ideje/Bugovi/TBI, Profile, Org...), pa jedno globalno pravilo
+(max-width + margin-inline: auto) pokrije skoro sve. Bez media querya — no-op ispod te širine,
+mobitel netaknut. AppHeader traka (toolbar + tabs slot) i Home footer navigacija dobili isto
+poravnanje sadržaja (pozadina ostaje puna širina, sadržaj centriran). Namjerno odgođeno:
+donja navigacija → bočni izbornik na širem ekranu, master-detail layout — veći zahvat, čeka
+da se pokaže je li stvarno potreban nakon što se ovo isproba.
 
 J. TBI modul — proširenja
 🟢 J1. Due date + sortiranje po prioritetu/roku.

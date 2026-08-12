@@ -33,7 +33,9 @@
     </q-toolbar>
 
     <!-- Tabovi (npr. ProjectPage) -->
-    <slot name="tabs" />
+    <div class="app-tabs-wrap">
+      <slot name="tabs" />
+    </div>
   </q-header>
 </template>
 
@@ -63,6 +65,14 @@ function onBack() {
   /* Sadržaj počinje ispod notcha/status bara; pozadina se proteže do vrha */
   /* padding-top: env(safe-area-inset-top); */
   border-bottom: 1px solid rgba(0, 209, 255, 0.1);
+}
+
+/* I10: traka (pozadina) ostaje puna širina, sadržaj unutra poravnat s
+   ograničenom širinom stranice ispod (--aarc-content-max) na tabletu/desktopu. */
+.app-toolbar,
+.app-tabs-wrap {
+  max-width: var(--aarc-content-max);
+  margin-inline: auto;
 }
 
 .app-logo {

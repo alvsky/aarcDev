@@ -4,6 +4,17 @@
   flex-direction: column;
 }
 
+// Prilagodba tabletu/desktopu (prva iteracija — samo ograničena širina, ne
+// puna preraga sučelja, vidi BACKLOG I10). Bez media queryja: max-width je
+// no-op ispod te širine, pa mobitel ostaje netaknut. q-page je zajednički
+// korijenski element gotovo svake stranice/panela u appu (ProjectsPage,
+// ChatPage, ItemListPanel unutar Ideje/Bugovi/TBI, Profile, Org...), pa
+// jedno pravilo pokrije skoro sve bez diranja svake stranice zasebno.
+.q-page {
+  max-width: var(--aarc-content-max);
+  margin-inline: auto;
+}
+
 // ==========================================
 // CSS Varijable — Light Mode
 // ==========================================
@@ -21,6 +32,10 @@
   --aarc-border: #e4e6eb;
 
   --aarc-font-size: 16px;
+  // Tablet/desktop (I10) — koliko širok smije biti sadržaj prije nego se
+  // centrira s marginama. Ista vrijednost za sve stranice zasad; zaseban
+  // (širi) predložak za chat/liste ako se u praksi pokaže preusko.
+  --aarc-content-max: 720px;
 }
 
 // ==========================================

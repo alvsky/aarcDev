@@ -408,6 +408,13 @@ onUnmounted(() => {
   border-top: 1px solid rgba(0, 209, 255, 0.15);
 }
 
+/* I10: isto ograničenje/centriranje kao AppHeader traka — na širokom
+   ekranu tabovi ne bi trebali biti razvučeni od ruba do ruba. */
+.aarc-footer :deep(.q-tabs) {
+  max-width: var(--aarc-content-max);
+  margin-inline: auto;
+}
+
 /* Okomit popis umjesto bočnog skrolanja — s puno projekata vertikalni prostor
    je jeftin (skrolaš dolje), horizontalni skriva stavke iz vidokruga. */
 .project-list {
