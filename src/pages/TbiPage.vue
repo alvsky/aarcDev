@@ -7,7 +7,6 @@
     kind="task"
     group="tbi"
     show-kind
-    :title="$t('tbi.title')"
     :new-label="$t('tbi.new')"
     :empty-text="$t('tbi.noItems')"
   />

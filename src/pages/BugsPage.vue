@@ -6,7 +6,6 @@
     :items="itemsStore.bugs(projectId)"
     kind="bug"
     group="bugs"
-    :title="$t('bugs.title')"
     :new-label="$t('bugs.new')"
     :empty-text="$t('bugs.noBugs')"
   />

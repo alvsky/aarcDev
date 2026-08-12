@@ -5,7 +5,6 @@
     :items="itemsStore.ideas(projectId)"
     kind="idea"
     group="ideas"
-    :title="$t('ideas.title')"
     :new-label="$t('ideas.new')"
     :empty-text="$t('ideas.noIdeas')"
   />

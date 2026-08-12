@@ -1,72 +1,79 @@
 <template>
   <!-- Zajednički panel za sve tri kartice — Ideje, Bugovi i TBI razlikuju se samo
        ulaznim popisom i sitnim postavkama. Vidi docs/item-model.md. -->
-  <q-page padding>
-    <div class="row items-center q-mb-sm">
-      <div class="text-h6">{{ title }}</div>
-      <q-space />
-      <q-btn color="primary" icon="add" :label="newLabel" @click="openDialog()" />
+  <!-- Isti obrazac kao ChatPage: panel je flex stupac s vlastitim unutarnjim
+       skrolom, pa alatna traka ostaje na mjestu dok se popis skrola. Sticky
+       s top:0 ovdje ne bi radio jer stranica skrola u prozoru, a zaglavlje
+       je fixed — traka bi završila iza njega. Naslov je maknut: kartica u
+       zaglavlju već kaže gdje si (Bugovi/Ideje/TBI). -->
+  <q-page class="column no-wrap" style="height: 0">
+    <div class="col-auto q-px-md q-pt-md q-pb-sm">
+      <div class="row items-center q-gutter-xs">
+        <q-btn
+          flat
+          dense
+          size="sm"
+          :icon="onlyWatching ? 'visibility' : 'visibility_off'"
+          :color="onlyWatching ? 'primary' : 'grey-6'"
+          :label="$t('items.onlyWatching')"
+          @click="onlyWatching = !onlyWatching"
+        />
+        <q-btn
+          flat
+          dense
+          size="sm"
+          icon="sort"
+          color="grey-6"
+          :label="sortBy === 'priority' ? $t('items.sortByPriority') : $t('items.sortByNewest')"
+          @click="sortBy = sortBy === 'priority' ? 'newest' : 'priority'"
+        />
+        <q-btn
+          flat
+          dense
+          size="sm"
+          icon="inventory_2"
+          :color="showClosed ? 'primary' : 'grey-6'"
+          :label="$t('items.showClosed')"
+          @click="showClosed = !showClosed"
+        />
+        <q-space />
+        <q-btn dense color="primary" icon="add" :label="newLabel" @click="openDialog()" />
+      </div>
     </div>
 
-    <div class="row items-center q-gutter-xs q-mb-md">
-      <q-btn
-        flat
-        dense
-        size="sm"
-        :icon="onlyWatching ? 'visibility' : 'visibility_off'"
-        :color="onlyWatching ? 'primary' : 'grey-6'"
-        :label="$t('items.onlyWatching')"
-        @click="onlyWatching = !onlyWatching"
-      />
-      <q-btn
-        flat
-        dense
-        size="sm"
-        icon="sort"
-        color="grey-6"
-        :label="sortBy === 'priority' ? $t('items.sortByPriority') : $t('items.sortByNewest')"
-        @click="sortBy = sortBy === 'priority' ? 'newest' : 'priority'"
-      />
-      <q-btn
-        flat
-        dense
-        size="sm"
-        icon="inventory_2"
-        :color="showClosed ? 'primary' : 'grey-6'"
-        :label="$t('items.showClosed')"
-        @click="showClosed = !showClosed"
-      />
+    <q-separator />
+
+    <div class="col scroll q-px-md q-pb-md">
+      <!-- I4: skeleton dok se prvi put puni keš za ovaj projekt, ne na svaki refetch. -->
+      <q-list v-if="itemsStore.isLoading(projectId) && !items.length">
+        <q-item v-for="n in 3" :key="n">
+          <q-item-section>
+            <q-skeleton type="text" width="60%" />
+            <q-skeleton type="text" width="35%" />
+          </q-item-section>
+        </q-item>
+      </q-list>
+
+      <div v-else-if="!visible.length" class="text-center text-grey-5 q-mt-xl">
+        {{ emptyText }}
+      </div>
+
+      <q-list v-else>
+        <ItemCard
+          v-for="item in visible"
+          :key="item.id"
+          :item="item"
+          :project-id="projectId"
+          :members="members"
+          :show-kind="showKind"
+          :group="group"
+          :expanded="item.id === highlightItemId"
+          @edit="openDialog(item)"
+          @delete="confirmDelete(item)"
+          @open-thread="openThread(item)"
+        />
+      </q-list>
     </div>
-
-    <!-- I4: skeleton dok se prvi put puni keš za ovaj projekt, ne na svaki refetch. -->
-    <q-list v-if="itemsStore.isLoading(projectId) && !items.length">
-      <q-item v-for="n in 3" :key="n">
-        <q-item-section>
-          <q-skeleton type="text" width="60%" />
-          <q-skeleton type="text" width="35%" />
-        </q-item-section>
-      </q-item>
-    </q-list>
-
-    <div v-else-if="!visible.length" class="text-center text-grey-5 q-mt-xl">
-      {{ emptyText }}
-    </div>
-
-    <q-list v-else>
-      <ItemCard
-        v-for="item in visible"
-        :key="item.id"
-        :item="item"
-        :project-id="projectId"
-        :members="members"
-        :show-kind="showKind"
-        :group="group"
-        :expanded="item.id === highlightItemId"
-        @edit="openDialog(item)"
-        @delete="confirmDelete(item)"
-        @open-thread="openThread(item)"
-      />
-    </q-list>
 
     <ItemDialog v-model="dialog" :kind="kind" :item="activeItem" :project-id="projectId" />
 
@@ -100,7 +107,6 @@ const props = defineProps({
   items: { type: Array, default: () => [] },
   // Vrsta koja se stvara gumbom "novo" na ovoj kartici
   kind: { type: String, required: true },
-  title: { type: String, default: '' },
   newLabel: { type: String, default: '' },
   emptyText: { type: String, default: '' },
   showKind: { type: Boolean, default: false },
