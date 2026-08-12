@@ -70,7 +70,13 @@ router.beforeEach(async (to) => {
   if (auth.user === null && !to.meta.public) {
     await auth.init()
   }
-  if (!auth.user && !to.meta.public) return '/login'
+  // G1: stižemo ovamo s ?code=... dok Supabase (PKCE) tek uspostavlja
+  // recovery sesiju — auth.user zna biti još null u ovom točnom trenutku.
+  // Bez ove iznimke guard bi nas bacio na /login PRIJE nego se sesija
+  // stigne postaviti, i tu bismo ostali zaglavljeni (PASSWORD_RECOVERY
+  // event iz auth.js stiže prekasno, korisnik je već na /login). Sesija se
+  // uspostavlja bilo kako — samo ne guramo /login preko nje dok traje.
+  if (!auth.user && !to.meta.public && !to.query.code) return '/login'
   // redirect čuva /invite/:token kroz prijavu/registraciju umjesto da uvijek
   // odbaci na Home (vidi AcceptInvitePage → goToLogin).
   if (auth.user && to.path === '/login') {

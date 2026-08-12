@@ -265,6 +265,13 @@ prije nego ga je Supabase stigao pročitati (prava utrka, ne teorija). Pravi pop
 #), router ga uopće ne dira. Rate limit built-in Supabase mailera (2/sat) usput riješen
 Resend SMTP-om (ručno postavljanje, ne vođena integracija koja traži potvrđenu domenu —
 `onboarding@resend.dev` radi bez toga). **Potvrđeno end-to-end 2026-08-12.**
+⚠️ Naknadno prijavljen bug (2026-08-12): klik na link iz maila znao je vratiti na /login umjesto
+na ekran za novu lozinku. Uzrok: utrka u router guardu — `?code=...` stigne u URL-u, ali
+Supabase (PKCE) treba trenutak da uspostavi recovery sesiju; guard je u međuvremenu vidio
+"nema korisnika" i bacio na /login PRIJE nego se sesija stigla postaviti, pa se korisnik
+zaglavio ondje čak i kad PASSWORD_RECOVERY event kasnije stigne. Popravljeno: guard ne baca na
+/login dok `to.query.code` postoji — pusti navigaciju kroz, PASSWORD_RECOVERY listener u
+auth.js sam preusmjeri na /reset-password čim sesija stvarno postoji.
 ✅ G2. (2026-08-12) Email verifikacija pri registraciji. "Confirm email" uključen u dashboardu
 2026-08-11 (config.toml, vidi B2), statična potvrdna stranica na vitkadesign.com/aarc.html.
 LoginPage.vue ne pretpostavlja sesiju odmah nakon signUp() — provjerava `session`, prikazuje
