@@ -112,6 +112,6 @@ onActivated(async () => {
 /* Quasarova zadana visina taba (48px) je za tab-bar s ikonom iznad teksta —
    ovdje je sve u jednom redu, pa toliko visine samo jede prostor chatu. */
 .channel-tabs :deep(.q-tab) {
-  min-height: 26px;
+  min-height: 36px;
 }
 </style>
