@@ -210,7 +210,12 @@ push_tokens.platform (ios/android/web), messages.channel (main/offtopic ili null
 threadove). Vrijednosti potvrđene pretragom koda, ne pogađanjem. (items.kind/stage/priority ih
 već imaju od M2.)
 ✅ C2. (2026-08-10) Atomarni create_project RPC — projekt + owner u jednoj transakciji. Uklonjena utrka i "projekt bez ownera"; usput jedini način da tvorac privatnog projekta uopće vidi ono što je upravo stvorio.
-🟠 C3. Prijeći na inkrementalne migracije (svaka promjena = nova migracija; schema.sql ostaje kao dump referenca).
+✅ C3. (2026-08-12) Inkrementalne migracije — u praksi već dosljedno primijenjeno cijelu sesiju
+(svaka promjena = nova migracija, `schema.sql` nikad ručno dirana). Preostali dio ("schema.sql
+ostaje kao dump referenca") NIJE bio istinit dok se ovo nije zatvorilo — dump je bio zastario
+još od prije M6 (spajanja items tablice), pokazivao je nepostojeće `ideas`/`bugs`/`tbi_items`.
+Ponovno generiran preko `supabase db dump --linked --schema public` — sad odgovara stvarnom
+stanju (13 tablica, uključujući `items`/`org_members`/`project_user_state`).
 ✅ C4. Drop legacy tablica bug_reads i idea_reads (riješeno 2026-08-09 uz M6).
 ✅ C5. Siročad u item_reads (riješeno 2026-08-09 uz M6 — tablicu je zamijenio item_user_state s pravim FK-om).
 ✅ C6. Brisanje screenshotova iz Storagea pri brisanju ideje/buga/TBI itema (riješeno 2026-08-05 — briše se i iz Storagea i iz lokalnog keša).
