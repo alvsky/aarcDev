@@ -43,7 +43,10 @@
 
     <q-separator />
 
-    <div class="col scroll q-px-md q-pb-md">
+    <!-- Velik razmak na dnu namjerno: bez njega zadnja stavka završi tik uz
+         rub, pa njezina razdjelna crta izgleda kao početak sljedeće i djeluje
+         kao da popis ide dalje. -->
+    <div class="col scroll q-px-md list-scroll">
       <!-- I4: skeleton dok se prvi put puni keš za ovaj projekt, ne na svaki refetch. -->
       <q-list v-if="itemsStore.isLoading(projectId) && !items.length">
         <q-item v-for="n in 3" :key="n">
@@ -241,3 +244,9 @@ async function confirmDelete(item) {
   await itemsStore.deleteItem(item.id)
 }
 </script>
+
+<style scoped>
+.list-scroll {
+  padding-bottom: 48px;
+}
+</style>
