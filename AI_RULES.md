@@ -54,6 +54,18 @@
 
 ---
 
+## Git
+
+- Standing authorization for this project: commit and push to `main` after
+  each change without asking for permission first (user confirmed
+  2026-08-12). Still write real, descriptive commit messages per change —
+  this is about not pausing to ask, not about being careless.
+- Destructive git operations (force-push, reset --hard, discarding
+  uncommitted work) still need explicit confirmation — this authorization
+  only covers normal commit + push.
+
+---
+
 ## Capacitor
 
 - Keep platform-specific code isolated.
