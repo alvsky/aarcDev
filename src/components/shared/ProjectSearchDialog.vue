@@ -98,6 +98,7 @@ import { useRouter } from 'vue-router'
 import { useItemsStore } from 'src/stores/items'
 import { useChatStore } from 'src/stores/chat'
 import { normalizeSearch } from 'src/utils/text'
+import { tabForItem } from 'src/utils/itemTabs'
 import UserAvatar from './UserAvatar.vue'
 
 const props = defineProps({
@@ -152,20 +153,6 @@ watch([query, includeMessages], ([q, include]) => {
     }
   }, 300)
 })
-
-// Stavka može biti u dva pogleda (docs/item-model.md), ali odabir mora
-// pratiti stvarnu DOMENU tog pogleda, ne posredan upit — task nema drugi
-// dom osim TBI-a, aktivna faza pripada ploči, sve ostalo matičnom pogledu
-// (bug uvijek u Bugovima jer taj registar prikazuje sve faze; ideja u
-// Idejama jer taj pogled uključuje i gotove/odbijene, samo ne aktivne).
-// Ranija verzija je gledala je li stavka trenutno na TBI ploči preko
-// accepted_at — za gotovu ideju koja je nekad bila prihvaćena to je znalo
-// odabrati TBI, gdje popis zatvorenih po zadanom skriva rezultat.
-const ACTIVE_STAGES = ['accepted', 'in_progress', 'testing']
-function tabForItem(item) {
-  if (item.kind === 'task' || ACTIVE_STAGES.includes(item.stage)) return 'tbi'
-  return item.kind === 'bug' ? 'bugs' : 'ideas'
-}
 
 function close() {
   emit('update:modelValue', false)

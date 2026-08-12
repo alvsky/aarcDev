@@ -234,8 +234,23 @@ ostavljeno kao poznato ograničenje, prevelik zahvat za sad.
 🟢 D5. Batch dohvat signed URL-ova za slike (sad jedan poziv po slici).
 
 E. Testovi i kvaliteta
-🟠 E1. Uvesti Vitest; prvi testovi za čistu logiku: threadKey(), unread agregacija i pravilo "jedna stavka jedan badge" (tabForNewItem/tabForThread), is_new pravila, prijelazi faza.
-🟠 E2. GitHub Actions: lint:check + testovi na svaki push. ⚠️ nakon A2, E1.
+✅ E1. (2026-08-12) Vitest na čistu logiku, tests/unit/ (odvojeno od tests/rls-isolation.test.js
+koji je integracijski). threadKey() (chat.js) — stavka uvijek isti ključ bez obzira na kanal,
+inače ide po (project, channel). Domenski getteri items.js (ideas/bugs/tbi) — pravilo "kartice
+su pogledi, ne ladice" iz docs/item-model.md, uključujući regresijski test za K3 bug (gotova
+ideja koja je nekad bila prihvaćena ne smije ići na tbi). tabForItem (izdvojen iz
+ProjectSearchDialog.vue u src/utils/itemTabs.js da bude testabilan bez montiranja komponente).
+"unread agregacija"/"tabForNewItem/tabForThread" iz izvorne zamisli VIŠE NE POSTOJE kao JS —
+D1 je to prebacio u SQL (item_tab_new/item_tab_thread), pa se ovdje ne mogu jedinično testirati;
+domenski getteri su najbliži preostali ekvivalent u JS-u. Store moduli uvoze pravi Supabase
+klijent na vrhu datoteke (čita window.localStorage) — u node test okruženju (bez jsdoma)
+`vi.mock('src/boot/supabase', ...)` isprazni ga umjesto uvođenja nove ovisnosti samo zbog toga.
+vitest.config.js dobio resolve.alias za `src/...` (dosad ga trebao samo integracijski test, koji
+alias nije koristio).
+✅ E2. (2026-08-12) GitHub Actions (.github/workflows/ci.yml): lint:check + tests/unit na svaki
+push/PR. Integracijski RLS test namjerno IZOSTAVLJEN iz CI-ja — zove pravi dev Supabase projekt,
+stvara/briše prave test korisnike; nema smisla trošiti na svaki push bez posebno podešenih repo
+secreta. Ako se poveže, zaseban ručno pokrenut job.
 🟠 E3. (2026-08-11, djelomično) Centralni wrapper oko store akcija + Quasar Notify za
 korisnika i dalje NIJE napravljen (veći zahvat, ostaje otvoreno). Konkretan primjer iz opisa
 JE popravljen: sva 4 mjesta koja zovu Storage `.remove()` (chat.js, items.js,

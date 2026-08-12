@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm run lint:check
+
+      # tests/rls-isolation.test.js je integracijski test — zove pravi dev
+      # Supabase projekt i stvara/briše prave test korisnike (BACKLOG B17).
+      # Namjerno izostavljen ovdje: nema smisla na svaki push/PR trošiti
+      # rate limit i dirati tuđu bazu bez posebno podešenih repo secreta.
+      # Ako se to ikad poveže, ide u zaseban, ručno pokrenut job.
+      - run: pnpm exec vitest run tests/unit
