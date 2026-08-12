@@ -7,7 +7,9 @@ android {
         applicationId "com.vitka.collabapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        // Drži se iOS brojeva (MARKETING_VERSION / CURRENT_PROJECT_VERSION u
+        // project.pbxproj) i CHANGELOG.md — inače se ne zna koji je build što.
+        versionCode 23
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {

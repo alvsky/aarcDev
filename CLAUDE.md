@@ -60,6 +60,11 @@ Before making changes, always read:
 
 ## Quick facts
 
+- **Versioning**: iOS is the source of truth (`MARKETING_VERSION` /
+  `CURRENT_PROJECT_VERSION` in `src-capacitor/ios/App/App.xcodeproj/project.pbxproj`).
+  Android (`versionCode`/`versionName` in `src-capacitor/android/app/build.gradle`),
+  root `package.json` `version`, and `CHANGELOG.md` must be bumped to match — they had
+  already drifted once (iOS build 23 vs Android 1 vs package.json 0.0.1, fixed 2026-08-12).
 - No custom backend: stores → supabase-js → Supabase (Auth/Postgres/Realtime/Storage +
   `push-on-message` Edge Function fired by DB webhook on message INSERT → FCM v1).
 - `/project/:id/:tab(chat|bugs|ideas|tbi)?` (ProjectPage.vue) has no rendered child routes —
