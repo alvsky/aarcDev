@@ -1,15 +1,18 @@
 <template>
   <q-page class="column no-wrap" style="height: 0">
+    <!-- Ikona ide U red sa sadržajem, ne kroz `icon` prop: taj je slaže IZNAD
+         sadržaja pa je tab dvostruko viši nego što ovdje treba biti. -->
     <q-tabs
       v-model="channel"
       dense
       align="left"
-      class="q-px-md col-auto"
+      class="q-px-md col-auto channel-tabs"
       indicator-color="primary"
       @update:model-value="switchChannel"
     >
-      <q-tab name="main" icon="forum">
-        <div class="row items-center q-gutter-xs">
+      <q-tab name="main">
+        <div class="row items-center q-gutter-xs no-wrap">
+          <q-icon name="forum" size="16px" />
           <span>{{ $t('chat.channels.main') }}</span>
           <q-badge
             v-if="notifStore.threadUnread({ projectId, channel: 'main' }) > 0"
@@ -21,8 +24,9 @@
         </div>
       </q-tab>
 
-      <q-tab name="offtopic" icon="coffee">
-        <div class="row items-center q-gutter-xs">
+      <q-tab name="offtopic">
+        <div class="row items-center q-gutter-xs no-wrap">
+          <q-icon name="coffee" size="16px" />
           <span>{{ $t('chat.channels.offtopic') }}</span>
           <q-badge
             v-if="notifStore.threadUnread({ projectId, channel: 'offtopic' }) > 0"
@@ -103,3 +107,11 @@ onActivated(async () => {
   await loadChannel(channel.value)
 })
 </script>
+
+<style scoped>
+/* Quasarova zadana visina taba (48px) je za tab-bar s ikonom iznad teksta —
+   ovdje je sve u jednom redu, pa toliko visine samo jede prostor chatu. */
+.channel-tabs :deep(.q-tab) {
+  min-height: 36px;
+}
+</style>
