@@ -495,6 +495,15 @@ ovdje). ItemDialog.vue: q-select vidljiv samo za kind='bug', pri stvaranju novog
 unaprijed popunjen preko `Capacitor.getPlatform()` (na webu vraća 'web', poklapa se s
 CHECK-om), korisnik ga može promijeniti. ItemCard.vue prikazuje malu ikonu
 (phone_iphone/android/public) uz prioritet/fazu, samo kad je platforma poznata.
+✅ N2. (2026-08-12) Koraci za reprodukciju buga. Nova kolona `items.steps` (text, bez CHECK-a —
+slobodan tekst nema rječnik), samo za kind='bug' (frontend provodi, kolona ne zna za kind —
+isti obrazac kao N1). Zasebna kolona umjesto predloška unutar description: onaj tko popravlja
+prvo traži "kako ovo izazvati", pa se prikazuje kao istaknut blok (siva pozadina, white-space:
+pre-line da numerirani koraci zadrže prijelome) odvojeno od konteksta. Razmatrano i odbačeno:
+tri odvojena polja (Koraci/Očekivano/Dobiveno) — discipliniranije, ali dijalog znatno viši i
+prijava sporija, pa se prazna polja ionako preskaču; umjesto toga jedan textarea s
+placeholderom koji nagovješta taj format. Prazan unos se sprema kao null, ne '' — da "nije
+upisano" i "upisano pa obrisano" ne budu dvije različite stvari za prikaz.
 
 Preporučeni redoslijed ako želiš vodilju
 Odmah, prije bilo čega: A1–A2 (git), zatim B1–B3 (RLS).

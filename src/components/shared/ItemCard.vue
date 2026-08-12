@@ -96,6 +96,15 @@
           {{ item.description }}
         </div>
 
+        <!-- Koraci za reprodukciju — istaknuti odvojeno od opisa: onaj tko
+             popravlja bug prvo traži "kako ovo izazvati". -->
+        <div v-if="item.steps" class="steps-block q-mb-sm">
+          <div class="text-caption text-weight-medium q-mb-xs">
+            <q-icon name="list_alt" size="14px" class="q-mr-xs" />{{ $t('bugs.steps') }}
+          </div>
+          <div class="text-body2 steps-text">{{ item.steps }}</div>
+        </div>
+
         <ChatImage
           v-if="item.screenshot_url"
           :path="item.screenshot_url"
@@ -349,6 +358,18 @@ async function onOpen() {
 </script>
 
 <style scoped>
+/* Koraci za reprodukciju: pre-line čuva prijelome redaka koje je korisnik
+   upisao (numerirani koraci), inače bi se sve stopilo u jedan odlomak. */
+.steps-block {
+  background: var(--aarc-surface2);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.steps-text {
+  white-space: pre-line;
+}
+
 /* Lijevi stupac drži dvije ikone, pa mu treba nešto više od Quasarove zadane širine. */
 .item-lead {
   min-width: 62px;

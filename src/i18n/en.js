@@ -155,6 +155,9 @@ export default {
       android: 'Android',
       web: 'Web',
     },
+    steps: 'Steps to reproduce',
+    stepsPlaceholder:
+      '1. Open…\n2. Click on…\n3. …\n\nExpected: what should happen\nActual: what actually happened',
     screenshot: 'Screenshot',
     addScreenshot: 'Add image',
     pasteScreenshot: 'Paste',

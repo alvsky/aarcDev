@@ -43,6 +43,36 @@
           </template>
         </q-field>
 
+        <!-- Koraci za reprodukciju — samo za bugove. Placeholder nagovješta
+             format umjesto da ga nameće trima zasebnim poljima (dijalog bi
+             bio znatno viši, a prazna polja se ionako preskaču). -->
+        <q-field
+          v-if="kind === 'bug'"
+          :label="$t('bugs.steps')"
+          outlined
+          stack-label
+          style="min-height: 130px"
+        >
+          <template #control>
+            <textarea
+              v-model="form.steps"
+              class="q-field__native full-width"
+              style="
+                min-height: 110px;
+                resize: vertical;
+                padding: 8px 0;
+                line-height: 1.5;
+                font-size: 14px;
+                font-family: inherit;
+                border: none;
+                outline: none;
+                background: transparent;
+              "
+              :placeholder="$t('bugs.stepsPlaceholder')"
+            />
+          </template>
+        </q-field>
+
         <!-- Screenshot -->
         <ScreenshotUpload v-model="pendingImage" />
 
@@ -115,7 +145,7 @@ const open = computed({
   set: (v) => emit('update:modelValue', v),
 })
 
-const form = ref({ title: '', description: '', priority: 'med', platform: null })
+const form = ref({ title: '', description: '', priority: 'med', platform: null, steps: '' })
 
 // Web vraća 'web' — poklapa se s CHECK vrijednostima na items.platform, pa
 // nema posebnog slučaja za taj otvor.
@@ -136,6 +166,7 @@ watch(
         // Pri uređivanju zadrži postojeću vrijednost; pri stvaranju novog
         // buga unaprijed popuni stvarnom platformom (korisnik može promijeniti).
         platform: props.item?.id ? (props.item?.platform ?? null) : detectedPlatform,
+        steps: props.item?.steps ?? '',
       }
     }
   },
@@ -185,6 +216,9 @@ async function save() {
 
     // platform vrijedi samo za bugove — ostale vrste ga jednostavno nemaju.
     const platform = props.kind === 'bug' ? form.value.platform : null
+    // Prazan textarea daje '' — u bazu ide null, da "nije upisano" i
+    // "upisano pa obrisano" ne budu dvije različite stvari za prikaz.
+    const steps = props.kind === 'bug' ? (form.value.steps?.trim() || null) : null
 
     // Jedna putanja za sve vrste — prije tri gotovo iste grane.
     if (props.item?.id) {
@@ -193,6 +227,7 @@ async function save() {
         description: form.value.description,
         priority: form.value.priority,
         platform,
+        steps,
         ...screenshot.update,
       })
     } else {
@@ -203,6 +238,7 @@ async function save() {
         description: form.value.description,
         priority: form.value.priority,
         platform,
+        steps,
         ...screenshot.create,
       })
     }

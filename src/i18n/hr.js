@@ -155,6 +155,9 @@ export default {
       android: 'Android',
       web: 'Web',
     },
+    steps: 'Koraci za reprodukciju',
+    stepsPlaceholder:
+      '1. Otvori…\n2. Klikni na…\n3. …\n\nOčekivano: što bi se trebalo dogoditi\nDobiveno: što se stvarno dogodilo',
     screenshot: 'Screenshot',
     addScreenshot: 'Dodaj sliku',
     pasteScreenshot: 'Zalijepi',
