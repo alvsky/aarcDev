@@ -22,6 +22,11 @@ export default {
     checkEmail:
       'Poslali smo potvrdu na {email}. Otvori mail i klikni link da aktiviraš račun, pa se vrati ovamo i prijavi se.',
     backToLogin: 'Natrag na prijavu',
+    forgotPassword: 'Zaboravljena lozinka?',
+    forgotPasswordHint: 'Upiši svoju e-mail adresu — poslat ćemo ti link za postavljanje nove lozinke.',
+    resetLinkSent: 'Poslali smo link za resetiranje lozinke na {email}.',
+    resetPassword: 'Nova lozinka',
+    resetPasswordDone: 'Lozinka je promijenjena. Vraćamo te na početnu…',
   },
   invite: {
     title: 'Pozivnica',

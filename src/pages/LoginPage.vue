@@ -62,6 +62,17 @@
                 </template>
               </q-input>
 
+              <div class="text-right" v-if="isLogin">
+                <q-btn
+                  flat
+                  dense
+                  size="sm"
+                  :label="$t('auth.forgotPassword')"
+                  class="text-grey-6"
+                  @click="promptForgotPassword"
+                />
+              </div>
+
               <div v-if="errorMsg" class="text-negative text-caption">
                 {{ errorMsg }}
               </div>
@@ -92,11 +103,15 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useQuasar } from 'quasar'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from 'src/stores/auth'
 import { useOrgsStore } from 'src/stores/orgs'
 
 const router = useRouter()
 const route = useRoute()
+const $q = useQuasar()
+const { t } = useI18n()
 const authStore = useAuthStore()
 const orgsStore = useOrgsStore()
 
@@ -120,6 +135,23 @@ const form = reactive({
 function toggle() {
   isLogin.value = !isLogin.value
   errorMsg.value = ''
+}
+
+function promptForgotPassword() {
+  $q.dialog({
+    title: t('auth.forgotPassword'),
+    message: t('auth.forgotPasswordHint'),
+    prompt: { model: form.email, type: 'email', label: t('auth.email') },
+    cancel: true,
+  }).onOk(async (email) => {
+    if (!email?.trim()) return
+    try {
+      await authStore.requestPasswordReset(email.trim())
+      $q.notify({ type: 'positive', message: t('auth.resetLinkSent', { email: email.trim() }) })
+    } catch (e) {
+      $q.notify({ type: 'negative', message: e.message })
+    }
+  })
 }
 
 async function submit() {

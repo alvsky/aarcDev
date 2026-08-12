@@ -22,6 +22,11 @@ export default {
     checkEmail:
       'We sent a confirmation to {email}. Open it and click the link to activate your account, then come back and log in.',
     backToLogin: 'Back to login',
+    forgotPassword: 'Forgot password?',
+    forgotPasswordHint: "Enter your email — we'll send you a link to set a new password.",
+    resetLinkSent: 'We sent a password reset link to {email}.',
+    resetPassword: 'New password',
+    resetPasswordDone: 'Password changed. Taking you home…',
   },
   invite: {
     title: 'Invitation',

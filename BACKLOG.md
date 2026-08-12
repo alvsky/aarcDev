@@ -247,18 +247,28 @@ F. Okoline i deploy
 🟢 F3. Dokumentirati postupak "podigni novu okolinu od nule" u docs/development.md. ⚠️ nakon F2.
 
 G. Autentikacija i računi
-🟠 G1. Reset lozinke (Supabase reset flow + stranica).
-🟠 G2. Email verifikacija pri registraciji. Djelomično: "Confirm email" ponovno uključen u
-dashboardu 2026-08-11 (config.toml, vidi B2), statična potvrdna stranica na
-vitkadesign.com/aarc.html. LoginPage.vue popravljen (2026-08-11) da ne pretpostavlja sesiju
-odmah nakon signUp() — provjerava `session`, prikazuje "provjeri email" umjesto pucanja na
-createOrg/redirectu. Gmail custom SMTP isprobano i ODBAČENO 2026-08-11 — vraća 500 na
-signUp (razlog nije do App Passworda, do same Gmail SMTP prirode za transakcijski mail, Supabase
-i sam upozorava "designed for personal rather than transactional"); ugrađeni Supabase mailer
-radi ispravno i za sad je dovoljan. Pravi SMTP servis (Postmark/Resend i sl.) treba tek pred
-javni izlazak. Preostaje: `emailRedirectTo` eksplicitno pri signUp() (trenutno oslonjen na
-Site URL default — dovoljno dok postoji samo jedna potvrdna stranica). B17 testovi trenutno ne
-prolaze zbog ovoga (vidi B17).
+✅ G1. (2026-08-12) Reset lozinke. requestPasswordReset(email)/confirmPasswordReset(newPassword)
+u auth.js, "Zaboravljena lozinka?" na LoginPage (prompt za email), nova ResetPasswordPage.vue
+(/reset-password, javna ruta). ⚠️ Rješava poznati sukob hash-routinga i Supabaseovog
+implicit-flow linka: GoTrue dopisuje `#access_token=...&type=recovery` na `redirectTo`, pa bi
+`.../#/reset-password#access_token=...` (dvostruki #) slomio ili Vue Routerovo parsiranje ili
+Supabaseovo `detectSessionInUrl` (nepouzdano čije prije). Rješenje: `redirectTo` je goli origin
+(bez #/rute) — GoTrue tad doda samo JEDAN #, koji Supabase pouzdano prepozna; auth.js sluša
+`PASSWORD_RECOVERY` event i SAM eksplicitno odlazi na /reset-password preko router.push,
+umjesto da se oslanja na to da URL slučajno već pokazuje na pravu rutu. ⚠️ TREBA RUČNU RADNJU:
+`window.location.origin` (dev localhost, produkcijska domena) mora biti na Supabase Redirect
+URLs allow-listi (Auth → URL Configuration) inače Supabase tiho padne natrag na Site URL
+(statična stranica, ne naša app) — bez toga cijeli tok ne radi.
+✅ G2. (2026-08-12) Email verifikacija pri registraciji. "Confirm email" uključen u dashboardu
+2026-08-11 (config.toml, vidi B2), statična potvrdna stranica na vitkadesign.com/aarc.html.
+LoginPage.vue ne pretpostavlja sesiju odmah nakon signUp() — provjerava `session`, prikazuje
+"provjeri email" umjesto pucanja na createOrg/redirectu. Gmail custom SMTP isprobano i
+ODBAČENO — vraća 500 na signUp (Supabase i sam upozorava "designed for personal rather than
+transactional"); ugrađeni Supabase mailer radi ispravno i za sad je dovoljan. Pravi SMTP servis
+(Postmark/Resend i sl.) treba tek pred javni izlazak. `emailRedirectTo` eksplicitno pri
+signUp() namjerno NIJE dodano — Site URL default dovoljan dok postoji samo jedna potvrdna
+stranica, nema potrebe za dodatnom složenošću. B17 testovi i dalje ne prolaze zbog ovoga (vidi
+B17) — service_role Admin API rješenje ostaje odgođeno.
 🟢 G3. Transfer ownershipa projekta (UI + pravila; preduvjet za elegantno brisanje računa).
 ✅ G4. Upload avatara (riješeno 2026-08-07) — UserAvatar komponenta (foto ili inicijali, skalira s postavkom veličine teksta preko --aarc-font-scale), upload/promjena/uklanjanje na Profilu, avatar_url dodan u sve profile select()-e i zamijenjeno svih 6 mjesta prikaza (MessageList, MemberDialog, ProjectsPage ×3, ProfilePage).
 

@@ -16,6 +16,15 @@ const routes = [
     meta: { public: true },
   },
   {
+    // G1: stiže se ovamo eksplicitnim router.push iz auth.js (PASSWORD_RECOVERY
+    // event), ne izravno iz Supabaseovog linka — vidi komentar ondje zašto.
+    // public: true jer recovery sesija tehnički JEST auth.user, ali ne
+    // oslanjamo se na to (guard ionako pušta kroz ako je auth.user postavljen).
+    path: '/reset-password',
+    component: () => import('src/pages/ResetPasswordPage.vue'),
+    meta: { public: true },
+  },
+  {
     path: '/',
     component: () => import('src/layouts/MainLayout.vue'),
     meta: { auth: true },
