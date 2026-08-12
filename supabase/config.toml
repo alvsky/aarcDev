@@ -22,7 +22,8 @@ minimum_password_length = 6
 enable_signup = true
 # Uključeno 2026-08-11 (bilo isključeno zbog limita besplatnog plana na
 # built-in slanju — vidi BACKLOG G2). Za mali tim dovoljno; SMTP provider
-# (Gmail) postavljen izravno u dashboardu, ne ovdje.
+# (Resend, ne Gmail — Gmail SMTP je isproban i odbačen, vidi BACKLOG G1/G2)
+# postavljen izravno u dashboardu, ne ovdje.
 enable_confirmations = true
 
 [functions.push-on-message]

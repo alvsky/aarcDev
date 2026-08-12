@@ -258,7 +258,13 @@ Supabaseovo `detectSessionInUrl` (nepouzdano čije prije). Rješenje: `redirectT
 umjesto da se oslanja na to da URL slučajno već pokazuje na pravu rutu. ⚠️ TREBA RUČNU RADNJU:
 `window.location.origin` (dev localhost, produkcijska domena) mora biti na Supabase Redirect
 URLs allow-listi (Auth → URL Configuration) inače Supabase tiho padne natrag na Site URL
-(statična stranica, ne naša app) — bez toga cijeli tok ne radi.
+(statična stranica, ne naša app) — bez toga cijeli tok ne radi. Prvi pokušaj (samo goli origin)
+SVEJEDNO nije radio — Vue Router je normalizirao `#access_token=...` u `#/access_token=...`
+prije nego ga je Supabase stigao pročitati (prava utrka, ne teorija). Pravi popravak:
+`flowType: 'pkce'` u boot/supabase.js — token ide kroz `?code=...` (pravi query string, prije
+#), router ga uopće ne dira. Rate limit built-in Supabase mailera (2/sat) usput riješen
+Resend SMTP-om (ručno postavljanje, ne vođena integracija koja traži potvrđenu domenu —
+`onboarding@resend.dev` radi bez toga). **Potvrđeno end-to-end 2026-08-12.**
 ✅ G2. (2026-08-12) Email verifikacija pri registraciji. "Confirm email" uključen u dashboardu
 2026-08-11 (config.toml, vidi B2), statična potvrdna stranica na vitkadesign.com/aarc.html.
 LoginPage.vue ne pretpostavlja sesiju odmah nakon signUp() — provjerava `session`, prikazuje
