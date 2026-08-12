@@ -106,7 +106,12 @@ export default defineConfig((ctx) => {
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#devserver
     devServer: {
-      https: true,
+      // HTTPS samo za web dev (treba ga Supabase auth redirect, vidi G1).
+      // NE za capacitor: iOS WebView odbija self-signed certifikat
+      // ("The certificate for this server is invalid") i aplikacija se ni
+      // ne učita. Isti obrazac kao mockovi niže — ponašanje se razlikuje
+      // po ctx.mode.capacitor.
+      https: !ctx.mode.capacitor,
       open: true, // opens browser window automatically
     },
 
