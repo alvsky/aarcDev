@@ -454,6 +454,13 @@ Usput ispraviti CLAUDE.md, koji tvrdi da Android push radi.
 🟠 L6. Provjeriti POST_NOTIFICATIONS na Androidu 13+ — manifest deklarira samo INTERNET;
 Capacitorov push plugin bi ga trebao ubaciti spajanjem manifesta, ali to se potvrđuje tek
 na uređaju. ⚠️ nakon L5 (bez FCM-a se ionako nema što prikazati).
+🟡 L9. (2026-08-12) Donja sigurna zona (Android nav traka / iOS home indicator) — dosad se
+koristio samo GORNJI safe-area inset, donji nigdje, iako je `viewport-fit=cover` odavno
+postavljen za native buildove. Dodana CSS varijabla `--aarc-safe-bottom` i primijenjena na tri
+mjesta gdje sadržaj dodiruje donji rub: `.q-footer` (donja navigacija na Homeu — Quasar to NE
+radi sam), chat composer (ChatPanel, vrijedi i u ThreadDialogu jer je `maximized`), i dno
+popisa stavki (ItemListPanel). ⚠️ NIJE POTVRĐENO NA UREĐAJU — env() je 0 na webu, pa se
+stvarni učinak vidi tek u native buildu. Provjeriti uz L5/L6.
 🟠 L7. Odvojiti aarcDev u vlastiti Firebase projekt. Sad dijeli projekt "sve-aplikacije" s
 aplikacijama iz 2019., pa servisni račun firebase-adminsdk (čiji JSON je u Supabase
 secrets) ima administratorska prava nad svime, ne samo nad aarcDev-om. Manji doseg,

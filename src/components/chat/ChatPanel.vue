@@ -15,7 +15,7 @@
 
     <q-separator />
 
-    <div class="col-auto q-pa-sm">
+    <div class="col-auto q-pa-sm composer">
       <MessageInput
         :project-id="projectId"
         :channel="channel"
@@ -70,5 +70,12 @@ defineExpose({
 .chat-panel {
   min-height: 0;
   min-width: 0;
+}
+
+/* Polje za unos je zadnje na ekranu — bez donje sigurne zone završi ispod
+   Android navigacijske trake / iOS home indicatora, pa se teško pogađa.
+   Vrijedi i u ThreadDialogu: on je `maximized`, dakle jednako dodiruje rub. */
+.composer {
+  padding-bottom: calc(8px + var(--aarc-safe-bottom));
 }
 </style>

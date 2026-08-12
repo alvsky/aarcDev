@@ -32,6 +32,9 @@
   --aarc-border: #e4e6eb;
 
   --aarc-font-size: 16px;
+  // Android navigacijska traka / iOS home indicator. viewport-fit=cover je
+  // postavljen samo za native buildove (index.html), pa je na webu ovo 0.
+  --aarc-safe-bottom: env(safe-area-inset-bottom, 0px);
   // Tablet/desktop (I10) — koliko širok smije biti sadržaj prije nego se
   // centrira s marginama. Ista vrijednost za sve stranice zasad; zaseban
   // (širi) predložak za chat/liste ako se u praksi pokaže preusko.
@@ -516,6 +519,13 @@ body.body--dark .q-btn.text-negative {
 // iOS safe area za drawer
 .q-drawer .q-header .q-toolbar {
   padding-top: max(env(safe-area-inset-top), 12px) !important;
+}
+
+// Donja sigurna zona (Android navigacijska traka, iOS home indicator).
+// Quasar to NE radi sam za QFooter — bez ovoga donja navigacija na Homeu
+// završi djelomično ispod sistemske trake i teže se pogađa.
+.q-footer {
+  padding-bottom: var(--aarc-safe-bottom);
 }
 
 // Font size classes

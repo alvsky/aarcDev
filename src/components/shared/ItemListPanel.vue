@@ -247,6 +247,8 @@ async function confirmDelete(item) {
 
 <style scoped>
 .list-scroll {
-  padding-bottom: 48px;
+  /* 48px je vizualni razmak; safe-bottom je Android nav traka / iOS home
+     indicator, inače zadnja stavka završi ispod sistemske trake. */
+  padding-bottom: calc(48px + var(--aarc-safe-bottom));
 }
 </style>
