@@ -92,7 +92,7 @@
 
     <q-card flat class="q-mx-md q-mb-sm">
       <q-card-section class="q-pa-sm">
-        <div v-if="item.description" class="text-body2 q-mb-sm">
+        <div v-if="item.description" class="text-body2 q-mb-sm multiline-text">
           {{ item.description }}
         </div>
 
@@ -102,7 +102,7 @@
           <div class="text-caption text-weight-medium q-mb-xs">
             <q-icon name="list_alt" size="14px" class="q-mr-xs" />{{ $t('bugs.steps') }}
           </div>
-          <div class="text-body2 steps-text">{{ item.steps }}</div>
+          <div class="text-body2 multiline-text">{{ item.steps }}</div>
         </div>
 
         <ChatImage
@@ -358,16 +358,17 @@ async function onOpen() {
 </script>
 
 <style scoped>
-/* Koraci za reprodukciju: pre-line čuva prijelome redaka koje je korisnik
-   upisao (numerirani koraci), inače bi se sve stopilo u jedan odlomak. */
+/* pre-line čuva prijelome redaka koje je korisnik upisao — vrijedi i za
+   opis i za korake (numerirani popis), inače se sve stopi u jedan odlomak.
+   Oba dolaze iz textarea polja, pa oba mogu imati višeredni unos. */
+.multiline-text {
+  white-space: pre-line;
+}
+
 .steps-block {
   background: var(--aarc-surface2);
   border-radius: 8px;
   padding: 8px 10px;
-}
-
-.steps-text {
-  white-space: pre-line;
 }
 
 /* Lijevi stupac drži dvije ikone, pa mu treba nešto više od Quasarove zadane širine. */
