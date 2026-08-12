@@ -424,9 +424,8 @@ async function sendInvite() {
 }
 
 function inviteUrl(token) {
-  // Hash-router (invarijanta arhitekture) — link mora nositi #/ da radi izvan
-  // aplikacije (npr. zalijepljen u poruku), ne samo unutar SPA navigacije.
-  return `${window.location.origin}/#/invite/${token}`
+  // History mode (2026-08-12, prešli s hash-routera) — čist put, nema #.
+  return `${window.location.origin}/invite/${token}`
 }
 
 async function copyInviteLink(token, notify = true) {

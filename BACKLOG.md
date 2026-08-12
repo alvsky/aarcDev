@@ -290,6 +290,18 @@ dodijeljenih stavki. Toggle gumb "Statistika" u zaglavlju popisa članova (vidlj
 dohvat lijen (tek na klik). Ostali članovi i dalje vide samo osnovne podatke
 (avatar/ime/email/uloga) kao i prije.
 
+✅ I9. (2026-08-12) Prijelaz s hash na history mode routing (createWebHashHistory →
+createWebHistory, quasar.config.js vueRouterMode). Izravan povod: G1 (reset lozinke) —
+Supabaseov `#access_token=...` redirect sudarao se s istim `#` koji je koristio router (vidi
+G1 detaljno). Umjesto da to rješavamo samo za tu jednu rutu, uklonjen je cijeli razred problema.
+Dirano: OrgPage.vue#inviteUrl (link bez #), CLAUDE.md/docs/architecture.md ažurirani (i usput
+popravljen zastario opis "tabovi ne mijenjaju URL" — I1 je to već promijenio, dokument nije
+ažuriran onda). ⚠️ TREBA PROVJERU: history mode traži SPA fallback (posluži index.html za
+svaku putanju) na produkcijskom hostingu kad app jednom bude deployan (F2) — Vite dev server to
+već radi sam po sebi, nije trebalo ništa dodatno za lokalni razvoj. Capacitor native build
+(iOS/Android) treba provjeriti kod sljedećeg builda — većina postavki to podnosi bez problema,
+ali nisam u mogućnosti sam testirati na uređaju.
+
 I. Navigacija i UX
 ✅ I1. (2026-08-10) Router refaktor: tabovi u URL-u. Jedna ruta
 `/project/:id/:tab(chat|bugs|ideas|tbi)?` (zamijenila neiskorištene djecu-rute — ProjectPage i

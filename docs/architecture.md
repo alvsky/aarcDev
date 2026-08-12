@@ -97,13 +97,17 @@ project-card badges, and the native app-icon badge. This is a known scaling bott
 
 ## Routing and the project screen
 
-Hash-mode router (`src/router/index.js`). A global guard lazily runs `auth.init()` and
-redirects unauthenticated users to `/login`.
+History-mode router (`src/router/index.js`, switched from hash mode 2026-08-12 — a hash-mode
+`#` collided with Supabase's own `#access_token=...` auth redirects, see BACKLOG G1). Needs a
+SPA fallback (serve `index.html` for any path) on whatever static host it deploys to. A global
+guard lazily runs `auth.init()` and redirects unauthenticated users to `/login`.
 
-`/project/:id` renders `ProjectPage.vue`, which does **not** use nested routes even though
-child routes are declared: it renders its own `q-tabs` + keep-alive `q-tab-panels`, mounting
-ChatPage/IdeasPage/BugsPage/TbiPage as plain components with a `projectId` prop. Tab switches
-do not change the URL. ProjectPage is also where realtime channels are set up and torn down.
+`/project/:id/:tab(chat|bugs|ideas|tbi)?` renders `ProjectPage.vue`, which does **not** use
+nested routes: it renders its own `q-tabs` + keep-alive `q-tab-panels`, mounting
+ChatPage/IdeasPage/BugsPage/TbiPage as plain components with a `projectId` prop. The active tab
+is a writable computed over `route.params.tab` (I1, 2026-08-11) — tab switches use
+`router.replace`, so they don't pile up back-button history but do show up in the URL.
+ProjectPage is also where realtime channels are set up and torn down.
 
 ## Stage transitions
 

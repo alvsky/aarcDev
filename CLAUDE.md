@@ -7,8 +7,8 @@ it to the TBI board by changing one column, not by creating a second row. Every 
 chat thread. Unread counts, app-icon badges, FCM push. UI/comments partly Croatian (i18n: `en`
 default, `hr` fallback).
 
-Stack: Quasar 2 (app-vite) + Vue 3 + Pinia 3 + vue-router 5 (hash) + Supabase JS v2 +
-Capacitor 8 (iOS/Android). **pnpm**. No tests.
+Stack: Quasar 2 (app-vite) + Vue 3 + Pinia 3 + vue-router 5 (history mode since 2026-08-12,
+was hash) + Supabase JS v2 + Capacitor 8 (iOS/Android). **pnpm**. No tests.
 
 # Important
 
@@ -62,8 +62,10 @@ Before making changes, always read:
 
 - No custom backend: stores → supabase-js → Supabase (Auth/Postgres/Realtime/Storage +
   `push-on-message` Edge Function fired by DB webhook on message INSERT → FCM v1).
-- `/project/:id` (ProjectPage.vue) ignores its declared child routes — renders q-tabs +
-  keep-alive panels passing `projectId` as a **prop**; tabs don't change URL.
+- `/project/:id/:tab(chat|bugs|ideas|tbi)?` (ProjectPage.vue) has no rendered child routes —
+  it draws q-tabs + keep-alive panels itself, passing `projectId` as a **prop**; the active
+  tab lives in `route.params.tab` (writable computed, `router.replace`), not local state
+  (since I1, 2026-08-11 — used to be invisible to the URL entirely).
 - Each page owns its own `q-layout`; MainLayout is a bare passthrough. The top bar is the
   shared `components/shared/AppHeader.vue` (props `title`/`back`/`backTo`/`settings`, slots
   `#left`/`#actions`/`#tabs`) — it bakes in safe-area-inset-top and the offline strip
