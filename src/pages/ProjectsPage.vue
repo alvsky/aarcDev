@@ -15,7 +15,7 @@
     </AppHeader>
 
     <q-page-container>
-      <q-page class="home-page q-pb-xl">
+      <q-page class="home-page q-pb-sm">
         <!-- Pozdrav -->
         <div class="q-px-md q-pt-sm q-pb-md">
           <div class="text-h3 text-weight-bold home-greeting">{{ greeting }},</div>
@@ -23,7 +23,7 @@
         </div>
 
         <!-- Projekti -->
-        <div class="q-px-md q-mb-lg">
+        <div class="q-px-md q-mb-sm">
           <div class="text-h6 text-weight-medium q-mb-md home-section-label">
             {{ $t('projects.title') }}
           </div>
@@ -264,7 +264,9 @@ const sortBy = ref('unread')
 
 const visibleProjects = computed(() => {
   const q = normalizeSearch(search.value?.trim())
-  let list = q ? orgProjects.value.filter((p) => normalizeSearch(p.name).includes(q)) : orgProjects.value
+  let list = q
+    ? orgProjects.value.filter((p) => normalizeSearch(p.name).includes(q))
+    : orgProjects.value
 
   const sorted = [...list]
   // Prikvačeno uvijek na vrhu, neovisno o odabranom sortiranju — to je
