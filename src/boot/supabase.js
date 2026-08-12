@@ -10,6 +10,13 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     autoRefreshToken: true,
     detectSessionInUrl: true,
     storage: window.localStorage,
+    // G1: implicit tok stavlja token u #access_token=... — isti # koji
+    // koristi naš hash router. Vue Router normalizira/dira taj fragment
+    // prije nego ga Supabase stigne pročitati (utrka), pa se recovery
+    // sesija nikad ne uspostavi (vidi 2026-08-12, prazna stranica +
+    // #/access_token=... umjesto stvarne prijave). PKCE stavlja token u
+    // ?code=... — pravi query string, PRIJE #, router ga uopće ne dira.
+    flowType: 'pkce',
   },
 })
 
