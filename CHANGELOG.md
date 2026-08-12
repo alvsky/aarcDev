@@ -9,6 +9,22 @@ svakim isporučenim buildom). Android `versionCode`/`versionName` i
 
 ---
 
+## v1.0 (build 24) — 2026-08-12
+
+Dotjerivanje razmaka nakon prvog testiranja na uređaju.
+
+- Pod-tabovi u chatu (Rasprava / Offtopic) zauzimaju upola manje visine — taj
+  prostor sad ide popisu poruka.
+- Manje praznog prostora pri dnu početnog zaslona.
+- Donja navigacija više nema upadljivu praznu traku ispod natpisa.
+- Popis ideja/bugova/zadataka: alatna traka s filtrima ostaje na mjestu dok se
+  popis skrola (prije se moralo skrolati skroz na vrh da bi se promijenio
+  filtar), a suvišan naslov iznad nje je maknut — kartica u zaglavlju već kaže
+  gdje si.
+- Prijelomi redaka u opisima i koracima za reprodukciju se čuvaju pri prikazu.
+
+---
+
 ## v1.0 (build 23) — 2026-08-12
 
 Prva zabilježena verzija. Obuhvaća sve dosad napravljeno, ne samo zadnji krug.
