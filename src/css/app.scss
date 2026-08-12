@@ -524,8 +524,12 @@ body.body--dark .q-btn.text-negative {
 // Donja sigurna zona (Android navigacijska traka, iOS home indicator).
 // Quasar to NE radi sam za QFooter — bez ovoga donja navigacija na Homeu
 // završi djelomično ispod sistemske trake i teže se pogađa.
+//
+// Pola inseta, ne puni: QTabs već ima vlastiti unutarnji razmak, pa puni
+// inset (34px na iPhoneu) dođe povrh njega i ostavi upadljivu praznu traku.
+// Pola je dovoljno da natpisi ostanu iznad home indicatora.
 .q-footer {
-  padding-bottom: var(--aarc-safe-bottom);
+  padding-bottom: calc(var(--aarc-safe-bottom) * 0.5);
 }
 
 // Font size classes
