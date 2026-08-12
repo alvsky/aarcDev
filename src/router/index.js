@@ -16,10 +16,8 @@ const routes = [
     meta: { public: true },
   },
   {
-    // G1: stiže se ovamo eksplicitnim router.push iz auth.js (PASSWORD_RECOVERY
-    // event), ne izravno iz Supabaseovog linka — vidi komentar ondje zašto.
-    // public: true jer recovery sesija tehnički JEST auth.user, ali ne
-    // oslanjamo se na to (guard ionako pušta kroz ako je auth.user postavljen).
+    // G1: guard niže preusmjerava ovamo čim vidi ?code= u adresi, izravno,
+    // bez čekanja na auth event (bio nepouzdan — vidi commit povijest).
     path: '/reset-password',
     component: () => import('src/pages/ResetPasswordPage.vue'),
     meta: { public: true },
@@ -66,17 +64,21 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
+  // G1: ?code=... u adresi znači da smo TEK stigli s recovery (ili bilo
+  // kojeg drugog PKCE) linka — odvedi izravno na /reset-password, ne čekaj
+  // da se sesija sama uspostavi pa da nas events.js preusmjeri. Prijašnja
+  // verzija (čekanje na PASSWORD_RECOVERY event) ovisila je o redoslijedu
+  // između router guarda i async razmjene koda — nepouzdano, znalo završiti
+  // na praznoj `/?code=...` adresi bez ikakvog preusmjeravanja.
+  if (to.query.code && to.path !== '/reset-password') {
+    return { path: '/reset-password', query: to.query }
+  }
+
   const auth = useAuthStore()
   if (auth.user === null && !to.meta.public) {
     await auth.init()
   }
-  // G1: stižemo ovamo s ?code=... dok Supabase (PKCE) tek uspostavlja
-  // recovery sesiju — auth.user zna biti još null u ovom točnom trenutku.
-  // Bez ove iznimke guard bi nas bacio na /login PRIJE nego se sesija
-  // stigne postaviti, i tu bismo ostali zaglavljeni (PASSWORD_RECOVERY
-  // event iz auth.js stiže prekasno, korisnik je već na /login). Sesija se
-  // uspostavlja bilo kako — samo ne guramo /login preko nje dok traje.
-  if (!auth.user && !to.meta.public && !to.query.code) return '/login'
+  if (!auth.user && !to.meta.public) return '/login'
   // redirect čuva /invite/:token kroz prijavu/registraciju umjesto da uvijek
   // odbaci na Home (vidi AcceptInvitePage → goToLogin).
   if (auth.user && to.path === '/login') {

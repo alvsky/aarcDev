@@ -269,9 +269,13 @@ Resend SMTP-om (ručno postavljanje, ne vođena integracija koja traži potvrđe
 na ekran za novu lozinku. Uzrok: utrka u router guardu — `?code=...` stigne u URL-u, ali
 Supabase (PKCE) treba trenutak da uspostavi recovery sesiju; guard je u međuvremenu vidio
 "nema korisnika" i bacio na /login PRIJE nego se sesija stigla postaviti, pa se korisnik
-zaglavio ondje čak i kad PASSWORD_RECOVERY event kasnije stigne. Popravljeno: guard ne baca na
-/login dok `to.query.code` postoji — pusti navigaciju kroz, PASSWORD_RECOVERY listener u
-auth.js sam preusmjeri na /reset-password čim sesija stvarno postoji.
+zaglavio ondje čak i kad PASSWORD_RECOVERY event kasnije stigne. Prvi popravak (guard samo NE baca na /login dok ?code= postoji, čeka PASSWORD_RECOVERY event)
+i dalje nije bio pouzdan — znao ostati zaglavljen na praznoj `/?code=...` adresi bez ikakvog
+preusmjeravanja. Pravi popravak: guard prepozna `?code=` DETERMINISTIČKI i odmah preusmjeri na
+/reset-password, bez čekanja na auth event — uklonjen sad-nepotreban PASSWORD_RECOVERY listener
+iz auth.js#init(). Razmatrano i odbačeno: preusmjeriti na Profile (već ima promjenu lozinke) —
+ne radi, taj obrazac traži TRENUTNU lozinku, a recovery korisnik je po definiciji zaboravio baš
+nju.
 ✅ G2. (2026-08-12) Email verifikacija pri registraciji. "Confirm email" uključen u dashboardu
 2026-08-11 (config.toml, vidi B2), statična potvrdna stranica na vitkadesign.com/aarc.html.
 LoginPage.vue ne pretpostavlja sesiju odmah nakon signUp() — provjerava `session`, prikazuje

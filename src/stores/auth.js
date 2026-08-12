@@ -3,7 +3,6 @@ import { supabase } from 'src/boot/supabase'
 import { i18n } from 'src/boot/i18n'
 import { clearAll } from 'src/utils/persistence'
 import { clearImageCache } from 'src/utils/imageCache'
-import router from 'src/router'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -41,18 +40,9 @@ export const useAuthStore = defineStore('auth', {
       this.applyDarkMode()
       this.applyFontSize()
 
-      supabase.auth.onAuthStateChange((event, session) => {
+      supabase.auth.onAuthStateChange((_event, session) => {
         this.user = session?.user ?? null
         if (this.user) this.fetchProfile()
-
-        // G1: redirectTo je namjerno goli origin (bez #/ruta) — GoTrue
-        // dopisuje #access_token=...&type=recovery na kraj, pa bi dvostruki
-        // # (naš hash router + Supabase token) inače lomio parsiranje.
-        // Umjesto da se oslanjamo na to da router sam pogodi rutu iz tog
-        // spoja, čekamo ovaj event i sami eksplicitno odemo na pravu rutu.
-        if (event === 'PASSWORD_RECOVERY') {
-          router.push('/reset-password')
-        }
       })
     },
 
@@ -80,10 +70,11 @@ export const useAuthStore = defineStore('auth', {
       if (error) throw error
     },
 
-    // G1: redirectTo je goli origin, ne #/reset-password — vidi komentar u
-    // init() uz PASSWORD_RECOVERY. Mora biti na Supabase Redirect URLs
-    // allow-listi (Auth → URL Configuration) za svaku okolinu (dev
-    // localhost, produkcija) inače Supabase tiho padne natrag na Site URL.
+    // G1: redirectTo je goli origin — router (index.js) prepozna ?code= u
+    // adresi i sam odvede na /reset-password. Mora biti na Supabase
+    // Redirect URLs allow-listi (Auth → URL Configuration) za svaku
+    // okolinu (dev localhost, produkcija) inače Supabase tiho padne natrag
+    // na Site URL.
     async requestPasswordReset(email) {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: window.location.origin + '/',
