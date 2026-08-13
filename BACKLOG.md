@@ -444,23 +444,30 @@ se zatvori (klik na rezultat ili ručno zatvaranje), ne ostaje zaglavljen s pro�
 
 L. Native / mobilno
 🟠 L1. iOS FCM most: zamijeniti localStorage-polling pravim Capacitor bridge eventom ili notifikacijom iz nativnog koda; dodati retry. (Krhko: 30 s timeout.)
-🟠 L5. (2026-08-13, djelomično) google-services.json dodan u
+✅ L5. (2026-08-13) Android push RADI end-to-end, potvrđeno na emulatoru
+(Pixel_8a_API_35, Play Store image). google-services.json dodan u
 src-capacitor/android/app/ (package_name com.vitka.collabapp se poklapa s applicationId;
 project_id sve-aplikacije, isti dijeljeni Firebase projekt kao ostale vitka.* app-ove — vidi
-L7). Build lokalno potvrđen: `:app:processDebugGoogleServices` se izvršava (prije je
-build.gradle tiho preskakao plugin, samo logger.info), google_app_id/API key stvarno
-generirani u app/build/generated/.../values.xml. ⚠️ NAPOMENA ZA BUILD OKOLINU: lokalni
-`java` na PATH-u je JDK 17, a capacitor-android modul traži source/target 21 —
-build treba JAVA_HOME na JBR unutar Android Studija
+L7). `:app:processDebugGoogleServices` se izvršava (prije je build.gradle tiho preskakao
+plugin, samo logger.info). Cijeli lanac potvrđen uživo: POST_NOTIFICATIONS dozvola ispravno
+zatražena i odobrena (vidi i L6), pravi FCM token dobiven i upisan u push_tokens
+(potvrđeno upitom nad bazom), stvarna poruka poslana iz appa → DB webhook →
+push-on-message edge function → FCM → sistemska notifikacija stvarno prikazana na
+uređaju ("aarcDev — test Alan: ..."). ⚠️ NAPOMENA ZA BUILD OKOLINU: lokalni `java` na
+PATH-u je JDK 17, a capacitor-android modul traži source/target 21 — build treba
+JAVA_HOME na JBR unutar Android Studija
 (`/Applications/Android Studio.app/Contents/jbr/Contents/Home`), inače
-compileDebugJavaWithJavac puca s "invalid source release: 21". Preostalo: ograničiti
-Android API ključ u Google Cloud Consoleu po package name + SHA-1 (isto obrazloženje kao
-B0) — ručna radnja, treba pristup Consoli. Stvarna dostava pusha NIJE još testirana na
-uređaju/emulatoru (samo je build-lanac potvrđen) — vidi L6 za POST_NOTIFICATIONS dozvolu
-prije nego se ovo označi gotovim.
-🟠 L6. Provjeriti POST_NOTIFICATIONS na Androidu 13+ — manifest deklarira samo INTERNET;
-Capacitorov push plugin bi ga trebao ubaciti spajanjem manifesta, ali to se potvrđuje tek
-na uređaju. ⚠️ nakon L5 (bez FCM-a se ionako nema što prikazati).
+compileDebugJavaWithJavac puca s "invalid source release: 21". ⚠️ Usput otkriveno:
+src-capacitor/www nije bio sinkroniziran u android/app/src/main/assets/public od
+5.8. (tjedan dana zaostatka — nedostajala pretraga I7, prikvačeni projekti I8 itd.) —
+pravi tok je `quasar build -m capacitor -T android` pa `npx cap sync android` (iz
+src-capacitor/), obični `quasar build` puni samo dist/spa (web mock plugini) i ne dira
+www/android. Preostalo prije potpunog zatvaranja: ograničiti Android API ključ u Google
+Cloud Consoleu po package name + SHA-1 (isto obrazloženje kao B0) — ručna radnja, treba
+pristup Consoli.
+✅ L6. (2026-08-13) POST_NOTIFICATIONS na Androidu 13+ potvrđen na emulatoru (API 35) —
+Capacitorov push plugin ubacuje dozvolu spajanjem manifesta kako se i očekivalo, sustavski
+dijalog za odobrenje se pojavljuje i radi. Potvrđeno usput uz L5 end-to-end test.
 🟡 L9. (2026-08-12) Donja sigurna zona (Android nav traka / iOS home indicator) — dosad se
 koristio samo GORNJI safe-area inset, donji nigdje, iako je `viewport-fit=cover` odavno
 postavljen za native buildove. Dodana CSS varijabla `--aarc-safe-bottom` i primijenjena na tri

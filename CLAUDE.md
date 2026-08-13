@@ -100,10 +100,11 @@ Before making changes, always read:
 - Debug console.logs in stores/pages; unfiltered realtime channels for message
   updates/reactions; unused nested child routes; `fetchUnread()` won't scale; Capacitor
   appName mismatch (`aarc` vs `aarcDev`).
-- **Android push build chain fixed but delivery unverified** — `google-services.json` added
-  2026-08-13, Gradle now applies the plugin (confirmed via `processDebugGoogleServices`).
-  Still needed: restrict the Android API key by package name + SHA-1 in Google Cloud Console,
-  and confirm an actual token registers and a push is delivered on a device/emulator. See
-  BACKLOG L5/L6.
+- **Android push works** — confirmed end-to-end 2026-08-13 on an emulator (Pixel_8a_API_35,
+  Play Store image): `google-services.json` added, POST_NOTIFICATIONS permission granted,
+  real FCM token registered to `push_tokens`, a chat message triggered the DB webhook →
+  `push-on-message` edge function → FCM → an actual system notification appeared. Still
+  needed: restrict the Android API key by package name + SHA-1 in Google Cloud Console
+  (manual, Console access required). See BACKLOG L5/L6.
 - **Multi-tenancy migration is the current priority** — see `docs/multi-tenancy.md` and
   BACKLOG § B. Until it lands, RLS gives no isolation.
