@@ -57,12 +57,13 @@
       <!-- Tekstualni input -->
       <q-input
         v-model="body"
+        type="textarea"
         :placeholder="pendingImage ? $t('chat.imageAlt') : $t('chat.placeholder')"
         outlined
         dense
         autogrow
         class="col"
-        @keydown.enter.exact.prevent="send"
+        @keydown.enter.exact="onEnter"
         @paste="onPaste"
         @dragenter.prevent="isDragging = true"
       />
@@ -89,6 +90,7 @@
 import { ref, computed } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
+import { Capacitor } from '@capacitor/core'
 import { useChatStore } from 'src/stores/chat'
 import { useProjectsStore } from 'src/stores/projects'
 import { useImageUpload } from 'src/composables/useImageUpload'
@@ -118,6 +120,15 @@ const pendingPreview = ref(null)
 const fileInput = ref(null)
 
 const canSend = computed(() => !!body.value.trim() || !!pendingImage.value)
+
+// Na mobitelu nema Shift za novi red, pa Enter na tipkovnici mora ostati
+// običan prijelaz u novi red — poruka ide isključivo preko send gumba.
+// Na desktopu (fizička tipkovnica) Enter šalje, Shift+Enter pravi novi red.
+function onEnter(e) {
+  if (Capacitor.isNativePlatform()) return
+  e.preventDefault()
+  send()
+}
 
 async function onPaste(e) {
   const items = Array.from(e.clipboardData?.items ?? [])
