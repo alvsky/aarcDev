@@ -444,13 +444,20 @@ se zatvori (klik na rezultat ili ručno zatvaranje), ne ostaje zaglavljen s pro�
 
 L. Native / mobilno
 🟠 L1. iOS FCM most: zamijeniti localStorage-polling pravim Capacitor bridge eventom ili notifikacijom iz nativnog koda; dodati retry. (Krhko: 30 s timeout.)
-🔴 L5. Android push NE RADI — nema google-services.json, pa build.gradle preskoči
-google-services plugin i samo zapiše logger.info koji se u normalnom buildu ne vidi.
-Provjeriti je li aplikacija com.vitka.collabapp uopće registrirana u Firebaseu, preuzeti
-konfiguraciju u src-capacitor/android/app/ i rebuildati. Napomena: .gitignore ima tu
-datoteku ZAKOMENTIRANU (redak 65) — nije ignorirana, samo nikad nije dodana. Kad se doda,
-ograničiti Android API ključ po package name + SHA-1 (isto obrazloženje kao B0).
-Usput ispraviti CLAUDE.md, koji tvrdi da Android push radi.
+🟠 L5. (2026-08-13, djelomično) google-services.json dodan u
+src-capacitor/android/app/ (package_name com.vitka.collabapp se poklapa s applicationId;
+project_id sve-aplikacije, isti dijeljeni Firebase projekt kao ostale vitka.* app-ove — vidi
+L7). Build lokalno potvrđen: `:app:processDebugGoogleServices` se izvršava (prije je
+build.gradle tiho preskakao plugin, samo logger.info), google_app_id/API key stvarno
+generirani u app/build/generated/.../values.xml. ⚠️ NAPOMENA ZA BUILD OKOLINU: lokalni
+`java` na PATH-u je JDK 17, a capacitor-android modul traži source/target 21 —
+build treba JAVA_HOME na JBR unutar Android Studija
+(`/Applications/Android Studio.app/Contents/jbr/Contents/Home`), inače
+compileDebugJavaWithJavac puca s "invalid source release: 21". Preostalo: ograničiti
+Android API ključ u Google Cloud Consoleu po package name + SHA-1 (isto obrazloženje kao
+B0) — ručna radnja, treba pristup Consoli. Stvarna dostava pusha NIJE još testirana na
+uređaju/emulatoru (samo je build-lanac potvrđen) — vidi L6 za POST_NOTIFICATIONS dozvolu
+prije nego se ovo označi gotovim.
 🟠 L6. Provjeriti POST_NOTIFICATIONS na Androidu 13+ — manifest deklarira samo INTERNET;
 Capacitorov push plugin bi ga trebao ubaciti spajanjem manifesta, ali to se potvrđuje tek
 na uređaju. ⚠️ nakon L5 (bez FCM-a se ionako nema što prikazati).

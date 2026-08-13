@@ -100,7 +100,10 @@ Before making changes, always read:
 - Debug console.logs in stores/pages; unfiltered realtime channels for message
   updates/reactions; unused nested child routes; `fetchUnread()` won't scale; Capacitor
   appName mismatch (`aarc` vs `aarcDev`).
-- **Android push has never worked** — no `google-services.json`, so the Gradle build skips
-  the plugin and says so only at `logger.info`. BACKLOG L5.
+- **Android push build chain fixed but delivery unverified** — `google-services.json` added
+  2026-08-13, Gradle now applies the plugin (confirmed via `processDebugGoogleServices`).
+  Still needed: restrict the Android API key by package name + SHA-1 in Google Cloud Console,
+  and confirm an actual token registers and a push is delivered on a device/emulator. See
+  BACKLOG L5/L6.
 - **Multi-tenancy migration is the current priority** — see `docs/multi-tenancy.md` and
   BACKLOG § B. Until it lands, RLS gives no isolation.
