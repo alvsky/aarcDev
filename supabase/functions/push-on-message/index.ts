@@ -220,13 +220,30 @@ serve(async (req) => {
         .eq('id', record.author_id)
         .single()
 
+      // Invarijanta 4: thread = item_id postavljen (channel null), ili obrnuto.
+      // Bez ove grane data payload je uvijek nosio samo channel, pa je klik na
+      // push za poruku unutar threada ideje/buga/taska uvijek vodio na
+      // Discussion/main umjesto na taj konkretan thread (usePush.js grana po
+      // data.itemId). Isti izbor taba kao tabForItem (src/utils/itemTabs.js).
+      let data: Record<string, string> = { projectId: record.project_id, channel: record.channel ?? 'main' }
+      if (record.item_id) {
+        const { data: item } = await supabase
+          .from('items')
+          .select('kind, stage')
+          .eq('id', record.item_id)
+          .single()
+        if (item) {
+          data = { projectId: record.project_id, itemId: record.item_id, kind: item.kind }
+        }
+      }
+
       await sendPushToMembers(supabase, fcmProjectId, accessToken, {
         projectId: record.project_id,
         excludeUserId: record.author_id,
         notifField: 'notif_messages',
         title,
         body: `${author?.full_name}: ${record.body?.slice(0, 80) || '📎 Screenshot'}`,
-        data: { projectId: record.project_id, channel: record.channel ?? 'main' },
+        data,
       })
     } else if (payload.table === 'items') {
       const { data: author } = await supabase
