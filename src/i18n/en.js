@@ -264,6 +264,7 @@ export default {
     prefIdeas: 'New ideas',
     prefBugs: 'New bugs',
     prefTbi: 'New TODO items',
+    open: 'Open',
   },
   settings: {
     title: 'Settings',

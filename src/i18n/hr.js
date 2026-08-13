@@ -264,6 +264,7 @@ export default {
     prefIdeas: 'Nove ideje',
     prefBugs: 'Novi bugovi',
     prefTbi: 'Nove TODO stavke',
+    open: 'Otvori',
   },
   settings: {
     title: 'Postavke',

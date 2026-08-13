@@ -1,4 +1,6 @@
 import { Capacitor } from '@capacitor/core'
+import { Notify } from 'quasar'
+import { i18n } from 'src/boot/i18n'
 import { useNotificationsStore } from 'src/stores/notifications'
 import { useAuthStore } from 'src/stores/auth'
 import router from 'src/router'
@@ -7,6 +9,21 @@ import router from 'src/router'
 // na items INSERT), pa je stage uvijek početni — dovoljno da bug/idea/task
 // jednoznačno odredi karticu bez dodatnog upita bazi.
 const KIND_TAB = { bug: 'bugs', task: 'tbi', idea: 'ideas' }
+
+// Dijeli ga i klik na sistemsku notifikaciju (pushNotificationActionPerformed)
+// i klik na in-app banner (pushNotificationReceived, dok je app otvorena) —
+// isto odredište, dva različita okidača.
+function navigateFromPushData(data) {
+  const projectId = data.projectId
+  if (!projectId) return
+
+  // I1: tab i meta (item/channel) su sad dio same adrese — ItemListPanel/
+  // ChatPage čitaju query kad se mountaju i briše je čim potroše (vidi
+  // njihove watchere), da se isti skok ne ponovi kod idućeg običnog ulaska.
+  const tab = data.itemId ? (KIND_TAB[data.kind] ?? 'ideas') : 'chat'
+  const query = data.itemId ? { item: data.itemId } : { channel: data.channel ?? 'main' }
+  router.push({ path: `/project/${projectId}/${tab}`, query })
+}
 
 // Token može stići prije prijave (init se pokreće na startu aplikacije) —
 // tada ga čuvamo ovdje i registriramo tek kad se korisnik prijavi.
@@ -98,22 +115,37 @@ export function usePush() {
       if (auth.user) {
         await notifStore.fetchUnread()
       }
+
+      // Android/iOS sam ne prikaže sistemsku notifikaciju dok je app otvorena
+      // (to rade samo kad je u pozadini/ugašena) — bez ovoga bi push u
+      // foregroundu prošao potpuno nezamijećeno osim tihog rasta brojača.
+      const data = notification.data ?? {}
+      if (!data.projectId) return
+      // Već si unutar tog projekta: bedž/točkice na tabovima to već pokazuju,
+      // a ako baš gledaš taj kanal poruka je već stigla uživo (invarijanta 2)
+      // — banner bi ovdje bio samo dupli šum.
+      if (router.currentRoute.value.params.id === data.projectId) return
+
+      Notify.create({
+        message: notification.title ?? '',
+        caption: notification.body ?? '',
+        position: 'top',
+        timeout: 6000,
+        color: 'primary',
+        icon: 'notifications',
+        actions: [
+          {
+            label: i18n.global.t('notifications.open'),
+            color: 'white',
+            handler: () => navigateFromPushData(data),
+          },
+        ],
+      })
     })
 
     PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
       console.log('Push action performed:', action)
-      const data = action.notification?.data ?? {}
-      const projectId = data.projectId
-      if (!projectId) return
-
-      // I1: tab i meta (item/channel) su sad dio same adrese — ItemListPanel/
-      // ChatPage čitaju query kad se mountaju i briše je čim potroše (vidi
-      // njihove watchere), da se isti skok ne ponovi kod idućeg običnog ulaska.
-      const tab = data.itemId ? (KIND_TAB[data.kind] ?? 'ideas') : 'chat'
-      const query = data.itemId
-        ? { item: data.itemId }
-        : { channel: data.channel ?? 'main' }
-      router.push({ path: `/project/${projectId}/${tab}`, query })
+      navigateFromPushData(action.notification?.data ?? {})
     })
   }
 
