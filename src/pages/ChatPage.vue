@@ -52,7 +52,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onActivated, nextTick } from 'vue'
+import { ref, onMounted, onActivated, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useChatStore } from 'src/stores/chat'
 import { useNotificationsStore } from 'src/stores/notifications'
@@ -106,6 +106,21 @@ onActivated(async () => {
   }
   await loadChannel(channel.value)
 })
+
+// Push notifikacija dok je app u pozadini (ne ugašen): ChatPage ostaje
+// aktivna kartica cijelo vrijeme, pa se onActivated nikad ne okine —
+// router.push samo promijeni query dok je komponenta već na ekranu. Bez
+// ovog watchera se ništa ne bi dogodilo (isti simptom kao prije K3 fixa,
+// samo za slučaj "app već otvorena na chatu" umjesto promjene taba).
+watch(
+  () => route.query.channel,
+  async (target) => {
+    if (!target) return
+    channel.value = target === 'offtopic' ? 'offtopic' : 'main'
+    router.replace({ query: {} })
+    await loadChannel(channel.value)
+  },
+)
 </script>
 
 <style scoped>
