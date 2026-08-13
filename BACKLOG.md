@@ -414,7 +414,12 @@ J. TBI modul — proširenja
 🟢 J4. Notifikacija assigneeu kad mu se dodijeli item.
 
 K. Chat — proširenja
-🟢 K1. Push i za nove ideje/bugove/TBI iteme (sad samo poruke okidaju edge function).
+✅ K1. (zapis bio zastario — riješeno ranije, ne datirano) Push za nove ideje/bugove/TBI
+iteme već postoji: push-on-message grana na payload.table ('messages' vs 'items'), oba
+DB webhooka zovu istu edge funkciju (CLAUDE.md to već dokumentira). 2026-08-13 popravljena
+grana za messages (vidi L5-susjedni fix): poruke unutar threada ideje/buga/taska prije
+nisu nosile itemId/kind u data payloadu, pa je klik na push uvijek vodio na
+Discussion/main umjesto na taj konkretan thread.
 🟢 K2. Mention (@ime) + push na mention.
 ✅ K3. (2026-08-11) Pretraga stavki i poruka — nova ProjectSearchDialog.vue (ikona u zaglavlju
 projekta). Stavke: klijentska pretraga po naslovu/opisu preko itemsStore.byProject — namjerno
