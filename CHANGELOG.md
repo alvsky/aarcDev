@@ -9,6 +9,26 @@ svakim isporučenim buildom). Android `versionCode`/`versionName` i
 
 ---
 
+## v1.0 (build 25) — 2026-08-13
+
+Android push notifikacije i popravci dodira na notifikaciju.
+
+- Android push notifikacije sad rade (dosad nikad nisu, nedostajala je
+  konfiguracija).
+- Dodir na notifikaciju za komentar unutar ideje/buga/zadatka sad otvara baš
+  taj thread umjesto uvijek Rasprave.
+- Dodir na notifikaciju dok je app u pozadini (ne ugašena) sad ispravno otvara
+  cilj, umjesto da ostane na trenutnom zaslonu.
+- Dodir na notifikaciju za drugi projekt sad stvarno prebaci na taj projekt,
+  umjesto da samo promijeni karticu unutar starog.
+- Notifikacija se sad pojavljuje i dok gledaš app (prije se pojavljivala samo
+  kad je app u pozadini ili ugašena) — kratki banner s gumbom "Otvori", osim
+  kad si već unutar tog istog projekta.
+- U poruku se sad može upisati novi red (Enter na mobitelu više ne šalje
+  poruku odmah).
+
+---
+
 ## v1.0 (build 24) — 2026-08-12
 
 Dotjerivanje razmaka nakon prvog testiranja na uređaju.
