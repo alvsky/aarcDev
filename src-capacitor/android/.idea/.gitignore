@@ -1,3 +1,8 @@
 # Default ignored files
 /shelf/
 /workspace.xml
+
+# Machine-specific IDE state, not project config
+/AndroidProjectSystem.xml
+/compiler.xml
+/deploymentTargetSelector.xml
