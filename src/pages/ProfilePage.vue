@@ -248,6 +248,28 @@
         </div>
       </q-page>
     </q-page-container>
+
+    <q-footer class="aarc-footer">
+      <q-tabs
+        v-model="activeTab"
+        align="justify"
+        active-color="accent"
+        inactive-color="grey"
+        indicator-color="transparent"
+      >
+        <q-tab name="home" icon="home" :label="$t('nav.projects')" @click="router.push('/')" />
+        <q-tab
+          v-if="!orgsStore.isGuest"
+          name="org"
+          icon="domain"
+          :label="$t('org.title')"
+          @click="router.push('/org')"
+        >
+          <q-badge v-if="otherOrgsUnread" color="negative" floating rounded />
+        </q-tab>
+        <q-tab name="profile" icon="person_outline" :label="$t('settings.profile')" />
+      </q-tabs>
+    </q-footer>
   </q-layout>
 </template>
 
@@ -259,6 +281,8 @@ import { useI18n } from 'vue-i18n'
 import AppHeader from 'src/components/shared/AppHeader.vue'
 import UserAvatar from 'src/components/shared/UserAvatar.vue'
 import { useAuthStore } from 'src/stores/auth'
+import { useOrgsStore } from 'src/stores/orgs'
+import { useNotificationsStore } from 'src/stores/notifications'
 import { useProjectsStore } from 'src/stores/projects'
 import { useItemsStore } from 'src/stores/items'
 import { useImageUpload } from 'src/composables/useImageUpload'
@@ -272,9 +296,17 @@ const $q = useQuasar()
 const { t } = useI18n()
 const { confirmDestructive } = useConfirmDialog()
 const authStore = useAuthStore()
+const orgsStore = useOrgsStore()
+const notifStore = useNotificationsStore()
 const projectsStore = useProjectsStore()
 const itemsStore = useItemsStore()
 const { uploadImage } = useImageUpload()
+
+const activeTab = ref('profile')
+
+const otherOrgsUnread = computed(() =>
+  orgsStore.orgs.some((o) => o.id !== orgsStore.currentId && notifStore.orgUnread(o.id) > 0),
+)
 
 const savingProfile = ref(false)
 const changingPassword = ref(false)
@@ -503,5 +535,15 @@ async function confirmDelete() {
   border-color: var(--q-negative) !important;
   border-radius: 16px !important;
   background: var(--aarc-surface) !important;
+}
+
+.aarc-footer {
+  background: var(--aarc-header) !important;
+  border-top: 1px solid rgba(0, 209, 255, 0.15);
+}
+
+.aarc-footer :deep(.q-tabs) {
+  max-width: var(--aarc-content-max);
+  margin-inline: auto;
 }
 </style>

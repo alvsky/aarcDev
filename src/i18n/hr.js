@@ -301,6 +301,34 @@ export default {
       large: 'Veliko',
       xlarge: 'Jako veliko',
     },
+    about: 'O aplikaciji',
+    privacy: 'Privatnost',
+  },
+  about: {
+    title: 'O aplikaciji',
+    tagline: 'Suradnja za male razvojne timove — chat, bugovi, ideje i backlog na jednom mjestu.',
+    version: 'Verzija',
+    build: 'Build',
+    privacyLink: 'Pravila privatnosti',
+  },
+  privacy: {
+    title: 'Pravila privatnosti',
+    updated: 'Zadnja izmjena: {date}',
+    intro:
+      'Ova stranica objašnjava koje podatke aarc prikuplja, zašto, i kako ih možeš ukloniti. Odnosi se na aplikaciju kakva je sada, ne na neku buduću javnu verziju.',
+    collectTitle: 'Što prikupljamo',
+    collect:
+      'Podatke koje sam upišeš prilikom registracije (e-mail, ime i prezime, po želji profilnu sliku); projekte, poruke u chatu, priloge, ideje, bugove i zadatke koje kreiraš ili u kojima sudjeluješ; te po jedan identifikator uređaja po telefonu/tabletu radi slanja push obavijesti.',
+    useTitle: 'Čemu služe',
+    use: 'Za rad same aplikacije: prikaz tvojih projekata i razgovora, slanje push obavijesti za aktivnosti na koje si pretplaćen, i prepoznavanje tebe (ime, slika) kolegama unutar zajedničkih projekata.',
+    storageTitle: 'Gdje se čuvaju',
+    storage:
+      'Svi podaci čuvaju se u našem Supabase projektu (baza i pohrana datoteka), a za slanje push obavijesti koristimo Firebase Cloud Messaging. Ne prodajemo niti dijelimo tvoje podatke s oglašivačima.',
+    retentionTitle: 'Brisanje tvojih podataka',
+    retention:
+      'Račun možeš obrisati u svakom trenutku iz Profil → Obriši račun, čime se uklanjaju tvoj profil, poruke i učitane datoteke (projekte kojih si jedini vlasnik prvo treba prenijeti na nekog drugog ili obrisati).',
+    contactTitle: 'Pitanja',
+    contact: 'Javi se osobi koja te pozvala u organizaciju, ili izravno vlasniku aplikacije.',
   },
 
   common: {

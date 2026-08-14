@@ -41,6 +41,24 @@
             />
           </q-card-section>
         </q-card>
+
+        <!-- O aplikaciji / privatnost -->
+        <q-card flat bordered class="settings-card">
+          <q-list separator>
+            <q-item clickable v-ripple @click="$router.push('/about')">
+              <q-item-section>{{ $t('settings.about') }}</q-item-section>
+              <q-item-section side>
+                <q-icon name="chevron_right" color="grey" />
+              </q-item-section>
+            </q-item>
+            <q-item clickable v-ripple @click="$router.push('/privacy')">
+              <q-item-section>{{ $t('settings.privacy') }}</q-item-section>
+              <q-item-section side>
+                <q-icon name="chevron_right" color="grey" />
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-card>
       </q-page>
     </q-page-container>
   </q-layout>

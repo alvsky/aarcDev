@@ -9,6 +9,19 @@ svakim isporučenim buildom). Android `versionCode`/`versionName` i
 
 ---
 
+## v1.0 (build 26) — 2026-08-14
+
+Android app ikona, dostupnija navigacija i nove stranice.
+
+- Android app ikona zamijenjena pravim aarc logom (dosad je bio zadani
+  Capacitorov placeholder).
+- Podnožje s navigacijom (Home / Organizacija / Profil) sad je vidljivo i na
+  stranicama Organizacije i Profila, ne samo na Homeu.
+- Nove stranice "O aplikaciji" (verzija, build broj) i "Pravila privatnosti",
+  dostupne iz Postavki.
+
+---
+
 ## v1.0 (build 25) — 2026-08-13
 
 Android push notifikacije i popravci dodira na notifikaciju.

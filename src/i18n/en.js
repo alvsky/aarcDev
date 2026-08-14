@@ -301,6 +301,34 @@ export default {
       large: 'Large',
       xlarge: 'Extra large',
     },
+    about: 'About',
+    privacy: 'Privacy policy',
+  },
+  about: {
+    title: 'About',
+    tagline: 'Collaboration for small dev teams — chat, bugs, ideas and backlog in one place.',
+    version: 'Version',
+    build: 'Build',
+    privacyLink: 'Privacy policy',
+  },
+  privacy: {
+    title: 'Privacy policy',
+    updated: 'Last updated: {date}',
+    intro:
+      "This page explains what data aarc collects, why, and how you can remove it. It covers the app you're using now, not any future public version.",
+    collectTitle: 'What we collect',
+    collect:
+      'Account info you provide (email, full name, optional profile photo); the projects, chat messages, attachments, ideas, bugs and tasks you create or take part in; and a push token per device so the app can notify you.',
+    useTitle: 'How we use it',
+    use: 'To run the app: showing your projects and conversations, sending you push notifications for activity you\'re subscribed to, and letting teammates recognize you (name, photo) inside shared projects.',
+    storageTitle: 'Where it lives',
+    storage:
+      'Everything is stored in our Supabase project (database and file storage) and, for push delivery, in Firebase Cloud Messaging. We don\'t sell or share your data with advertisers.',
+    retentionTitle: 'Deleting your data',
+    retention:
+      'You can delete your account any time from Profile → Delete account, which removes your profile, messages and uploaded files (projects you solely own need to be transferred or deleted first).',
+    contactTitle: 'Questions',
+    contact: 'Reach out to whoever invited you to your organization, or the app owner directly.',
   },
   common: {
     all: 'All',

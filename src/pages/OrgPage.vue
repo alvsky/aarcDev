@@ -245,6 +245,32 @@
         </div>
       </q-page>
     </q-page-container>
+
+    <q-footer class="aarc-footer">
+      <q-tabs
+        v-model="activeTab"
+        align="justify"
+        active-color="accent"
+        inactive-color="grey"
+        indicator-color="transparent"
+      >
+        <q-tab name="home" icon="home" :label="$t('nav.projects')" @click="router.push('/')" />
+        <q-tab
+          v-if="!orgsStore.isGuest"
+          name="org"
+          icon="domain"
+          :label="$t('org.title')"
+        >
+          <q-badge v-if="otherOrgsUnread" color="negative" floating rounded />
+        </q-tab>
+        <q-tab
+          name="profile"
+          icon="person_outline"
+          :label="$t('settings.profile')"
+          @click="router.push('/profile')"
+        />
+      </q-tabs>
+    </q-footer>
   </q-layout>
 </template>
 
@@ -269,6 +295,12 @@ const orgsStore = useOrgsStore()
 const authStore = useAuthStore()
 const notifStore = useNotificationsStore()
 const formatDate = useFormatDate()
+
+const activeTab = ref('org')
+
+const otherOrgsUnread = computed(() =>
+  orgsStore.orgs.some((o) => o.id !== orgsStore.currentId && notifStore.orgUnread(o.id) > 0),
+)
 
 const inviteEmail = ref('')
 const inviteRole = ref('member')
@@ -512,5 +544,15 @@ onMounted(() => {
   border-color: var(--q-negative) !important;
   border-radius: 16px !important;
   background: var(--aarc-surface) !important;
+}
+
+.aarc-footer {
+  background: var(--aarc-header) !important;
+  border-top: 1px solid rgba(0, 209, 255, 0.15);
+}
+
+.aarc-footer :deep(.q-tabs) {
+  max-width: var(--aarc-content-max);
+  margin-inline: auto;
 }
 </style>
