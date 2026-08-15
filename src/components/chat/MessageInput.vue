@@ -80,7 +80,7 @@
       />
     </div>
 
-    <div class="text-caption text-grey-5 q-mt-xs q-ml-sm">
+    <div v-if="!isNative" class="text-caption text-grey-5 q-mt-xs q-ml-sm">
       {{ $t('chat.pasteHint') }}
     </div>
   </div>
@@ -120,6 +120,7 @@ const pendingPreview = ref(null)
 const fileInput = ref(null)
 
 const canSend = computed(() => !!body.value.trim() || !!pendingImage.value)
+const isNative = Capacitor.isNativePlatform()
 
 // Na mobitelu nema Shift za novi red, pa Enter na tipkovnici mora ostati
 // običan prijelaz u novi red — poruka ide isključivo preko send gumba.

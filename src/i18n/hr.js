@@ -236,7 +236,7 @@ export default {
     placeholder: 'Napiši poruku…',
     send: 'Pošalji',
     noMessages: 'Još nema poruka.',
-    pasteHint: 'Ctrl+V za lijepljenje screenshota',
+    pasteHint: 'Ctrl+V / Cmd+V za lijepljenje screenshota',
     uploading: 'Slanje slike…',
     imageAlt: 'Screenshot',
     attachmentFail: 'Slika se nije mogla poslati.',

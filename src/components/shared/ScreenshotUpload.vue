@@ -39,7 +39,7 @@
 
     <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileSelected" />
 
-    <div class="text-caption text-grey-5 q-mt-xs">
+    <div v-if="!isNative" class="text-caption text-grey-5 q-mt-xs">
       {{ $t('chat.pasteHint') }}
     </div>
   </div>
@@ -49,6 +49,7 @@
 import { ref, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
+import { Capacitor } from '@capacitor/core'
 
 const props = defineProps({
   modelValue: { type: File, default: null },
@@ -59,6 +60,7 @@ const $q = useQuasar()
 const { t } = useI18n()
 const fileInput = ref(null)
 const preview = ref(null)
+const isNative = Capacitor.isNativePlatform()
 
 watch(
   () => props.modelValue,

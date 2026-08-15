@@ -236,7 +236,7 @@ export default {
     placeholder: 'Write a message…',
     send: 'Send',
     noMessages: 'No messages yet.',
-    pasteHint: 'Ctrl+V to paste a screenshot',
+    pasteHint: 'Ctrl+V / Cmd+V to paste a screenshot',
     uploading: 'Uploading image…',
     imageAlt: 'Screenshot',
     attachmentFail: 'Image could not be sent.',
