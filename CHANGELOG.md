@@ -9,6 +9,27 @@ svakim isporučenim buildom). Android `versionCode`/`versionName` i
 
 ---
 
+## v1.0 (build 27) — 2026-08-15
+
+Registracija konačno radi, pozivnice se šalju e-mailom.
+
+- Popravljena registracija/prijava koja je vraćala grešku 500 — Resend SMTP
+  pošiljatelj je koristio testnu (sandbox) adresu koja je smjela slati samo
+  vlasniku Resend računa, pa nitko drugi nije mogao dovršiti registraciju.
+  Sad koristi pravu, verificiranu domenu.
+- Neuspjela prijava/registracija/reset lozinke sad prikazuje razumljivu
+  poruku umjesto sirove (ponekad prazne, vidljive kao gole vitičaste zagrade)
+  greške sa servera.
+- Pozivnice u organizaciju sad stižu i e-mailom (uz link koji se i dalje
+  kopira u međuspremnik) — prije se link morao ručno proslijediti.
+- Nova web stranica za prihvat pozivnice (za nekoga tko još nema instaliranu
+  app) — prijava/registracija i pridruživanje organizaciji izravno u
+  pregledniku.
+- Uklonjena "Ctrl+V za lijepljenje" uputa na mobilnim uređajima (nema
+  smisla bez tipkovnice); na webu sad piše i za Mac (Cmd+V).
+
+---
+
 ## v1.0 (build 26) — 2026-08-14
 
 Android app ikona, dostupnija navigacija i nove stranice.
