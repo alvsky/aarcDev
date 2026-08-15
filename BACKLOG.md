@@ -189,6 +189,15 @@ list: popis organizacija s bedžom nepročitanog, "Nova organizacija", "Postavke
   povijest s Gmail SMTP-om, ista simptomatika). Popravljeno verifikacijom prave domene u
   Resendu i ispravkom sender adrese u Supabase SMTP postavkama; potvrđeno end-to-end (mail
   stvarno stigao na tuđu adresu). Do ovog popravka je zaštita bila samo teoretski uključena.
+  ✅ B21c. (2026-08-15) Pozivnice sad šalju i pravi e-mail, ne samo kopirljiv link — sad kad
+  SMTP/Resend stvarno radi (vidi bilješku iznad), nema razloga da admin ručno prosljeđuje link.
+  Nova Edge Function `send-invitation` (isti obrazac kao push-on-message: Resend HTTP API
+  umjesto FCM-a), okinuta DB webhook triggerom na `invitations` INSERT
+  (20260815100000_invitation_email_webhook.sql, `supabase_functions.http_request`, identično
+  push-on-item/push-on-message triggerima). Link se i dalje kopira u clipboard kao rezerva.
+  Sender: aarc@vitkadesign.com (ista verificirana domena kao Auth SMTP). RESEND_API_KEY
+  postavljen kao poseban Edge Function secret (`supabase secrets set`) — SMTP lozinka u Auth
+  postavkama je odvojen mehanizam, ne dijele isti secret store. Potvrđeno end-to-end.
   ✅ B25. (2026-08-11) project_members postaje pretplata, ne dozvola: nakon B7/B15 svaki
   član organizacije dobivao je obavijesti za SVAKI projekt vidljiv organizaciji, i za one
   koje nikad nije otvorio. auto_follow_on_message/_on_assign okidači + follow_project RPC

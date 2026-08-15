@@ -115,7 +115,7 @@ export default {
     invite: 'Pozovi člana',
     inviteRole: 'Uloga',
     inviteSend: 'Pošalji pozivnicu',
-    inviteCreated: 'Pozivnica stvorena — pošalji ovaj link:',
+    inviteCreated: 'Pozivnica poslana e-mailom (link je usput i kopiran, za svaki slučaj).',
     copyLink: 'Kopiraj link',
     linkCopied: 'Link kopiran.',
     pendingInvitations: 'Pozivnice na čekanju',

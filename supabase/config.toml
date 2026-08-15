@@ -36,3 +36,9 @@ entrypoint = "./functions/push-on-message/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/push-on-message/*.html" ]
+
+[functions.send-invitation]
+enabled = true
+verify_jwt = false
+import_map = "./functions/send-invitation/deno.json"
+entrypoint = "./functions/send-invitation/index.ts"

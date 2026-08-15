@@ -115,7 +115,7 @@ export default {
     invite: 'Invite member',
     inviteRole: 'Role',
     inviteSend: 'Send invitation',
-    inviteCreated: 'Invitation created — share this link:',
+    inviteCreated: 'Invitation sent by email (also copied the link, just in case).',
     copyLink: 'Copy link',
     linkCopied: 'Link copied.',
     pendingInvitations: 'Pending invitations',
