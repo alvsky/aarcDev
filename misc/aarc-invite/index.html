@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>aarc — Pozivnica</title>
+<style>
+  :root {
+    --primary: #007bff;
+    --accent: #00d1ff;
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --bg: #f4f6f9;
+    --border: #e2e5eb;
+    --negative: #e53935;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--text);
+    padding: 16px;
+  }
+  .card {
+    width: 100%;
+    max-width: 380px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+    padding: 28px 24px;
+  }
+  .logo {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 4px;
+    margin-bottom: 20px;
+  }
+  .center { text-align: center; }
+  .spinner {
+    width: 28px;
+    height: 28px;
+    margin: 24px auto;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .msg { font-size: 14px; line-height: 1.5; margin-bottom: 16px; }
+  .msg.error { color: var(--negative); }
+  .msg.muted { color: var(--muted); font-size: 13px; }
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 12px 0 4px;
+  }
+  input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    outline: none;
+  }
+  input:focus { border-color: var(--primary); }
+  button {
+    width: 100%;
+    margin-top: 18px;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button.primary {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: #fff;
+  }
+  button.primary:disabled { opacity: 0.6; cursor: default; }
+  button.link {
+    background: none;
+    color: var(--primary);
+    font-weight: 500;
+    margin-top: 8px;
+  }
+  button.outline {
+    background: #fff;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+  }
+  .toggle {
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">aarc</div>
+    <div class="subtitle">Pozivnica</div>
+
+    <div id="loading" class="center">
+      <div class="spinner"></div>
+    </div>
+
+    <div id="notFound" class="hidden">
+      <div class="msg">Pozivnica ne postoji, iskorištena je ili je istekla.</div>
+    </div>
+
+    <div id="loadError" class="hidden">
+      <div class="msg error" id="loadErrorText"></div>
+    </div>
+
+    <div id="inviteInfo" class="hidden">
+      <div class="msg" id="invitedToText"></div>
+
+      <!-- Neprijavljen: prijava/registracija -->
+      <div id="authSection" class="hidden">
+        <div class="msg muted" id="loginHint"></div>
+
+        <label for="fullNameInput" id="fullNameLabel" class="hidden">Ime i prezime</label>
+        <input type="text" id="fullNameInput" class="hidden" autocomplete="name" />
+
+        <label for="emailInput">E-mail</label>
+        <input type="email" id="emailInput" autocomplete="email" />
+
+        <label for="passwordInput">Lozinka</label>
+        <input type="password" id="passwordInput" autocomplete="current-password" />
+
+        <button class="primary" id="authSubmit">Prijavi se</button>
+        <div class="toggle">
+          <button class="link" id="authToggle">Nemaš račun? Registriraj se</button>
+        </div>
+        <div class="msg error hidden" id="authError"></div>
+      </div>
+
+      <!-- Čeka potvrdu e-maila nakon registracije -->
+      <div id="confirmSection" class="hidden">
+        <div class="msg" id="confirmText"></div>
+      </div>
+
+      <!-- Prijavljen krivom adresom -->
+      <div id="wrongAccountSection" class="hidden">
+        <div class="msg error" id="wrongAccountText"></div>
+        <button class="outline" id="switchAccountBtn">Odjavi se i prijavi drugim računom</button>
+      </div>
+
+      <!-- Prijavljen ispravnom adresom -->
+      <div id="acceptSection" class="hidden">
+        <button class="primary" id="acceptBtn">Prihvati pozivnicu</button>
+        <div class="msg error hidden" id="acceptError"></div>
+      </div>
+
+      <!-- Uspješno pridružen -->
+      <div id="doneSection" class="hidden">
+        <div class="msg" id="doneText"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script>
+    // Ista instanca kao u appu (src/boot/supabase.js) — anon key je javni,
+    // zaštita je isključivo RLS/RPC provjere na serveru.
+    const SUPABASE_URL = 'https://uwtmnbliuuoqkmwjwzid.supabase.co'
+    const SUPABASE_ANON_KEY =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3dG1uYmxpdXVvcWttd2p3emlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyOTI5ODAsImV4cCI6MjA5OTg2ODk4MH0.KHial6jxW_25QzVO5rHb98x-Xz8Xm5Fkra_Jn6NRq7U'
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { flowType: 'pkce', persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+    })
+
+    const ROLE_LABEL = { owner: 'Vlasnik', admin: 'Admin', member: 'Član', guest: 'Gost' }
+
+    // Token je zadnji segment putanje (/invite/<token>), s query-stringom kao rezervom
+    // ako stranica ikad bude servirana preko ?token=... umjesto pravog puta.
+    function getToken() {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('token')) return params.get('token')
+      const parts = window.location.pathname.split('/').filter(Boolean)
+      return parts[parts.length - 1] || null
+    }
+
+    const token = getToken()
+    let invite = null
+    let isLogin = true
+
+    const el = (id) => document.getElementById(id)
+    const show = (id) => el(id).classList.remove('hidden')
+    const hide = (id) => el(id).classList.add('hidden')
+
+    function showAuthState() {
+      hide('authSection')
+      hide('confirmSection')
+      hide('wrongAccountSection')
+      hide('acceptSection')
+      hide('doneSection')
+    }
+
+    async function render() {
+      const { data: { session } } = await supabase.auth.getSession()
+      showAuthState()
+
+      if (!session) {
+        show('authSection')
+        el('loginHint').textContent =
+          `Prijavi se ili napravi račun s adresom ${invite.email} da prihvatiš pozivnicu.`
+        if (!el('emailInput').value) el('emailInput').value = invite.email
+        return
+      }
+
+      const emailMatches = session.user.email?.toLowerCase() === invite.email.toLowerCase()
+      if (!emailMatches) {
+        show('wrongAccountSection')
+        el('wrongAccountText').textContent =
+          `Pozivnica je poslana na ${invite.email}, a prijavljen/a si kao ${session.user.email}.`
+        return
+      }
+
+      show('acceptSection')
+    }
+
+    async function loadInvite() {
+      if (!token) {
+        hide('loading')
+        show('notFound')
+        return
+      }
+      const { data, error } = await supabase.rpc('get_invitation_preview', { p_token: token })
+      hide('loading')
+
+      if (error) {
+        show('loadError')
+        el('loadErrorText').textContent = error.message
+        return
+      }
+      const row = Array.isArray(data) ? data[0] : data
+      if (!row) {
+        show('notFound')
+        return
+      }
+
+      invite = row
+      show('inviteInfo')
+      el('invitedToText').textContent =
+        `Pozvan/a si u organizaciju "${invite.org_name}" kao ${ROLE_LABEL[invite.role] ?? invite.role}.`
+      await render()
+    }
+
+    el('authToggle').addEventListener('click', () => {
+      isLogin = !isLogin
+      el('authSubmit').textContent = isLogin ? 'Prijavi se' : 'Registriraj se'
+      el('authToggle').textContent = isLogin ? 'Nemaš račun? Registriraj se' : 'Već imaš račun? Prijavi se'
+      if (isLogin) { hide('fullNameLabel'); hide('fullNameInput') }
+      else { show('fullNameLabel'); show('fullNameInput') }
+      hide('authError')
+    })
+
+    el('authSubmit').addEventListener('click', async () => {
+      const email = el('emailInput').value.trim()
+      const password = el('passwordInput').value
+      hide('authError')
+      if (!email || !password) return
+
+      el('authSubmit').disabled = true
+      try {
+        if (isLogin) {
+          const { error } = await supabase.auth.signInWithPassword({ email, password })
+          if (error) throw error
+          await render()
+        } else {
+          const fullName = el('fullNameInput').value.trim()
+          const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: { data: { full_name: fullName } },
+          })
+          if (error) throw error
+          if (!data.session) {
+            hide('authSection')
+            show('confirmSection')
+            el('confirmText').textContent =
+              `Poslali smo potvrdu na ${email}. Otvori mail, klikni na link, i vrati se na OVU istu stranicu da dovršiš pridruživanje.`
+          } else {
+            await render()
+          }
+        }
+      } catch (e) {
+        el('authError').textContent = e.message || 'Nešto je pošlo po zlu. Pokušaj ponovno.'
+        show('authError')
+      } finally {
+        el('authSubmit').disabled = false
+      }
+    })
+
+    el('switchAccountBtn').addEventListener('click', async () => {
+      await supabase.auth.signOut()
+      await render()
+    })
+
+    el('acceptBtn').addEventListener('click', async () => {
+      hide('acceptError')
+      el('acceptBtn').disabled = true
+      try {
+        const { error } = await supabase.rpc('accept_invitation', { p_token: token })
+        if (error) throw error
+        hide('acceptSection')
+        show('doneSection')
+        el('doneText').textContent =
+          `Pridružen/a si organizaciji "${invite.org_name}"! Otvori aarc app na mobitelu — novi prostor te već čeka.`
+      } catch (e) {
+        el('acceptError').textContent = e.message || 'Nešto je pošlo po zlu. Pokušaj ponovno.'
+        show('acceptError')
+      } finally {
+        el('acceptBtn').disabled = false
+      }
+    })
+
+    // Ako se korisnik vrati na ovu stranicu nakon klika na potvrdni mail link
+    // (PKCE ?code=... u adresi), supabase-js sam zamijeni kod za sesiju
+    // (detectSessionInUrl) — samo trebamo ponovno provjeriti stanje.
+    supabase.auth.onAuthStateChange(() => { if (invite) render() })
+
+    loadInvite()
+  </script>
+</body>
+</html>

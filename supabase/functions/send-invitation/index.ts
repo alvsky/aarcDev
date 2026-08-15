@@ -23,7 +23,7 @@ serve(async (req) => {
       supabase.from('profiles').select('full_name').eq('id', record.invited_by).single(),
     ])
 
-    const inviteUrl = `https://vitkadesign.com/invite/${record.token}`
+    const inviteUrl = `https://vitkadesign.com/aarc-invite/${record.token}`
     const orgName = org?.name ?? 'aarc'
     const inviterName = inviter?.full_name ?? 'Netko'
     const roleLabel = ROLE_LABEL[record.role] ?? record.role

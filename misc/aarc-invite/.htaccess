@@ -1,0 +1,7 @@
+# Bez ovoga cPanel/Apache traži stvarnu datoteku "invite/<token>" i vraća 404
+# (samo /invite/ bi poslužio index.html). Ovo preusmjerava svaki podpuni pod
+# /invite/ na index.html, koji token čita iz window.location.pathname.
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [L]
