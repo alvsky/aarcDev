@@ -179,8 +179,12 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"
+    onerror="document.getElementById('loading').classList.add('hidden'); document.getElementById('loadError').classList.remove('hidden'); document.getElementById('loadErrorText').textContent = 'Ne mogu učitati potrebnu skriptu (provjeri internetsku vezu ili blokator oglasa) — pokušaj ponovno.'"
+  ></script>
   <script>
+   try {
     // Ista instanca kao u appu (src/boot/supabase.js) — anon key je javni,
     // zaštita je isključivo RLS/RPC provjere na serveru.
     const SUPABASE_URL = 'https://uwtmnbliuuoqkmwjwzid.supabase.co'
@@ -342,7 +346,19 @@
     // (detectSessionInUrl) — samo trebamo ponovno provjeriti stanje.
     supabase.auth.onAuthStateChange(() => { if (invite) render() })
 
-    loadInvite()
+    // Bez ovog .catch() bi svaka mrežna/neočekivana greška (npr. CORS, DNS,
+    // blokiran fetch) ostavila spinner zauvijek vrtećim bez ikakve poruke —
+    // točno ovo se dogodilo u praksi (2026-08-15).
+    loadInvite().catch((e) => {
+      hide('loading')
+      show('loadError')
+      el('loadErrorText').textContent = 'Greška: ' + (e?.message || e)
+    })
+   } catch (e) {
+    document.getElementById('loading').classList.add('hidden')
+    document.getElementById('loadError').classList.remove('hidden')
+    document.getElementById('loadErrorText').textContent = 'Greška: ' + (e?.message || e)
+   }
   </script>
 </body>
 </html>
