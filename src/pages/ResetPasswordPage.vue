@@ -70,6 +70,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from 'src/stores/auth'
+import { authErrorMessage } from 'src/utils/authError'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -102,7 +103,7 @@ async function submit() {
     done.value = true
     setTimeout(() => router.push('/'), 2000)
   } catch (e) {
-    errorMsg.value = e.message
+    errorMsg.value = authErrorMessage(e, t)
   } finally {
     loading.value = false
   }

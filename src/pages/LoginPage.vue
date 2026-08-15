@@ -107,6 +107,7 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from 'src/stores/auth'
 import { useOrgsStore } from 'src/stores/orgs'
+import { authErrorMessage } from 'src/utils/authError'
 
 const router = useRouter()
 const route = useRoute()
@@ -149,7 +150,7 @@ function promptForgotPassword() {
       await authStore.requestPasswordReset(email.trim())
       $q.notify({ type: 'positive', message: t('auth.resetLinkSent', { email: email.trim() }) })
     } catch (e) {
-      $q.notify({ type: 'negative', message: e.message })
+      $q.notify({ type: 'negative', message: authErrorMessage(e, t) })
     }
   })
 }
@@ -181,7 +182,7 @@ async function submit() {
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
     router.push(redirect)
   } catch (e) {
-    errorMsg.value = e.message
+    errorMsg.value = authErrorMessage(e, t)
   } finally {
     loading.value = false
   }

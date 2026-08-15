@@ -27,6 +27,11 @@ export default {
     resetLinkSent: 'We sent a password reset link to {email}.',
     resetPassword: 'New password',
     resetPasswordDone: 'Password changed. Taking you home…',
+    errorGeneric: 'Something went wrong. Please try again in a moment.',
+    errorInvalidCredentials: 'Incorrect email or password.',
+    errorUserExists: 'An account with this email already exists.',
+    errorEmailNotConfirmed: 'Please confirm your email before logging in.',
+    errorPasswordTooShort: 'Password must be at least 6 characters.',
   },
   invite: {
     title: 'Invitation',

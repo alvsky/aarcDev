@@ -27,6 +27,11 @@ export default {
     resetLinkSent: 'Poslali smo link za resetiranje lozinke na {email}.',
     resetPassword: 'Nova lozinka',
     resetPasswordDone: 'Lozinka je promijenjena. Vraćamo te na početnu…',
+    errorGeneric: 'Nešto je pošlo po zlu. Pokušaj ponovno za trenutak.',
+    errorInvalidCredentials: 'Pogrešan e-mail ili lozinka.',
+    errorUserExists: 'Račun s ovom e-mail adresom već postoji.',
+    errorEmailNotConfirmed: 'Prvo potvrdi e-mail adresu prije prijave.',
+    errorPasswordTooShort: 'Lozinka mora imati barem 6 znakova.',
   },
   invite: {
     title: 'Pozivnica',
