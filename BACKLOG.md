@@ -182,10 +182,13 @@ list: popis organizacija s bedžom nepročitanog, "Nova organizacija", "Postavke
   neprijavljen/kriva adresa/ispravna adresa) + LoginPage `redirect`+`email` query da token
   preživi prijavu/registraciju. End-to-end potvrđeno s pravim računom (registracija preko
   invite linka → ulazak u "vitka d.o.o." kao member).
-  🔴 PRIJE JAVNOG IZLASKA: bez G2 se netko može registrirati tuđom (nepotvrđenom) adresom i
-  preuzeti tuđu pozivnicu — accept_invitation uspoređuje e-mail sesije s pozivnicom, ali ta
-  provjera vrijedi onoliko koliko vrijedi da je adresa stvarno vlasnikova. Zatvoriti s G2 prije
-  javnog izlaska, ne odgađati dalje.
+  ✅ Zatvoreno (2026-08-15): rizik "netko se registrira tuđom nepotvrđenom adresom i preuzme
+  pozivnicu" formalno je bio zatvoren s G2 (2026-08-12), ali potvrda e-maila stvarno NIJE
+  stizala nikome osim vlasniku Resend računa — sandbox pošiljatelj (`onboarding@resend.dev`)
+  odbija slanje bilo kome drugom, GoTrue je to vraćao kao 500 na signUp (vidi i BACKLOG G2/G1
+  povijest s Gmail SMTP-om, ista simptomatika). Popravljeno verifikacijom prave domene u
+  Resendu i ispravkom sender adrese u Supabase SMTP postavkama; potvrđeno end-to-end (mail
+  stvarno stigao na tuđu adresu). Do ovog popravka je zaštita bila samo teoretski uključena.
   ✅ B25. (2026-08-11) project_members postaje pretplata, ne dozvola: nakon B7/B15 svaki
   član organizacije dobivao je obavijesti za SVAKI projekt vidljiv organizaciji, i za one
   koje nikad nije otvorio. auto_follow_on_message/_on_assign okidači + follow_project RPC
