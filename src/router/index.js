@@ -44,6 +44,10 @@ const routes = [
         component: () => import('src/pages/PrivacyPage.vue'),
       },
       {
+        path: '/changelog',
+        component: () => import('src/pages/ChangelogPage.vue'),
+      },
+      {
         path: '/profile',
         component: () => import('src/pages/ProfilePage.vue'),
         meta: { auth: true },

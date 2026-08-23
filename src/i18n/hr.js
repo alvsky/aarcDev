@@ -322,6 +322,11 @@ export default {
     version: 'Verzija',
     build: 'Build',
     privacyLink: 'Pravila privatnosti',
+    changelogLink: 'Popis promjena',
+  },
+  changelog: {
+    title: 'Popis promjena',
+    version: 'v{version} (build {build})',
   },
   privacy: {
     title: 'Pravila privatnosti',

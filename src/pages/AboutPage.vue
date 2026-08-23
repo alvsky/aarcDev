@@ -21,6 +21,13 @@
           </q-card-section>
           <q-separator />
           <q-list>
+            <q-item clickable v-ripple @click="$router.push('/changelog')">
+              <q-item-section>{{ $t('about.changelogLink') }}</q-item-section>
+              <q-item-section side>
+                <q-icon name="chevron_right" color="grey" />
+              </q-item-section>
+            </q-item>
+            <q-separator />
             <q-item clickable v-ripple @click="$router.push('/privacy')">
               <q-item-section>{{ $t('about.privacyLink') }}</q-item-section>
               <q-item-section side>
@@ -39,7 +46,7 @@ import AppHeader from 'src/components/shared/AppHeader.vue'
 
 // Prati iOS/Android/CHANGELOG.md — bump ručno zajedno s njima (vidi CLAUDE.md).
 const appVersion = '1.0'
-const appBuild = '27'
+const appBuild = '28'
 </script>
 
 <style scoped>

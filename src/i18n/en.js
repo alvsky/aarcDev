@@ -322,6 +322,11 @@ export default {
     version: 'Version',
     build: 'Build',
     privacyLink: 'Privacy policy',
+    changelogLink: 'Changelog',
+  },
+  changelog: {
+    title: 'Changelog',
+    version: 'v{version} (build {build})',
   },
   privacy: {
     title: 'Privacy policy',
