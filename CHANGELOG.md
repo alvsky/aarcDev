@@ -9,6 +9,21 @@ svakim isporučenim buildom). Android `versionCode`/`versionName` i
 
 ---
 
+## v1.0 (build 28) — 2026-08-23
+
+Poruke koje nestaju nakon čitanja, i chat prilagođen desktopu.
+
+- Nova opcija u chatu: poruka koja nestaje nakon čitanja. Uključi se gumbom s
+  ikonom vatre pored polja za unos poruke; ostalim članovima se prikaže kao
+  skriven mjehurić dok ga ne otvore, a sadržaj se u tom trenutku nepovratno
+  briše (uključno s privitkom). Kad je pročitaju svi članovi projekta, u
+  chatu ostaje samo trag "Otvoreno" — vidljiv svima, kao kod WhatsAppa.
+- Chat thread (otvoren iz ideje/buga/zadatka) sad ima istu ograničenu širinu
+  kao ostatak aplikacije na tabletu/desktopu — dosad se razvlačio preko
+  cijelog ekrana.
+
+---
+
 ## v1.0 (build 27) — 2026-08-15
 
 Registracija konačno radi, pozivnice se šalju e-mailom.
