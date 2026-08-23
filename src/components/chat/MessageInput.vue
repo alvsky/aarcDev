@@ -28,7 +28,7 @@
       v-if="isDragging"
       class="drop-zone flex flex-center"
       @dragover.prevent
-      @dragleave="isDragging = false"
+      @dragleave="stopDragging"
       @drop.prevent="onDrop"
     >
       <div class="text-body2 text-grey-5 text-center">
@@ -65,7 +65,7 @@
         class="col"
         @keydown.enter.exact="onEnter"
         @paste="onPaste"
-        @dragenter.prevent="isDragging = true"
+        @dragenter.prevent="startDragging"
       />
 
       <!-- Ugašena vatra = obična poruka; upaljena = nestaje nakon čitanja. -->
@@ -100,7 +100,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { Capacitor } from '@capacitor/core'
@@ -133,10 +133,19 @@ const pendingPreview = ref(null)
 const fileInput = ref(null)
 const destroyAfterRead = ref(false)
 
-// Mora biti funkcija, ne pridruživanje u predlošku (@click="x = !x"): tamo se
-// zastavica nije mijenjala i poruke su odlazile kao obične.
+// Sve tri idu kroz funkciju, ne kroz pridruživanje u predlošku (@click="x = !x"):
+// tako je pisan i prekidač za vatru, pa se zastavica nije mijenjala i poruke su
+// odlazile kao obične. Drop zona je bila na istom obrascu.
 function toggleDestroyAfterRead() {
   destroyAfterRead.value = !destroyAfterRead.value
+}
+
+function startDragging() {
+  isDragging.value = true
+}
+
+function stopDragging() {
+  isDragging.value = false
 }
 
 const canSend = computed(() => !!body.value.trim() || !!pendingImage.value)
@@ -146,7 +155,7 @@ const isNative = Capacitor.isNativePlatform()
 // običan prijelaz u novi red — poruka ide isključivo preko send gumba.
 // Na desktopu (fizička tipkovnica) Enter šalje, Shift+Enter pravi novi red.
 function onEnter(e) {
-  if (Capacitor.isNativePlatform()) return
+  if (isNative) return
   e.preventDefault()
   send()
 }
@@ -176,6 +185,9 @@ function onFileSelected(e) {
 
 function setPending(file) {
   if (!file) return
+  // Bez ovoga druga zaredom zalijepljena slika ostavlja prvi objectURL zauvijek
+  // u memoriji — revoke je dosad radio samo clearPending.
+  if (pendingPreview.value) URL.revokeObjectURL(pendingPreview.value)
   pendingImage.value = file
   pendingPreview.value = URL.createObjectURL(file)
 }
@@ -186,6 +198,12 @@ function clearPending() {
   pendingPreview.value = null
   if (fileInput.value) fileInput.value.value = ''
 }
+
+// Napuštanje chata s pripremljenom slikom (promjena kanala, zatvaranje threada)
+// inače ostavi objectURL neopozvan.
+onUnmounted(() => {
+  if (pendingPreview.value) URL.revokeObjectURL(pendingPreview.value)
+})
 
 async function send() {
   if (!canSend.value || sending.value) return
@@ -274,80 +292,6 @@ async function send() {
 </script>
 
 <style scoped>
-.message-list-wrapper {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.message-list {
-  overflow-y: auto;
-  flex: 1;
-  min-height: 0;
-  box-sizing: border-box;
-}
-
-.msg-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.msg-own {
-  flex-direction: row-reverse;
-}
-
-.msg-own .msg-meta {
-  text-align: right;
-}
-
-.msg-bubble-wrap {
-  max-width: 75%;
-  display: flex;
-  flex-direction: column;
-}
-
-.msg-own .msg-bubble-wrap {
-  align-items: flex-end;
-}
-
-.msg-meta {
-  margin-bottom: 2px;
-}
-
-.msg-bubble {
-  display: inline-block;
-  background: #f1f2f6;
-  border-radius: 0 12px 12px 12px;
-  padding: 8px 12px;
-  max-width: 100%;
-  word-break: break-word;
-}
-
-.msg-bubble-own {
-  background: #d4f6ff;
-  color: #011c3a;
-  border-radius: 12px 0 12px 12px;
-}
-
-.msg-body {
-  white-space: pre-wrap;
-  word-break: break-word;
-  font-size: 14px;
-}
-
-.msg-actions {
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.msg-row:hover .msg-actions {
-  opacity: 1;
-}
-
 .message-input-wrap {
   min-width: 0;
   max-width: 100%;
@@ -364,6 +308,16 @@ async function send() {
    je auto), pa razvuče cijeli thread dijalog umjesto da se skrati s "…". */
 .reply-preview-text {
   min-width: 0;
+}
+
+/* Drop zona je dosad bila bez ijednog pravila: div se srušio na nultu visinu,
+   pa se pri povlačenju slike nije imalo što vidjeti ni na što ispustiti. */
+.drop-zone {
+  min-height: 96px;
+  margin-bottom: 8px;
+  border: 2px dashed var(--q-primary, #1976d2);
+  border-radius: 8px;
+  background: rgba(25, 118, 210, 0.06);
 }
 
 .preview-thumb {
