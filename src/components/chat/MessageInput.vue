@@ -68,13 +68,18 @@
         @dragenter.prevent="isDragging = true"
       />
 
-      <q-toggle
-        v-model="destroyAfterRead"
+      <!-- Ugašena vatra = obična poruka; upaljena = nestaje nakon čitanja. -->
+      <q-btn
+        flat
+        round
         dense
-        size="sm"
-        color="primary"
-        :label="$t('chat.destroyAfterRead')"
-      />
+        icon="local_fire_department"
+        :color="destroyAfterRead ? 'deep-orange' : 'grey-5'"
+        :aria-pressed="destroyAfterRead"
+        @click="destroyAfterRead = !destroyAfterRead"
+      >
+        <q-tooltip>{{ $t('chat.destroyAfterRead') }}</q-tooltip>
+      </q-btn>
 
       <!-- Send gumb -->
       <q-btn
