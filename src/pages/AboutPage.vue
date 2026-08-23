@@ -46,7 +46,7 @@ import AppHeader from 'src/components/shared/AppHeader.vue'
 
 // Prati iOS/Android/CHANGELOG.md — bump ručno zajedno s njima (vidi CLAUDE.md).
 const appVersion = '1.0'
-const appBuild = '29'
+const appBuild = '30'
 </script>
 
 <style scoped>

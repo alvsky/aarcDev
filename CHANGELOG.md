@@ -9,7 +9,7 @@ svakim isporučenim buildom). Android `versionCode`/`versionName` i
 
 ---
 
-## v1.0 (build 29) — 2026-08-23
+## v1.0 (build 30) — 2026-08-23
 
 Popis promjena, sad i u samoj aplikaciji.
 

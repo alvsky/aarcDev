@@ -38,7 +38,7 @@ const { locale } = useI18n()
 const entries = [
   {
     version: '1.0',
-    build: 29,
+    build: 30,
     date: '2026-08-23',
     summary: 'Popis promjena, sad i u samoj aplikaciji.',
     items: [
