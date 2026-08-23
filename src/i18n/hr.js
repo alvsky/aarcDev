@@ -257,6 +257,7 @@ export default {
     retry: 'Pokušaj ponovno',
     destroyAfterRead: 'Nestaje nakon čitanja',
     hiddenMessage: 'Skrivena poruka',
+    messageOpened: 'Otvoreno',
     tapToReveal: 'Dodirni za prikaz — vidiš je samo jednom',
     revealTitle: 'Poruka je obrisana',
     revealHint: 'Ovo je jedini put da vidiš ovu poruku. Kad zatvoriš, nema je više.',

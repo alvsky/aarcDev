@@ -57,9 +57,20 @@ serve(async (req) => {
       if (storageError) return json({ purged: false, reason: storageError.message }, 500)
     }
 
-    // message_user_state ide s njim (on delete cascade).
-    const { error: deleteError } = await supabase.from('messages').delete().eq('id', messageId)
-    if (deleteError) return json({ purged: false, reason: deleteError.message }, 500)
+    // Redak namjerno preživi kao prazan nadgrobni zapis — bez njega nema na
+    // čemu prikazati "Otvoreno" u chatu (WhatsApp-style trag). Sadržaj se
+    // briše, ostaju samo autor, vrijeme i mjesto u threadu.
+    const { error: wipeError } = await supabase
+      .from('messages')
+      .update({
+        body: '',
+        attachment_url: null,
+        attachment_name: null,
+        attachment_type: null,
+        deleted_at: new Date().toISOString(),
+      })
+      .eq('id', messageId)
+    if (wipeError) return json({ purged: false, reason: wipeError.message }, 500)
 
     return json({ purged: true })
   } catch (error) {

@@ -257,6 +257,7 @@ export default {
     retry: 'Retry',
     destroyAfterRead: 'Destroy after read',
     hiddenMessage: 'Hidden message',
+    messageOpened: 'Opened',
     tapToReveal: 'Tap to reveal — you only see it once',
     revealTitle: 'Message deleted',
     revealHint: "This is the only time you'll see this message. Once you close it, it's gone.",

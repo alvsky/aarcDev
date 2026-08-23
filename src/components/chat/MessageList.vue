@@ -109,16 +109,27 @@
                   'msg-bubble-own': isOwn(item),
                   'msg-pending': item.pending,
                   'msg-bubble-hidden': isHidden(item),
+                  'msg-bubble-tombstone': isConsumed(item),
                 }"
                 @click="onBubbleClick(item)"
-                @contextmenu.prevent="!isHidden(item) && openActions(item, $event)"
+                @contextmenu.prevent="!isInert(item) && openActions(item, $event)"
                 @touchstart="startLongPress(item, $event)"
                 @touchend="cancelLongPress"
                 @touchmove="cancelLongPress"
               >
+                <!-- Trag pročitane poruke: sadržaja više nema, mjehurić ostaje
+                     da se u threadu vidi da je poruka bila i da je otvorena. -->
+                <div v-if="isConsumed(item)" class="row items-center no-wrap msg-tombstone">
+                  <q-icon name="visibility" size="16px" class="q-mr-xs" />
+                  <span>{{ $t('chat.messageOpened') }}</span>
+                </div>
+
                 <!-- Skrivena poruka: sadržaj se ne renderira dok je primatelj ne
                      otkrije i potvrdi u dijalogu. -->
-                <div v-if="isHidden(item)" class="row items-center no-wrap msg-hidden-teaser">
+                <div
+                  v-else-if="isHidden(item)"
+                  class="row items-center no-wrap msg-hidden-teaser"
+                >
                   <q-icon name="visibility_off" size="18px" class="q-mr-sm" />
                   <div>
                     <div class="msg-hidden-title">{{ $t('chat.hiddenMessage') }}</div>
@@ -136,9 +147,9 @@
                       <div class="reply-quote-author">
                         {{ replySource(item).profiles?.full_name }}
                       </div>
-                      <div class="reply-quote-body" :class="{ 'text-italic': isHiddenQuote(item) }">
+                      <div class="reply-quote-body" :class="{ 'text-italic': isMaskedQuote(item) }">
                         {{
-                          isHiddenQuote(item)
+                          isMaskedQuote(item)
                             ? $t('chat.hiddenMessage')
                             : truncate(replySource(item).body) || $t('chat.imageAlt')
                         }}
@@ -452,15 +463,30 @@ function closeActions() {
   actionsMenuRef.value?.hide()
 }
 
-// Skrivena je samo tuđa poruka koja je stvarno poslana — vlastita se autoru
-// prikazuje normalno, a pending/failed još nema retka u bazi.
-function isHidden(msg) {
-  return !!msg?.destroy_after_read && !isOwn(msg) && !msg.pending && !msg.failed
+// Potrošena: sadržaj je nepovratno maknut. readByMe = ja sam je otvorio;
+// deleted_at = pročitali su je svi članovi projekta, pa je i autor vidi takvu.
+function isConsumed(msg) {
+  return !!msg?.deleted_at || !!msg?.readByMe
 }
 
-// Citat odgovora ne smije otkriti sadržaj poruke koju korisnik još nije otvorio.
-function isHiddenQuote(item) {
-  return isHidden(replySource(item))
+// Skrivena je samo tuđa poruka koja je stvarno poslana i još nepročitana —
+// vlastita se autoru prikazuje normalno, a pending/failed još nema retka u bazi.
+function isHidden(msg) {
+  return (
+    !!msg?.destroy_after_read && !isOwn(msg) && !isConsumed(msg) && !msg.pending && !msg.failed
+  )
+}
+
+// Bez sadržaja za prikaz: citat odgovora ne smije otkriti poruku koju korisnik
+// još nije otvorio, ni pasti na "Screenshot" kad je tijelo već ispražnjeno.
+function isMaskedQuote(item) {
+  const source = replySource(item)
+  return isHidden(source) || isConsumed(source)
+}
+
+// Prazan ili još nepročitan mjehurić nema što ponuditi u izborniku akcija.
+function isInert(msg) {
+  return isHidden(msg) || isConsumed(msg)
 }
 
 async function onBubbleClick(item) {
@@ -494,7 +520,7 @@ function closeReveal() {
 }
 
 function startLongPress(msg, evt) {
-  if (editingId.value || isHidden(msg)) return
+  if (editingId.value || isInert(msg)) return
   longPressEvt = evt
   longPressTimer = setTimeout(() => {
     openActions(msg, longPressEvt)
@@ -661,6 +687,14 @@ onActivated(async () => {
   background: #ece9f5;
   border: 1px dashed #9b8fc4;
   color: #4a3f6b;
+}
+
+.msg-bubble-tombstone {
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #8a8a8a;
+  font-size: 13px;
+  font-style: italic;
 }
 
 .msg-hidden-teaser {

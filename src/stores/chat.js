@@ -74,24 +74,28 @@ export const useChatStore = defineStore('chat', {
               .in('message_id', data.map((m) => m.id))
           : { data: [] }
 
-        const hiddenMessageIds = new Set(
+        // Pročitana poruka koja nestaje NE ispada iz threada — ostaje kao trag
+        // ("Otvoreno"), kao kod WhatsAppa. readByMe nosi taj trag prije nego su
+        // je pročitali svi; nakon toga ga nosi messages.deleted_at, koji vide
+        // svi uključujući autora. Sadržaj je u oba slučaja već maknut.
+        const readByMe = new Set(
           (hiddenRows.data ?? []).filter((row) => !!row.hidden_at).map((row) => row.message_id),
         )
-        const visibleData = data.filter((m) => !hiddenMessageIds.has(m.id))
 
-        const userIds = [...new Set(visibleData.map((m) => m.author_id).filter(Boolean))]
+        const userIds = [...new Set(data.map((m) => m.author_id).filter(Boolean))]
         const { data: profiles } = await supabase
           .from('profiles')
           .select('id, full_name, avatar_url')
           .in('id', userIds)
 
         // Na kraju fetchMessages, prije this.threads[key] = ...
-        const messageIds = visibleData.map((m) => m.id)
+        const messageIds = data.map((m) => m.id)
         const reactions = await this.fetchReactions(messageIds)
 
         this.threads[key] = [
-          ...visibleData.map((m) => ({
+          ...data.map((m) => ({
             ...m,
+            readByMe: readByMe.has(m.id),
             profiles: profiles?.find((p) => p.id === m.author_id) ?? null,
             reactions: reactions[m.id] ?? [],
           })),
@@ -314,11 +318,19 @@ export const useChatStore = defineStore('chat', {
         return { ok: false, fullyRead: false }
       }
 
+      // Sadržaj se briše iz lokalne kopije odmah (i iz IndexedDB keša, koji
+      // threads prati), ali sam mjehurić ostaje kao trag da je poruka otvorena.
       for (const key of Object.keys(this.threads)) {
-        if (this.threads[key]) {
-          const before = this.threads[key].length
-          this.threads[key] = this.threads[key].filter((m) => m.id !== messageId)
-          if (before !== this.threads[key].length) break
+        const msg = this.threads[key]?.find((m) => m.id === messageId)
+        if (msg) {
+          Object.assign(msg, {
+            readByMe: true,
+            body: '',
+            attachment_url: null,
+            attachment_name: null,
+            attachment_type: null,
+          })
+          break
         }
       }
 
@@ -400,10 +412,16 @@ export const useChatStore = defineStore('chat', {
         for (const k of Object.keys(this.threads)) {
           const idx = this.threads[k]?.findIndex((m) => m.id === msg.id)
           if (idx !== -1 && idx !== undefined) {
+            // deleted_at + ispražnjeni prilog: tako do ostalih (i do autora)
+            // stigne brisanje poruke koja nestaje nakon čitanja.
             this.threads[k][idx] = {
               ...this.threads[k][idx],
               body: msg.body,
               edited_at: msg.edited_at,
+              deleted_at: msg.deleted_at,
+              attachment_url: msg.attachment_url,
+              attachment_name: msg.attachment_name,
+              attachment_type: msg.attachment_type,
             }
             break
           }
