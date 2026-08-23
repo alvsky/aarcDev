@@ -1,6 +1,7 @@
 <template>
-  <!-- Thread chat preko cijelog ekrana. Uski dijalog uz rub bio je izvor prelijevanja
-       i vodoravnog skrolanja, pa thread sad koristi isti raspored kao glavni chat. -->
+  <!-- Dijalog ostaje `maximized`: uski dijalog uz rub bio je izvor prelijevanja i
+       vodoravnog skrolanja, pa thread koristi isti raspored kao glavni chat.
+       Širinu ograničava sama kartica (vidi .thread-card), ne dijalog. -->
   <q-dialog
     v-model="open"
     maximized
@@ -49,8 +50,17 @@ function onHide() {
 </script>
 
 <style scoped>
+/* Isto ograničenje kao .q-page u app.scss: na tabletu/desktopu se sadržaj
+   centrira umjesto da se razvuče od ruba do ruba. Kartica to mora nositi sama —
+   `maximized` dijalog nije q-page, pa ga globalno pravilo ne hvata. Ispod te
+   širine je max-width no-op, mobitel ostaje netaknut.
+   Nadjačava Quasarov `.q-dialog__inner--maximized > div { max-width: 100% }`
+   jer scoped selektor (klasa + atribut) ima veću specifičnost. */
 .thread-card {
   height: 100%;
+  width: 100%;
+  max-width: var(--aarc-content-max);
+  margin-inline: auto;
   background: var(--aarc-surface);
 }
 
