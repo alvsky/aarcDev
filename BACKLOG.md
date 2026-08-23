@@ -492,10 +492,10 @@ mjesta gdje sadržaj dodiruje donji rub: `.q-footer` (donja navigacija na Homeu 
 radi sam), chat composer (ChatPanel, vrijedi i u ThreadDialogu jer je `maximized`), i dno
 popisa stavki (ItemListPanel). ⚠️ NIJE POTVRĐENO NA UREĐAJU — env() je 0 na webu, pa se
 stvarni učinak vidi tek u native buildu. Provjeriti uz L5/L6.
-🟠 L7. Odvojiti aarcDev u vlastiti Firebase projekt. Sad dijeli projekt "sve-aplikacije" s
-aplikacijama iz 2019., pa servisni račun firebase-adminsdk (čiji JSON je u Supabase
-secrets) ima administratorska prava nad svime, ne samo nad aarcDev-om. Manji doseg,
-odvojene kvote, lakše predati dalje. ⚠️ prije javnog izlaska.
+❌ L7. ODBAČENO (2026-08-23) — aarcDev ostaje u zajedničkom Firebase projektu
+"sve-aplikacije". Razmatrano: odvojiti u vlastiti projekt jer servisni račun
+firebase-adminsdk (JSON u Supabase secrets) ima administratorska prava nad svime, ne
+samo nad aarcDev-om. Svjesno prihvaćen rizik, odluka korisnika.
 🟢 L2. TestFlight + Play internal track pipeline.
 🟢 L3. Finalizacija ikona/splash za obje platforme.
 🟢 L4. Provjeriti ponašanje badge-a kad je badge_enabled isključen za sve projekte.
