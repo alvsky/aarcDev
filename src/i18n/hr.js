@@ -255,6 +255,12 @@ export default {
     pendingSend: 'Čeka slanje',
     sendFailed: 'Slanje nije uspjelo',
     retry: 'Pokušaj ponovno',
+    destroyAfterRead: 'Nestaje nakon čitanja',
+    hiddenMessage: 'Skrivena poruka',
+    tapToReveal: 'Dodirni za prikaz',
+    revealTitle: 'Poruka nestaje nakon čitanja',
+    revealHint: 'Kad potvrdiš, poruka se briše i više je nećeš moći vidjeti.',
+    revealConfirm: 'U redu, obriši',
   },
   notifications: {
     newMessage: 'Nova poruka',

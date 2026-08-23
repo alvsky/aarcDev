@@ -82,6 +82,9 @@ async function loadChannel(ch) {
 }
 
 async function onMessagesRead() {
+  // Poruke koje nestaju nakon čitanja NE uništavaju se ovdje — dolazak do dna
+  // kanala nije isto što i čitanje. Primatelj ih mora otvoriti i potvrditi
+  // pojedinačno (MessageList → dijalog za otkrivanje).
   await notifStore.markRead({ projectId: props.projectId, channel: channel.value })
   await notifStore.fetchUnread()
 }

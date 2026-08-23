@@ -40,6 +40,7 @@ export const useChatStore = defineStore('chat', {
     async fetchMessages({ projectId, itemId = null, channel = 'main' }) {
       const key = this.threadKey({ projectId, itemId, channel })
       this.loadingThreads[key] = true
+      const auth = useAuthStore()
       try {
         let query = supabase
           .from('messages')
@@ -65,18 +66,31 @@ export const useChatStore = defineStore('chat', {
           return
         }
 
-        const userIds = [...new Set(data.map((m) => m.author_id).filter(Boolean))]
+        const hiddenRows = auth.user
+          ? await supabase
+              .from('message_user_state')
+              .select('message_id, hidden_at')
+              .eq('user_id', auth.user.id)
+              .in('message_id', data.map((m) => m.id))
+          : { data: [] }
+
+        const hiddenMessageIds = new Set(
+          (hiddenRows.data ?? []).filter((row) => !!row.hidden_at).map((row) => row.message_id),
+        )
+        const visibleData = data.filter((m) => !hiddenMessageIds.has(m.id))
+
+        const userIds = [...new Set(visibleData.map((m) => m.author_id).filter(Boolean))]
         const { data: profiles } = await supabase
           .from('profiles')
           .select('id, full_name, avatar_url')
           .in('id', userIds)
 
         // Na kraju fetchMessages, prije this.threads[key] = ...
-        const messageIds = data.map((m) => m.id)
+        const messageIds = visibleData.map((m) => m.id)
         const reactions = await this.fetchReactions(messageIds)
 
         this.threads[key] = [
-          ...data.map((m) => ({
+          ...visibleData.map((m) => ({
             ...m,
             profiles: profiles?.find((p) => p.id === m.author_id) ?? null,
             reactions: reactions[m.id] ?? [],
@@ -106,13 +120,18 @@ export const useChatStore = defineStore('chat', {
       if (error) throw error
       if (!data?.length) return []
 
-      const userIds = [...new Set(data.map((m) => m.author_id).filter(Boolean))]
+      // Poruke koje nestaju nakon čitanja ne smiju procuriti kroz pretragu —
+      // primatelj ih mora otvoriti u chatu, gdje se i unište.
+      const results = data.filter((m) => !m.destroy_after_read)
+      if (!results.length) return []
+
+      const userIds = [...new Set(results.map((m) => m.author_id).filter(Boolean))]
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, full_name, avatar_url')
         .in('id', userIds)
 
-      return data.map((m) => ({
+      return results.map((m) => ({
         ...m,
         profiles: profiles?.find((p) => p.id === m.author_id) ?? null,
       }))
@@ -128,6 +147,7 @@ export const useChatStore = defineStore('chat', {
         attachmentType = null,
         attachmentName = null,
         replyToId = null,
+        destroyAfterRead = false,
       } = payload
       const auth = useAuthStore()
 
@@ -147,6 +167,7 @@ export const useChatStore = defineStore('chat', {
         attachment_type: attachmentType,
         attachment_name: attachmentName,
         reply_to_id: replyToId,
+        destroy_after_read: destroyAfterRead,
       })
       if (error) {
         // Mrežni pad usred slanja → u outbox; Postgres greške se bacaju kao i dosad
@@ -168,6 +189,7 @@ export const useChatStore = defineStore('chat', {
       this.outbox.push({
         tempId,
         ...payload,
+        destroyAfterRead: payload.destroyAfterRead ?? false,
         createdAt: new Date().toISOString(),
         attempts: 0,
         lastError: null,
@@ -185,6 +207,7 @@ export const useChatStore = defineStore('chat', {
         author_id: auth.user.id,
         body: payload.body || '',
         reply_to_id: payload.replyToId ?? null,
+        destroy_after_read: payload.destroyAfterRead ?? false,
         created_at: new Date().toISOString(),
         profiles: { id: auth.user.id, full_name: auth.fullName },
         reactions: [],
@@ -214,6 +237,7 @@ export const useChatStore = defineStore('chat', {
             item_id: item.itemId ?? null,
             channel: item.itemId ? null : (item.channel ?? 'main'),
             reply_to_id: item.replyToId ?? null,
+            destroy_after_read: item.destroyAfterRead ?? false,
           })
 
           if (error) {
@@ -268,6 +292,28 @@ export const useChatStore = defineStore('chat', {
       item.lastError = null
       this.markOptimistic(tempId, { pending: true, failed: false })
       this.flushOutbox()
+    },
+
+    // Uništi poruku "nakon čitanja" za trenutnog korisnika. Redoslijed je bitan:
+    // prvo server, pa tek onda lokalno skrivanje — da nam sljedeći fetchMessages
+    // ne vrati poruku koju smo korisniku već rekli da je nestala.
+    async markMessageAsRead(messageId) {
+      if (!messageId) return false
+
+      const { error } = await supabase.rpc('mark_message_read', { p_message_id: messageId })
+      if (error) {
+        console.error('[chat] markMessageAsRead failed:', error)
+        return false
+      }
+
+      for (const key of Object.keys(this.threads)) {
+        if (this.threads[key]) {
+          const before = this.threads[key].length
+          this.threads[key] = this.threads[key].filter((m) => m.id !== messageId)
+          if (before !== this.threads[key].length) break
+        }
+      }
+      return true
     },
 
     removeOutboxItem(tempId) {

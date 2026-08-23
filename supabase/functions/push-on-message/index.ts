@@ -242,7 +242,11 @@ serve(async (req) => {
         excludeUserId: record.author_id,
         notifField: 'notif_messages',
         title,
-        body: `${author?.full_name}: ${record.body?.slice(0, 80) || '📎 Screenshot'}`,
+        // Poruka koja nestaje nakon čitanja ne smije se vidjeti u banneru na
+        // zaključanom ekranu — inače je "skriveno dok ne otvoriš" besmisleno.
+        body: record.destroy_after_read
+          ? `${author?.full_name}: 🔥`
+          : `${author?.full_name}: ${record.body?.slice(0, 80) || '📎 Screenshot'}`,
         data,
       })
     } else if (payload.table === 'items') {

@@ -255,6 +255,12 @@ export default {
     pendingSend: 'Waiting to send',
     sendFailed: 'Send failed',
     retry: 'Retry',
+    destroyAfterRead: 'Destroy after read',
+    hiddenMessage: 'Hidden message',
+    tapToReveal: 'Tap to reveal',
+    revealTitle: 'Message disappears after reading',
+    revealHint: "Once you confirm, the message is deleted and you won't see it again.",
+    revealConfirm: 'OK, delete it',
   },
   notifications: {
     newMessage: 'New message',

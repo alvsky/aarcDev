@@ -68,6 +68,14 @@
         @dragenter.prevent="isDragging = true"
       />
 
+      <q-toggle
+        v-model="destroyAfterRead"
+        dense
+        size="sm"
+        color="primary"
+        :label="$t('chat.destroyAfterRead')"
+      />
+
       <!-- Send gumb -->
       <q-btn
         round
@@ -118,6 +126,7 @@ const isDragging = ref(false)
 const pendingImage = ref(null)
 const pendingPreview = ref(null)
 const fileInput = ref(null)
+const destroyAfterRead = ref(false)
 
 const canSend = computed(() => !!body.value.trim() || !!pendingImage.value)
 const isNative = Capacitor.isNativePlatform()
@@ -205,9 +214,11 @@ async function send() {
       attachmentType,
       attachmentName,
       replyToId: props.replyTo?.id ?? null,
+      destroyAfterRead: destroyAfterRead.value,
     })
 
     body.value = ''
+    destroyAfterRead.value = false
     clearPending()
     if (props.replyTo) emit('cancel-reply')
 

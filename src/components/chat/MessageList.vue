@@ -47,6 +47,14 @@
               >
                 ({{ $t('chat.edited') }})
               </span>
+              <q-icon
+                v-if="item.destroy_after_read"
+                name="local_fire_department"
+                size="12px"
+                class="q-ml-xs"
+              >
+                <q-tooltip>{{ $t('chat.destroyAfterRead') }}</q-tooltip>
+              </q-icon>
               <q-icon v-if="item.pending" name="schedule" size="12px" class="q-ml-xs">
                 <q-tooltip>{{ $t('chat.pendingSend') }}</q-tooltip>
               </q-icon>
@@ -97,36 +105,57 @@
                 v-else
                 :key="'view-' + item.id"
                 class="msg-bubble"
-                :class="{ 'msg-bubble-own': isOwn(item), 'msg-pending': item.pending }"
-                @contextmenu.prevent="openActions(item, $event)"
+                :class="{
+                  'msg-bubble-own': isOwn(item),
+                  'msg-pending': item.pending,
+                  'msg-bubble-hidden': isHidden(item),
+                }"
+                @click="onBubbleClick(item)"
+                @contextmenu.prevent="!isHidden(item) && openActions(item, $event)"
                 @touchstart="startLongPress(item, $event)"
                 @touchend="cancelLongPress"
                 @touchmove="cancelLongPress"
               >
-                <div
-                  v-if="item.reply_to_id"
-                  class="reply-quote"
-                  @click="scrollToMessage(item.reply_to_id)"
-                >
-                  <template v-if="replySource(item)">
-                    <div class="reply-quote-author">
-                      {{ replySource(item).profiles?.full_name }}
-                    </div>
-                    <div class="reply-quote-body">
-                      {{ truncate(replySource(item).body) || $t('chat.imageAlt') }}
-                    </div>
-                  </template>
-                  <div v-else class="reply-quote-body text-italic">
-                    {{ $t('chat.originalUnavailable') }}
+                <!-- Skrivena poruka: sadržaj se ne renderira dok je primatelj ne
+                     otkrije i potvrdi u dijalogu. -->
+                <div v-if="isHidden(item)" class="row items-center no-wrap msg-hidden-teaser">
+                  <q-icon name="visibility_off" size="18px" class="q-mr-sm" />
+                  <div>
+                    <div class="msg-hidden-title">{{ $t('chat.hiddenMessage') }}</div>
+                    <div class="msg-hidden-hint">{{ $t('chat.tapToReveal') }}</div>
                   </div>
                 </div>
-                <div v-if="item.body" class="msg-body">{{ item.body }}</div>
-                <ChatImage
-                  v-if="item.attachment_url"
-                  :path="item.attachment_url"
-                  :alt="item.attachment_name || $t('chat.imageAlt')"
-                  class="q-mt-xs"
-                />
+
+                <template v-else>
+                  <div
+                    v-if="item.reply_to_id"
+                    class="reply-quote"
+                    @click="scrollToMessage(item.reply_to_id)"
+                  >
+                    <template v-if="replySource(item)">
+                      <div class="reply-quote-author">
+                        {{ replySource(item).profiles?.full_name }}
+                      </div>
+                      <div class="reply-quote-body" :class="{ 'text-italic': isHiddenQuote(item) }">
+                        {{
+                          isHiddenQuote(item)
+                            ? $t('chat.hiddenMessage')
+                            : truncate(replySource(item).body) || $t('chat.imageAlt')
+                        }}
+                      </div>
+                    </template>
+                    <div v-else class="reply-quote-body text-italic">
+                      {{ $t('chat.originalUnavailable') }}
+                    </div>
+                  </div>
+                  <div v-if="item.body" class="msg-body">{{ item.body }}</div>
+                  <ChatImage
+                    v-if="item.attachment_url"
+                    :path="item.attachment_url"
+                    :alt="item.attachment_name || $t('chat.imageAlt')"
+                    class="q-mt-xs"
+                  />
+                </template>
               </div>
             </div>
             <!-- Reakcije -->
@@ -151,6 +180,45 @@
 
       <div ref="bottomEl" style="height: 1px" />
     </div>
+
+    <!-- Otkrivanje poruke koja nestaje nakon čitanja. Persistent: zatvaranje
+         klikom izvan bi značilo "pročitano" bez potvrde, pa je jedini izlaz
+         eksplicitan gumb — Odustani ostavlja poruku netaknutu. -->
+    <q-dialog v-model="revealDialog" persistent>
+      <q-card style="min-width: 300px; max-width: 90vw">
+        <q-card-section class="row items-center q-pb-sm">
+          <q-icon name="local_fire_department" color="warning" size="20px" class="q-mr-sm" />
+          <div class="text-subtitle2">{{ $t('chat.revealTitle') }}</div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none">
+          <div class="text-caption text-grey-6 q-mb-xs">
+            {{ revealMsg?.profiles?.full_name }}
+          </div>
+          <div v-if="revealMsg?.body" class="msg-body">{{ revealMsg.body }}</div>
+          <ChatImage
+            v-if="revealMsg?.attachment_url"
+            :path="revealMsg.attachment_url"
+            :alt="revealMsg.attachment_name || $t('chat.imageAlt')"
+            class="q-mt-sm"
+          />
+        </q-card-section>
+
+        <q-card-section class="q-pt-none text-caption text-grey-6">
+          {{ $t('chat.revealHint') }}
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat color="grey-7" :label="$t('common.cancel')" @click="closeReveal" />
+          <q-btn
+            unelevated
+            color="negative"
+            :label="$t('chat.revealConfirm')"
+            @click="confirmReveal"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
 
     <!-- Emoji picker -->
     <q-dialog v-model="emojiDialog">
@@ -254,6 +322,8 @@ const listEl = ref(null)
 const bottomEl = ref(null)
 const initialLoad = ref(true)
 const emojiDialog = ref(false)
+const revealDialog = ref(false)
+const revealMsg = ref(null)
 const activeMessage = ref(null)
 const editingId = ref(null)
 const editBody = ref('')
@@ -387,8 +457,43 @@ function closeActions() {
   actionsMenuRef.value?.hide()
 }
 
+// Skrivena je samo tuđa poruka koja je stvarno poslana — vlastita se autoru
+// prikazuje normalno, a pending/failed još nema retka u bazi.
+function isHidden(msg) {
+  return !!msg?.destroy_after_read && !isOwn(msg) && !msg.pending && !msg.failed
+}
+
+// Citat odgovora ne smije otkriti sadržaj poruke koju korisnik još nije otvorio.
+function isHiddenQuote(item) {
+  return isHidden(replySource(item))
+}
+
+function onBubbleClick(item) {
+  if (!isHidden(item)) return
+  // Uništavanje mora proći kroz server; offline bi se poruka vratila na
+  // sljedeći fetch, nakon što smo korisniku već rekli da je nema.
+  if (blockedOffline('chat.offlineNoDelete')) return
+  openReveal(item)
+}
+
+function openReveal(msg) {
+  revealMsg.value = msg
+  revealDialog.value = true
+}
+
+function closeReveal() {
+  revealDialog.value = false
+  revealMsg.value = null
+}
+
+async function confirmReveal() {
+  const id = revealMsg.value?.id
+  closeReveal()
+  if (id) await chatStore.markMessageAsRead(id)
+}
+
 function startLongPress(msg, evt) {
-  if (editingId.value) return
+  if (editingId.value || isHidden(msg)) return
   longPressEvt = evt
   longPressTimer = setTimeout(() => {
     openActions(msg, longPressEvt)
@@ -548,6 +653,27 @@ onActivated(async () => {
   background: #d4f6ff;
   color: #011c3a;
   border-radius: 12px 0 12px 12px;
+}
+
+.msg-bubble-hidden {
+  cursor: pointer;
+  background: #ece9f5;
+  border: 1px dashed #9b8fc4;
+  color: #4a3f6b;
+}
+
+.msg-hidden-teaser {
+  min-width: 0;
+}
+
+.msg-hidden-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.msg-hidden-hint {
+  font-size: 11px;
+  opacity: 0.7;
 }
 
 .msg-body {
