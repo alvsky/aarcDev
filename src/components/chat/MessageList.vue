@@ -181,9 +181,9 @@
       <div ref="bottomEl" style="height: 1px" />
     </div>
 
-    <!-- Otkrivanje poruke koja nestaje nakon čitanja. Persistent: zatvaranje
-         klikom izvan bi značilo "pročitano" bez potvrde, pa je jedini izlaz
-         eksplicitan gumb — Odustani ostavlja poruku netaknutu. -->
+    <!-- Otkrivanje poruke koja nestaje nakon čitanja. Poruka je u trenutku
+         otvaranja već uništena — dijalog je zadnji put da je korisnik vidi, pa
+         je persistent (slučajan klik izvan ne smije je zatvoriti). -->
     <q-dialog v-model="revealDialog" persistent>
       <q-card style="min-width: 300px; max-width: 90vw">
         <q-card-section class="row items-center q-pb-sm">
@@ -209,13 +209,7 @@
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn flat color="grey-7" :label="$t('common.cancel')" @click="closeReveal" />
-          <q-btn
-            unelevated
-            color="negative"
-            :label="$t('chat.revealConfirm')"
-            @click="confirmReveal"
-          />
+          <q-btn unelevated color="primary" :label="$t('chat.revealConfirm')" @click="closeReveal" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -324,6 +318,7 @@ const initialLoad = ref(true)
 const emojiDialog = ref(false)
 const revealDialog = ref(false)
 const revealMsg = ref(null)
+const pendingPurgeId = ref(null)
 const activeMessage = ref(null)
 const editingId = ref(null)
 const editBody = ref('')
@@ -468,28 +463,34 @@ function isHiddenQuote(item) {
   return isHidden(replySource(item))
 }
 
-function onBubbleClick(item) {
+async function onBubbleClick(item) {
   if (!isHidden(item)) return
   // Uništavanje mora proći kroz server; offline bi se poruka vratila na
   // sljedeći fetch, nakon što smo korisniku već rekli da je nema.
   if (blockedOffline('chat.offlineNoDelete')) return
-  openReveal(item)
-}
 
-function openReveal(msg) {
-  revealMsg.value = msg
+  // Otvaranje JEST čitanje — poruka se uništava odmah, prije prikaza, pa je
+  // korisnik ne može zadržati zatvaranjem dijaloga ili gašenjem aplikacije.
+  // Vlastita kopija (ne referenca na redak u storeu) preživi to uklanjanje i
+  // ostane u dijalogu dok je ne zatvori.
+  const snapshot = { ...item }
+  const { ok, fullyRead } = await chatStore.markMessageAsRead(item.id, { purge: false })
+  if (!ok) return
+
+  revealMsg.value = snapshot
+  pendingPurgeId.value = fullyRead ? item.id : null
   revealDialog.value = true
 }
 
+// Redak i prilog se brišu tek na zatvaranje dijaloga — dok je otvoren, potpisani
+// URL priloga mora ostati valjan.
 function closeReveal() {
   revealDialog.value = false
   revealMsg.value = null
-}
-
-async function confirmReveal() {
-  const id = revealMsg.value?.id
-  closeReveal()
-  if (id) await chatStore.markMessageAsRead(id)
+  if (pendingPurgeId.value) {
+    chatStore.purgeMessage(pendingPurgeId.value)
+    pendingPurgeId.value = null
+  }
 }
 
 function startLongPress(msg, evt) {

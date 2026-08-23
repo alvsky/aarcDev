@@ -297,13 +297,21 @@ export const useChatStore = defineStore('chat', {
     // Uništi poruku "nakon čitanja" za trenutnog korisnika. Redoslijed je bitan:
     // prvo server, pa tek onda lokalno skrivanje — da nam sljedeći fetchMessages
     // ne vrati poruku koju smo korisniku već rekli da je nestala.
-    async markMessageAsRead(messageId) {
-      if (!messageId) return false
+    //
+    // Kad je pročitaju svi članovi projekta, RPC vrati fully_read i redak +
+    // prilog stvarno brišemo kroz purge-message (vidi tu edge funkciju zašto
+    // brisanje ne može iz klijenta). Autorov primjerak nestane preko realtime
+    // DELETE eventa.
+    // Vraća { ok, fullyRead }. purge: false odgađa stvarno brisanje pozivatelju —
+    // MessageList ga zove tako jer dijalog još prikazuje prilog, a purge bi mu
+    // maknuo objekt iz Storagea ispod nogu (slika bi pukla zadnjem čitatelju).
+    async markMessageAsRead(messageId, { purge = true } = {}) {
+      if (!messageId) return { ok: false, fullyRead: false }
 
-      const { error } = await supabase.rpc('mark_message_read', { p_message_id: messageId })
+      const { data, error } = await supabase.rpc('mark_message_read', { p_message_id: messageId })
       if (error) {
         console.error('[chat] markMessageAsRead failed:', error)
-        return false
+        return { ok: false, fullyRead: false }
       }
 
       for (const key of Object.keys(this.threads)) {
@@ -313,7 +321,23 @@ export const useChatStore = defineStore('chat', {
           if (before !== this.threads[key].length) break
         }
       }
-      return true
+
+      const fullyRead = !!data?.fully_read
+      if (fullyRead && purge) await this.purgeMessage(messageId)
+      return { ok: true, fullyRead }
+    },
+
+    // Sadržaj je u tom trenutku već skriven svim primateljima, pa neuspjeh ne
+    // otkriva ništa — ali redak i prilog ostaju u bazi i nema tko ponoviti
+    // pokušaj (svjesno bez roka trajanja). Ako se pokaže da se to događa,
+    // rješenje je pg_cron sweep, ne retry u klijentu.
+    async purgeMessage(messageId) {
+      const { data, error } = await supabase.functions.invoke('purge-message', {
+        body: { messageId },
+      })
+      if (error || !data?.purged) {
+        console.error('[chat] purgeMessage failed:', error ?? data?.reason)
+      }
     },
 
     removeOutboxItem(tempId) {
