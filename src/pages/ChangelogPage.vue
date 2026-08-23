@@ -38,6 +38,15 @@ const { locale } = useI18n()
 const entries = [
   {
     version: '1.0',
+    build: 29,
+    date: '2026-08-23',
+    summary: 'Popis promjena, sad i u samoj aplikaciji.',
+    items: [
+      'Nova stranica "Popis promjena", dostupna iz Postavki → O aplikaciji — pregled svih dosadašnjih izdanja bez potrebe za GitHubom.',
+    ],
+  },
+  {
+    version: '1.0',
     build: 28,
     date: '2026-08-23',
     summary: 'Poruke koje nestaju nakon čitanja, i chat prilagođen desktopu.',

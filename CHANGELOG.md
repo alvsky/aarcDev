@@ -9,6 +9,15 @@ svakim isporučenim buildom). Android `versionCode`/`versionName` i
 
 ---
 
+## v1.0 (build 29) — 2026-08-23
+
+Popis promjena, sad i u samoj aplikaciji.
+
+- Nova stranica "Popis promjena", dostupna iz Postavki → O aplikaciji —
+  pregled svih dosadašnjih izdanja bez potrebe za GitHubom.
+
+---
+
 ## v1.0 (build 28) — 2026-08-23
 
 Poruke koje nestaju nakon čitanja, i chat prilagođen desktopu.
