@@ -76,7 +76,7 @@
         icon="local_fire_department"
         :color="destroyAfterRead ? 'deep-orange' : 'grey-5'"
         :aria-pressed="destroyAfterRead"
-        @click="destroyAfterRead = !destroyAfterRead"
+        @click="toggleDestroyAfterRead"
       >
         <q-tooltip>{{ $t('chat.destroyAfterRead') }}</q-tooltip>
       </q-btn>
@@ -132,6 +132,12 @@ const pendingImage = ref(null)
 const pendingPreview = ref(null)
 const fileInput = ref(null)
 const destroyAfterRead = ref(false)
+
+// Mora biti funkcija, ne pridruživanje u predlošku (@click="x = !x"): tamo se
+// zastavica nije mijenjala i poruke su odlazile kao obične.
+function toggleDestroyAfterRead() {
+  destroyAfterRead.value = !destroyAfterRead.value
+}
 
 const canSend = computed(() => !!body.value.trim() || !!pendingImage.value)
 const isNative = Capacitor.isNativePlatform()
