@@ -1,28 +1,35 @@
 export function useFormatDate() {
   // TODO: kasnije dodati u postavke korisnika, za sada forsiran hrvatski
-  const LOCALE = 'hr-HR'
+  function pad(n) {
+    return String(n).padStart(2, '0')
+  }
+
+  function formatDate(ts) {
+    const d = new Date(ts)
+    return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}.`
+  }
+
+  function formatTime(ts) {
+    const d = new Date(ts)
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
 
   function full(ts) {
-    return new Date(ts).toLocaleString(LOCALE, {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+    return `${formatDate(ts)}, ${formatTime(ts)}`
   }
 
   function smart(ts) {
     const d = new Date(ts)
     const now = new Date()
     // Usporedba datuma koristi lokalnu vremensku zonu, ne UTC
-    const dDateStr = d.toLocaleDateString(LOCALE, { day: '2-digit', month: '2-digit', year: 'numeric' })
-    const nowDateStr = now.toLocaleDateString(LOCALE, { day: '2-digit', month: '2-digit', year: 'numeric' })
-    const isToday = dDateStr === nowDateStr
+    const isToday =
+      d.getDate() === now.getDate() &&
+      d.getMonth() === now.getMonth() &&
+      d.getFullYear() === now.getFullYear()
     if (isToday) {
-      return d.toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' })
+      return formatTime(ts)
     }
-    return d.toLocaleDateString(LOCALE, { day: '2-digit', month: '2-digit' })
+    return formatDate(ts)
   }
 
   function relative(ts) {
@@ -40,10 +47,7 @@ export function useFormatDate() {
   }
 
   function time(ts) {
-    return new Date(ts).toLocaleTimeString(LOCALE, {
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+    return formatTime(ts)
   }
 
   return { full, smart, relative, time }
