@@ -4,8 +4,11 @@ export function useFormatDate() {
 
   function full(ts) {
     return new Date(ts).toLocaleString(LOCALE, {
-      dateStyle: 'short',
-      timeStyle: 'short',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     })
   }
 
@@ -13,13 +16,13 @@ export function useFormatDate() {
     const d = new Date(ts)
     const now = new Date()
     // Usporedba datuma koristi lokalnu vremensku zonu, ne UTC
-    const dDateStr = d.toLocaleDateString(LOCALE)
-    const nowDateStr = now.toLocaleDateString(LOCALE)
+    const dDateStr = d.toLocaleDateString(LOCALE, { day: '2-digit', month: '2-digit', year: 'numeric' })
+    const nowDateStr = now.toLocaleDateString(LOCALE, { day: '2-digit', month: '2-digit', year: 'numeric' })
     const isToday = dDateStr === nowDateStr
     if (isToday) {
-      return d.toLocaleTimeString(LOCALE, { timeStyle: 'short' })
+      return d.toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit' })
     }
-    return d.toLocaleDateString(LOCALE, { dateStyle: 'short' })
+    return d.toLocaleDateString(LOCALE, { day: '2-digit', month: '2-digit' })
   }
 
   function relative(ts) {
@@ -38,7 +41,8 @@ export function useFormatDate() {
 
   function time(ts) {
     return new Date(ts).toLocaleTimeString(LOCALE, {
-      timeStyle: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
     })
   }
 
