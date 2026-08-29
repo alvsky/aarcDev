@@ -1,10 +1,9 @@
-import { useI18n } from 'vue-i18n'
-
 export function useFormatDate() {
-  const { locale } = useI18n()
+  // TODO: kasnije dodati u postavke korisnika, za sada forsiran hrvatski
+  const LOCALE = 'hr-HR'
 
   function full(ts) {
-    return new Date(ts).toLocaleString(locale.value, {
+    return new Date(ts).toLocaleString(LOCALE, {
       dateStyle: 'short',
       timeStyle: 'short',
     })
@@ -14,31 +13,31 @@ export function useFormatDate() {
     const d = new Date(ts)
     const now = new Date()
     // Usporedba datuma koristi lokalnu vremensku zonu, ne UTC
-    const dDateStr = d.toLocaleDateString(locale.value)
-    const nowDateStr = now.toLocaleDateString(locale.value)
+    const dDateStr = d.toLocaleDateString(LOCALE)
+    const nowDateStr = now.toLocaleDateString(LOCALE)
     const isToday = dDateStr === nowDateStr
     if (isToday) {
-      return d.toLocaleTimeString(locale.value, { timeStyle: 'short' })
+      return d.toLocaleTimeString(LOCALE, { timeStyle: 'short' })
     }
-    return d.toLocaleDateString(locale.value, { dateStyle: 'short' })
+    return d.toLocaleDateString(LOCALE, { dateStyle: 'short' })
   }
 
   function relative(ts) {
     const diff = Math.floor((Date.now() - new Date(ts)) / 1000)
-    if (diff < 60) return locale.value === 'hr' ? 'upravo sad' : 'just now'
+    if (diff < 60) return 'upravo sad'
     if (diff < 3600) {
       const m = Math.floor(diff / 60)
-      return locale.value === 'hr' ? `prije ${m} min` : `${m}m ago`
+      return `prije ${m} min`
     }
     if (diff < 86400) {
       const h = Math.floor(diff / 3600)
-      return locale.value === 'hr' ? `prije ${h} h` : `${h}h ago`
+      return `prije ${h} h`
     }
     return full(ts)
   }
 
   function time(ts) {
-    return new Date(ts).toLocaleTimeString(locale.value, {
+    return new Date(ts).toLocaleTimeString(LOCALE, {
       timeStyle: 'short',
     })
   }
