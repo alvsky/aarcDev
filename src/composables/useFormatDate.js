@@ -5,11 +5,8 @@ export function useFormatDate() {
 
   function full(ts) {
     return new Date(ts).toLocaleString(locale.value, {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      dateStyle: 'short',
+      timeStyle: 'short',
     })
   }
 
@@ -21,9 +18,9 @@ export function useFormatDate() {
     const nowDateStr = now.toLocaleDateString(locale.value)
     const isToday = dDateStr === nowDateStr
     if (isToday) {
-      return d.toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
+      return d.toLocaleTimeString(locale.value, { timeStyle: 'short' })
     }
-    return d.toLocaleDateString(locale.value, { day: '2-digit', month: '2-digit' })
+    return d.toLocaleDateString(locale.value, { dateStyle: 'short' })
   }
 
   function relative(ts) {
@@ -42,8 +39,7 @@ export function useFormatDate() {
 
   function time(ts) {
     return new Date(ts).toLocaleTimeString(locale.value, {
-      hour: '2-digit',
-      minute: '2-digit',
+      timeStyle: 'short',
     })
   }
 
