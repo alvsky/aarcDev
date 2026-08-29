@@ -71,7 +71,10 @@ export const useChatStore = defineStore('chat', {
               .from('message_user_state')
               .select('message_id, hidden_at')
               .eq('user_id', auth.user.id)
-              .in('message_id', data.map((m) => m.id))
+              .in(
+                'message_id',
+                data.map((m) => m.id),
+              )
           : { data: [] }
 
         // Pročitana poruka koja nestaje NE ispada iz threada — ostaje kao trag

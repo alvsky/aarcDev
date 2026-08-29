@@ -21,12 +21,13 @@
           <div class="date-separator-line" />
         </div>
 
-        <!-- Poruka -->
+        <!-- Poruka — disappearing poruke koje su pročitane se ne prikazuju -->
         <div
           v-else
           :ref="(el) => setMsgRef(item.id, el)"
           class="msg-row q-mb-sm"
           :class="{ 'msg-own': isOwn(item), 'msg-highlight': highlightedId === item.id }"
+          v-show="!(item.destroy_after_read && isConsumed(item))"
         >
           <UserAvatar
             v-if="!isOwn(item)"
@@ -109,7 +110,6 @@
                   'msg-bubble-own': isOwn(item),
                   'msg-pending': item.pending,
                   'msg-bubble-hidden': isHidden(item),
-                  'msg-bubble-tombstone': isConsumed(item),
                 }"
                 @click="onBubbleClick(item)"
                 @contextmenu.prevent="!isInert(item) && openActions(item, $event)"
@@ -117,19 +117,9 @@
                 @touchend="cancelLongPress"
                 @touchmove="cancelLongPress"
               >
-                <!-- Trag pročitane poruke: sadržaja više nema, mjehurić ostaje
-                     da se u threadu vidi da je poruka bila i da je otvorena. -->
-                <div v-if="isConsumed(item)" class="row items-center no-wrap msg-tombstone">
-                  <q-icon name="visibility" size="16px" class="q-mr-xs" />
-                  <span>{{ $t('chat.messageOpened') }}</span>
-                </div>
-
                 <!-- Skrivena poruka: sadržaj se ne renderira dok je primatelj ne
                      otkrije i potvrdi u dijalogu. -->
-                <div
-                  v-else-if="isHidden(item)"
-                  class="row items-center no-wrap msg-hidden-teaser"
-                >
+                <div v-if="isHidden(item)" class="row items-center no-wrap msg-hidden-teaser">
                   <q-icon name="visibility_off" size="18px" class="q-mr-sm" />
                   <div>
                     <div class="msg-hidden-title">{{ $t('chat.hiddenMessage') }}</div>
@@ -137,7 +127,7 @@
                   </div>
                 </div>
 
-                <template v-else>
+                <template v-else-if="!isHidden(item)">
                   <div
                     v-if="item.reply_to_id"
                     class="reply-quote"
@@ -220,7 +210,12 @@
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn unelevated color="primary" :label="$t('chat.revealConfirm')" @click="closeReveal" />
+          <q-btn
+            unelevated
+            color="primary"
+            :label="$t('chat.revealConfirm')"
+            @click="closeReveal"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -472,9 +467,7 @@ function isConsumed(msg) {
 // Skrivena je samo tuđa poruka koja je stvarno poslana i još nepročitana —
 // vlastita se autoru prikazuje normalno, a pending/failed još nema retka u bazi.
 function isHidden(msg) {
-  return (
-    !!msg?.destroy_after_read && !isOwn(msg) && !isConsumed(msg) && !msg.pending && !msg.failed
-  )
+  return !!msg?.destroy_after_read && !isOwn(msg) && !isConsumed(msg) && !msg.pending && !msg.failed
 }
 
 // Bez sadržaja za prikaz: citat odgovora ne smije otkriti poruku koju korisnik
@@ -687,14 +680,6 @@ onActivated(async () => {
   background: #ece9f5;
   border: 1px dashed #9b8fc4;
   color: #4a3f6b;
-}
-
-.msg-bubble-tombstone {
-  background: transparent;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  color: #8a8a8a;
-  font-size: 13px;
-  font-style: italic;
 }
 
 .msg-hidden-teaser {
