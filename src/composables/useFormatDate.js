@@ -16,7 +16,10 @@ export function useFormatDate() {
   function smart(ts) {
     const d = new Date(ts)
     const now = new Date()
-    const isToday = d.toDateString() === now.toDateString()
+    // Usporedba datuma koristi lokalnu vremensku zonu, ne UTC
+    const dDateStr = d.toLocaleDateString(locale.value)
+    const nowDateStr = now.toLocaleDateString(locale.value)
+    const isToday = dDateStr === nowDateStr
     if (isToday) {
       return d.toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' })
     }
