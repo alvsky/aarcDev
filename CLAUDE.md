@@ -65,6 +65,12 @@ Before making changes, always read:
   Android (`versionCode`/`versionName` in `src-capacitor/android/app/build.gradle`),
   root `package.json` `version`, and `CHANGELOG.md` must be bumped to match — they had
   already drifted once (iOS build 23 vs Android 1 vs package.json 0.0.1, fixed 2026-08-12).
+  **`CHANGELOG.md` is not what ships** — the in-app changelog page reads a hardcoded
+  `entries` array in `src/pages/ChangelogPage.vue`, and the version/build shown in Settings
+  → About come from hardcoded `appVersion`/`appBuild` in `src/pages/AboutPage.vue`. Bumping
+  the version files and `CHANGELOG.md` without also updating these two leaves the app itself
+  reporting the old build after an upgrade — happened 2026-09-03 (stuck reporting build 30
+  through build 33).
 - No custom backend: stores → supabase-js → Supabase (Auth/Postgres/Realtime/Storage +
   `push-on-message` Edge Function fired by DB webhook on message INSERT → FCM v1).
 - `/project/:id/:tab(chat|bugs|ideas|tbi)?` (ProjectPage.vue) has no rendered child routes —

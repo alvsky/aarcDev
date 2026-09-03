@@ -38,6 +38,19 @@ const { locale } = useI18n()
 const entries = [
   {
     version: '1.0',
+    build: 33,
+    date: '2026-09-03',
+    summary: 'Linkovi u chatu, hrvatski datumi i popravak poruka koje se nisu pojavljivale.',
+    items: [
+      'Link napisan u chatu sad je klikabilan i otvara se u pregledniku.',
+      'Datumi i vrijeme su svugdje u hrvatskom formatu (npr. "03.09.2026." i "14:30"), uključujući razdjelnike dana u chatu ("Danas, 03.09.2026.").',
+      'Popravljeno: poslana poruka se ponekad nije pojavila u chatu dok se ne bi izašlo i vratilo u projekt.',
+      'Dva projekta s istim nazivom unutar iste organizacije više nisu moguća.',
+      'Poruka koja nestaje nakon čitanja sad iz chata nestaje u potpunosti — više ne ostavlja trag "Otvoreno" uveden u buildu 28.',
+    ],
+  },
+  {
+    version: '1.0',
     build: 30,
     date: '2026-08-23',
     summary: 'Popis promjena, sad i u samoj aplikaciji.',
