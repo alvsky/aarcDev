@@ -9,6 +9,23 @@ svakim isporučenim buildom). Android `versionCode`/`versionName` i
 
 ---
 
+## v1.0 (build 33) — 2026-09-03
+
+Linkovi u chatu, hrvatski datumi i popravak poruka koje se nisu pojavljivale.
+
+- Link napisan u chatu sad je klikabilan i otvara se u pregledniku.
+- Datumi i vrijeme su svugdje u hrvatskom formatu (`03.09.2026.`, `14:30`),
+  uključujući razdjelnike dana u chatu ("Danas, 03.09.2026."). Usput je
+  popravljena usporedba datuma koja je zbog vremenske zone znala prikazati
+  krivi dan.
+- Popravljeno: poslana poruka se ponekad nije pojavila u chatu dok se ne bi
+  izašlo i vratilo u projekt.
+- Dva projekta s istim nazivom unutar iste organizacije više nisu moguća.
+- Poruka koja nestaje nakon čitanja sad iz chata nestaje u potpunosti — više
+  ne ostavlja trag "Otvoreno" uveden u buildu 28.
+
+---
+
 ## v1.0 (build 30) — 2026-08-23
 
 Popis promjena, sad i u samoj aplikaciji.
