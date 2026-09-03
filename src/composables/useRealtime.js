@@ -43,9 +43,15 @@ export function useRealtime(projectId, handlers = {}, scope = 'page') {
     // se dogodilo kad je `items` dodan u pretplatu prije nego u publikaciju.
     channel.subscribe((status, err) => {
       if (status === 'CLOSED' && intentionalClose) return
+      // Uspjeh se logira samo u razvoju: "tiho mrtav kanal" se inače ne
+      // razlikuje od ispravnog rada, pa je pri sljedećoj sumnji na realtime
+      // prvo pitanje je li pretplata uopće došla do SUBSCRIBED.
+      if (status === 'SUBSCRIBED' && import.meta.env.DEV) {
+        console.log(`[realtime] project:${projectId}:${scope} SUBSCRIBED`)
+      }
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
         console.error(
-          `[realtime] pretplata za projekt ${projectId}: ${status}`,
+          `[realtime] pretplata project:${projectId}:${scope}: ${status}`,
           err ?? '(bez detalja — provjeri je li svaka tablica u supabase_realtime publikaciji)',
         )
       }
