@@ -149,7 +149,12 @@
                       {{ $t('chat.originalUnavailable') }}
                     </div>
                   </div>
-                  <div v-if="item.body" class="msg-body">{{ item.body }}</div>
+                  <div
+                    v-if="item.body"
+                    class="msg-body"
+                    v-html="linkifyHtml(item.body)"
+                  />
+
                   <ChatImage
                     v-if="item.attachment_url"
                     :path="item.attachment_url"
@@ -196,7 +201,11 @@
           <div class="text-caption text-grey-6 q-mb-xs">
             {{ revealMsg?.profiles?.full_name }}
           </div>
-          <div v-if="revealMsg?.body" class="msg-body">{{ revealMsg.body }}</div>
+          <div
+            v-if="revealMsg?.body"
+            class="msg-body"
+            v-html="linkifyHtml(revealMsg.body)"
+          />
           <ChatImage
             v-if="revealMsg?.attachment_url"
             :path="revealMsg.attachment_url"
@@ -302,6 +311,7 @@ import { useFormatDate } from 'src/composables/useFormatDate'
 import { useChatStore } from 'src/stores/chat'
 import { useOfflineGuard } from 'src/composables/useOfflineGuard'
 import { useConfirmDialog } from 'src/composables/useConfirmDialog'
+import { useLinkify } from 'src/composables/useLinkify'
 import { useI18n } from 'vue-i18n'
 import ChatImage from './ChatImage.vue'
 import UserAvatar from 'src/components/shared/UserAvatar.vue'
@@ -317,7 +327,8 @@ const authStore = useAuthStore()
 const formatDate = useFormatDate()
 const chatStore = useChatStore()
 const { blockedOffline } = useOfflineGuard()
-const { locale, t } = useI18n()
+const { linkifyHtml } = useLinkify()
+const { t } = useI18n()
 const listEl = ref(null)
 const bottomEl = ref(null)
 const initialLoad = ref(true)
@@ -361,36 +372,37 @@ const highlightedId = ref(null)
 
 const isOwn = (msg) => msg.author_id === authStore.user?.id
 
-// Date separator logika
+// Date separator logika — hrvatski format
 const messagesWithSeparators = computed(() => {
   const result = []
   let lastDate = null
   const today = new Date()
-  const todayStr = today.toDateString()
   const yesterday = new Date(today)
   yesterday.setDate(today.getDate() - 1)
-  const yesterdayStr = yesterday.toDateString()
+
+  const isSameDay = (d1, d2) =>
+    d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear()
+
+  const formatCroatianDate = (d) => {
+    const day = String(d.getDate()).padStart(2, '0')
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const year = d.getFullYear()
+    return `${day}.${month}.${year}.`
+  }
 
   for (const msg of props.messages) {
     const msgDate = new Date(msg.created_at)
-    const msgDateStr = msgDate.toDateString()
+    const msgDateKey = formatCroatianDate(msgDate)
 
-    if (msgDateStr !== lastDate) {
-      let label = ''
-      if (msgDateStr === todayStr) {
-        label = locale.value === 'hr' ? 'Danas' : 'Today'
-      } else if (msgDateStr === yesterdayStr) {
-        label = locale.value === 'hr' ? 'Jučer' : 'Yesterday'
-      } else {
-        label = msgDate.toLocaleDateString(locale.value, {
-          weekday: 'long',
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-        })
+    if (msgDateKey !== lastDate) {
+      let label = msgDateKey
+      if (isSameDay(msgDate, today)) {
+        label = `Danas, ${msgDateKey}`
+      } else if (isSameDay(msgDate, yesterday)) {
+        label = `Jučer, ${msgDateKey}`
       }
-      result.push({ type: 'separator', separator: msgDateStr, label })
-      lastDate = msgDateStr
+      result.push({ type: 'separator', separator: msgDateKey, label })
+      lastDate = msgDateKey
     }
 
     result.push({ ...msg, type: 'message' })
@@ -700,6 +712,16 @@ onActivated(async () => {
   white-space: pre-wrap;
   word-break: break-word;
   font-size: 14px;
+}
+
+.msg-body :deep(.msg-link) {
+  color: var(--q-primary, #1976d2);
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.msg-bubble-own .msg-body :deep(.msg-link) {
+  color: #011c3a;
 }
 
 .msg-actions {
