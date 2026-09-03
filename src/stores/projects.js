@@ -136,7 +136,15 @@ export const useProjectsStore = defineStore('projects', {
         p_description: description ?? null,
         p_color: color ?? null,
       })
-      if (error) throw error
+      if (error) {
+        // Jedinstveni indeks (org_id, lower(name)) javi se kao 23505 ako
+        // organizacija već ima projekt tog naziva — pretvoreno u čitljivu
+        // poruku umjesto sirove Postgres greške.
+        if (error.code === '23505') {
+          throw new Error('Projekt s tim nazivom već postoji.')
+        }
+        throw error
+      }
 
       await this.fetchProjects()
       return newId
@@ -144,7 +152,12 @@ export const useProjectsStore = defineStore('projects', {
 
     async updateProject(id, updates) {
       const { error } = await supabase.from('projects').update(updates).eq('id', id)
-      if (error) throw error
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error('Projekt s tim nazivom već postoji.')
+        }
+        throw error
+      }
       await this.fetchProjects()
     },
 
