@@ -1,6 +1,12 @@
 import { supabase } from 'src/boot/supabase'
 
-export function useRealtime(projectId, handlers = {}) {
+// `scope` razdvaja pretplatnike na isti projekt (Home vs. otvoreni projekt).
+// Realtime dopušta samo jedan join po topicu po socketu: drugi join na isti
+// topic server rješava tako da UGASI stariji kanal. Dok su se oba zvala
+// `project:${id}`, preklapanje dviju stranica nije davalo grešku nego tiho
+// mrtav chat — poruka bi se poslala, ali echo (koji je jedini put kojim
+// vlastita poruka ulazi u thread) više ne bi stigao.
+export function useRealtime(projectId, handlers = {}, scope = 'page') {
   let channel = null
   // CLOSED je i normalan status kad MI namjerno zatvorimo kanal (odlazak s
   // projekta, unmount, HMR u devu) — ne samo kad realtime stvarno padne.
@@ -11,7 +17,7 @@ export function useRealtime(projectId, handlers = {}) {
 
   function setup() {
     intentionalClose = false
-    channel = supabase.channel(`project:${projectId}`)
+    channel = supabase.channel(`project:${projectId}:${scope}`)
 
     const tables = [
       { table: 'messages', handler: handlers.onMessage },

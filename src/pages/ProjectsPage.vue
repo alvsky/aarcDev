@@ -251,6 +251,12 @@ const dialog = ref(false)
 const activeProject = ref(null)
 const activeTab = ref('home')
 const realtimeCleanups = ref([])
+// onMounted je async i čeka dohvate; korisnik u međuvremenu može otvoriti
+// projekt i otići s Homea. Nastavak te async funkcije se time NE prekida, pa
+// bi se pretplate stvorile nakon unmounta — u nizu koji onUnmounted više neće
+// isprazniti (nova montaža dobiva svoj ref). Vidi zašto je to bilo štetno u
+// komentaru uz setup() niže.
+let disposed = false
 
 // Home prikazuje TEKUĆU organizaciju, ne sve odjednom — miješanje badgeva
 // nepovezanih timova bi značilo da nikad nisi siguran u kojem kontekstu radiš
@@ -352,6 +358,7 @@ watch(
 )
 
 onMounted(async () => {
+  disposed = false
   realtimeCleanups.value.forEach((fn) => fn())
   realtimeCleanups.value = []
 
@@ -362,24 +369,36 @@ onMounted(async () => {
 
   await notifStore.fetchUnread()
 
+  // Popis se crta odmah iz keša, pa je otvaranje projekta prije nego dohvati
+  // gore završe posve normalno — a pretplata stvorena nakon toga bi bila
+  // zombi koji nitko ne gasi i koja bi, kao mlađa pretplata na isti topic,
+  // ugasila upravo uspostavljenu pretplatu ProjectPagea (chat bi tiho
+  // prestao primati poruke uživo).
+  if (disposed) return
+
   for (const project of projectsStore.projects) {
     // onIdea/onBug su ostaci prije spajanja u jedinstvenu tablicu items (vidi
     // docs/item-model.md) — useRealtime ih ne prepoznaje, pa je realtime za
     // stavke na Homeu tiho bio mrtav otkad je items zamijenio ideas/bugs/tbi.
-    const { setup, teardown } = useRealtime(project.id, {
-      onMessage: async () => {
-        await notifStore.fetchUnread()
+    const { setup, teardown } = useRealtime(
+      project.id,
+      {
+        onMessage: async () => {
+          await notifStore.fetchUnread()
+        },
+        onItem: async () => {
+          await notifStore.fetchUnread()
+        },
       },
-      onItem: async () => {
-        await notifStore.fetchUnread()
-      },
-    })
+      'home',
+    )
     setup()
     realtimeCleanups.value.push(teardown)
   }
 })
 
 onUnmounted(() => {
+  disposed = true
   realtimeCleanups.value.forEach((fn) => fn())
   realtimeCleanups.value = []
 })

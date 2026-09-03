@@ -147,17 +147,21 @@ const chatUnread = computed(
     notifStore.threadUnread({ projectId, channel: 'offtopic' }),
 )
 
-const { setup, teardown } = useRealtime(projectId, {
-  onMessage: async (p) => {
-    // console.log('onMessage event:', p.event, p.payload.new?.id)
-    await chatStore.handleIncoming(p)
-    await notifStore.fetchUnread()
+const { setup, teardown } = useRealtime(
+  projectId,
+  {
+    onMessage: async (p) => {
+      // console.log('onMessage event:', p.event, p.payload.new?.id)
+      await chatStore.handleIncoming(p)
+      await notifStore.fetchUnread()
+    },
+    onItem: async (p) => {
+      itemsStore.handleIncoming(p)
+      await notifStore.fetchUnread()
+    },
   },
-  onItem: async (p) => {
-    itemsStore.handleIncoming(p)
-    await notifStore.fetchUnread()
-  },
-})
+  'project',
+)
 
 const messagesUpdateChannel = supabase
   .channel(`msg-update:${projectId}`)
