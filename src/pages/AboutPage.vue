@@ -12,12 +12,12 @@
         <q-card flat bordered class="about-card">
           <q-card-section class="row items-center">
             <div class="col about-label">{{ $t('about.version') }}</div>
-            <div class="about-value">{{ appVersion }}</div>
+            <div class="about-value">{{ releasesStore.latest?.version ?? '—' }}</div>
           </q-card-section>
           <q-separator />
           <q-card-section class="row items-center">
             <div class="col about-label">{{ $t('about.build') }}</div>
-            <div class="about-value">{{ appBuild }}</div>
+            <div class="about-value">{{ releasesStore.latest?.build ?? '—' }}</div>
           </q-card-section>
           <q-separator />
           <q-list>
@@ -42,11 +42,17 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue'
 import AppHeader from 'src/components/shared/AppHeader.vue'
+import { useReleasesStore } from 'src/stores/releases'
 
-// Prati iOS/Android/CHANGELOG.md — bump ručno zajedno s njima (vidi CLAUDE.md).
-const appVersion = '1.0'
-const appBuild = '33'
+const releasesStore = useReleasesStore()
+
+onMounted(() => {
+  // Ne await-a se — releasesStore.latest je perzistiran (keš iz prošle
+  // sesije), pa stranica ima što prikazati odmah; ovo je samo osvježavanje.
+  releasesStore.fetchReleases()
+})
 </script>
 
 <style scoped>
