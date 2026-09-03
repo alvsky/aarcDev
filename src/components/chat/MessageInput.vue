@@ -68,8 +68,8 @@
         @dragenter.prevent="startDragging"
       />
 
-      <!-- Ugašena vatra = obična poruka; upaljena = nestaje nakon čitanja. -->
-      <q-btn
+      <!-- Ugašena vatra = obična poruka; upaljena = nestaje nakon čitanja. UPDATE: privremeno isključeno (zakomentirano) kao i svako pojavljivanje destroyAfterRead -->
+      <!-- <q-btn
         flat
         round
         dense
@@ -79,7 +79,7 @@
         @click="toggleDestroyAfterRead"
       >
         <q-tooltip>{{ $t('chat.destroyAfterRead') }}</q-tooltip>
-      </q-btn>
+      </q-btn> -->
 
       <!-- Send gumb -->
       <q-btn
@@ -100,6 +100,8 @@
 </template>
 
 <script setup>
+// /* eslint-disable */ //stavljeno privremeno
+
 import { ref, computed, onUnmounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
@@ -131,14 +133,14 @@ const isDragging = ref(false)
 const pendingImage = ref(null)
 const pendingPreview = ref(null)
 const fileInput = ref(null)
-const destroyAfterRead = ref(false)
+// const destroyAfterRead = ref(false)
 
 // Sve tri idu kroz funkciju, ne kroz pridruživanje u predlošku (@click="x = !x"):
 // tako je pisan i prekidač za vatru, pa se zastavica nije mijenjala i poruke su
 // odlazile kao obične. Drop zona je bila na istom obrascu.
-function toggleDestroyAfterRead() {
-  destroyAfterRead.value = !destroyAfterRead.value
-}
+// function toggleDestroyAfterRead() {
+//   destroyAfterRead.value = !destroyAfterRead.value
+// }
 
 function startDragging() {
   isDragging.value = true
@@ -243,11 +245,11 @@ async function send() {
       attachmentType,
       attachmentName,
       replyToId: props.replyTo?.id ?? null,
-      destroyAfterRead: destroyAfterRead.value,
+      // destroyAfterRead: destroyAfterRead.value,
     })
 
     body.value = ''
-    destroyAfterRead.value = false
+    // destroyAfterRead.value = false
     clearPending()
     if (props.replyTo) emit('cancel-reply')
 

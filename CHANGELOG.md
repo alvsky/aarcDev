@@ -9,6 +9,13 @@ svakim isporučenim buildom). Android `versionCode`/`versionName` i
 
 ---
 
+## v1.0 (build 34) — 2026-09-03
+
+- Privremeno uklonjena opcija poruke koja nestaje nakon čitanja (gumb s
+  ikonom vatre pored polja za unos poruke) — vraća se kasnije.
+
+---
+
 ## v1.0 (build 33) — 2026-09-03
 
 Linkovi u chatu, hrvatski datumi i popravak poruka koje se nisu pojavljivale.
