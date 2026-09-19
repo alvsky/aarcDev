@@ -275,7 +275,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
@@ -334,16 +334,28 @@ function promptNewOrg() {
 
 const org = computed(() => orgsStore.current)
 
-// Skriveni prekidač za feature flagove — klik na naziv organizacije. Tiho ne
-// radi ništa izvan aarc d.o.o. ili za ne-admine: RLS (feature_flags_update)
-// bi svejedno odbio pisanje, ali gašenje već ovdje znači da nitko slučajnim
-// klikom ne otvori dijalog koji će mu samo vratiti grešku. AARC_ORG_ID mora
-// ostati usklađen s migracijom 20260919100000_feature_flags.sql.
+// Skriveni prekidač za feature flagove — 9 klikova na naziv organizacije u
+// roku od 2s. Tiho ne radi ništa izvan aarc d.o.o. ili za ne-admine: RLS
+// (feature_flags_update) bi svejedno odbio pisanje, ali gašenje već ovdje
+// znači da nitko slučajnim klikanjem ne otvori dijalog koji će mu samo
+// vratiti grešku. AARC_ORG_ID mora ostati usklađen s migracijom
+// 20260919100000_feature_flags.sql.
 const AARC_ORG_ID = 'c0f7214b-6d78-4b30-8685-d8cbb4c2ec26'
+const TAPS_REQUIRED = 9
+let orgTapCount = 0
+let orgTapTimer = null
 
 function onOrgNameTap() {
   if (!orgsStore.isAdmin || org.value?.id !== AARC_ORG_ID) return
-  openFeatureFlagsDialog()
+  orgTapCount++
+  clearTimeout(orgTapTimer)
+  orgTapTimer = setTimeout(() => {
+    orgTapCount = 0
+  }, 2000)
+  if (orgTapCount >= TAPS_REQUIRED) {
+    orgTapCount = 0
+    openFeatureFlagsDialog()
+  }
 }
 
 function openFeatureFlagsDialog() {
@@ -362,6 +374,8 @@ function openFeatureFlagsDialog() {
     }
   })
 }
+
+onUnmounted(() => clearTimeout(orgTapTimer))
 
 const showStats = ref(false)
 const EMPTY_STATS = {
