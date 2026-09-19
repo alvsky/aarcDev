@@ -29,7 +29,7 @@
 
         <!-- Naziv -->
         <div class="row items-center q-px-md q-pt-md q-mb-sm">
-          <div class="text-h6 org-name">{{ org?.name }}</div>
+          <div class="text-h6 org-name" @click="onOrgNameTap">{{ org?.name }}</div>
           <q-btn
             v-if="orgsStore.isAdmin"
             flat
@@ -275,13 +275,14 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useOrgsStore } from 'src/stores/orgs'
 import { useAuthStore } from 'src/stores/auth'
 import { useNotificationsStore } from 'src/stores/notifications'
+import { useFeatureFlagsStore } from 'src/stores/featureFlags'
 import { useFormatDate } from 'src/composables/useFormatDate'
 import { useConfirmDialog } from 'src/composables/useConfirmDialog'
 import AppHeader from 'src/components/shared/AppHeader.vue'
@@ -294,6 +295,7 @@ const { confirmDestructive } = useConfirmDialog()
 const orgsStore = useOrgsStore()
 const authStore = useAuthStore()
 const notifStore = useNotificationsStore()
+const featureFlagsStore = useFeatureFlagsStore()
 const formatDate = useFormatDate()
 
 const activeTab = ref('org')
@@ -331,6 +333,48 @@ function promptNewOrg() {
 }
 
 const org = computed(() => orgsStore.current)
+
+// Skriveni prekidač za feature flagove — tapni 7x na naziv organizacije u
+// roku od 2s. Tiho ne radi ništa izvan aarc d.o.o. ili za ne-admine: RLS
+// (feature_flags_update) bi svejedno odbio pisanje, ali gašenje već ovdje
+// znači da nitko slučajnim tapkanjem ne otvori dijalog koji će mu samo
+// vratiti grešku. AARC_ORG_ID mora ostati usklađen s migracijom
+// 20260919100000_feature_flags.sql.
+const AARC_ORG_ID = 'c0f7214b-6d78-4b30-8685-d8cbb4c2ec26'
+let orgTapCount = 0
+let orgTapTimer = null
+
+function onOrgNameTap() {
+  if (!orgsStore.isAdmin || org.value?.id !== AARC_ORG_ID) return
+  orgTapCount++
+  clearTimeout(orgTapTimer)
+  orgTapTimer = setTimeout(() => {
+    orgTapCount = 0
+  }, 2000)
+  if (orgTapCount >= 7) {
+    orgTapCount = 0
+    openFeatureFlagsDialog()
+  }
+}
+
+function openFeatureFlagsDialog() {
+  const enabled = featureFlagsStore.isEnabled('disappearing_messages')
+  $q.dialog({
+    title: 'Feature flags',
+    message: `Nestajuće poruke su trenutno ${enabled ? 'UKLJUČENE' : 'ISKLJUČENE'}.`,
+    ok: { label: enabled ? 'Isključi' : 'Uključi' },
+    cancel: t('common.cancel'),
+  }).onOk(async () => {
+    try {
+      await featureFlagsStore.setFlag('disappearing_messages', !enabled)
+      $q.notify({ type: 'positive', message: t('settings.saved') })
+    } catch (e) {
+      $q.notify({ type: 'negative', message: e.message })
+    }
+  })
+}
+
+onUnmounted(() => clearTimeout(orgTapTimer))
 
 const showStats = ref(false)
 const EMPTY_STATS = {
@@ -500,6 +544,7 @@ onMounted(() => {
 
 .org-name {
   color: var(--aarc-text);
+  user-select: none;
 }
 
 .org-role-caption,

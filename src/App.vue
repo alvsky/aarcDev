@@ -8,6 +8,7 @@ import { Capacitor } from '@capacitor/core'
 import { useAuthStore } from './stores/auth'
 import { useNotificationsStore } from 'src/stores/notifications'
 import { useChatStore } from 'src/stores/chat'
+import { useFeatureFlagsStore } from 'src/stores/featureFlags'
 import { useBadge } from 'src/composables/useBadge'
 import { usePush } from 'src/composables/usePush'
 import { useNetwork } from 'src/composables/useNetwork'
@@ -18,6 +19,7 @@ const { onReconnect } = useNetwork()
 const authStore = useAuthStore()
 const notifStore = useNotificationsStore()
 const chatStore = useChatStore()
+const featureFlagsStore = useFeatureFlagsStore()
 
 // Token koji je stigao prije prijave registriraj čim se korisnik prijavi;
 // usput pošalji poruke koje čekaju u outboxu
@@ -28,6 +30,7 @@ watch(
       await registerPendingToken()
       await chatStore.flushOutbox()
       await notifStore.fetchUnread()
+      await featureFlagsStore.fetchFlags()
     }
   },
 )

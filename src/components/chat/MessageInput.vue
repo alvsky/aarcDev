@@ -68,8 +68,11 @@
         @dragenter.prevent="startDragging"
       />
 
-      <!-- Ugašena vatra = obična poruka; upaljena = nestaje nakon čitanja. UPDATE: privremeno isključeno (zakomentirano) kao i svako pojavljivanje destroyAfterRead -->
-      <!-- <q-btn
+      <!-- Ugašena vatra = obična poruka; upaljena = nestaje nakon čitanja. Skriveno
+           iza feature flaga (vidi useFeatureFlagsStore) umjesto zakomentiranog koda —
+           prekidač se sad uključuje/isključuje iz OrgPage.vue bez novog builda. -->
+      <q-btn
+        v-if="disappearingMessagesEnabled"
         flat
         round
         dense
@@ -79,7 +82,7 @@
         @click="toggleDestroyAfterRead"
       >
         <q-tooltip>{{ $t('chat.destroyAfterRead') }}</q-tooltip>
-      </q-btn> -->
+      </q-btn>
 
       <!-- Send gumb -->
       <q-btn
@@ -100,14 +103,13 @@
 </template>
 
 <script setup>
-// /* eslint-disable */ //stavljeno privremeno
-
 import { ref, computed, onUnmounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { Capacitor } from '@capacitor/core'
 import { useChatStore } from 'src/stores/chat'
 import { useProjectsStore } from 'src/stores/projects'
+import { useFeatureFlagsStore } from 'src/stores/featureFlags'
 import { useImageUpload } from 'src/composables/useImageUpload'
 import { useNetwork } from 'src/composables/useNetwork'
 
@@ -124,8 +126,13 @@ const $q = useQuasar()
 const { t } = useI18n()
 const chatStore = useChatStore()
 const projectsStore = useProjectsStore()
+const featureFlagsStore = useFeatureFlagsStore()
 const { uploading, uploadImage } = useImageUpload()
 const { online } = useNetwork()
+
+const disappearingMessagesEnabled = computed(() =>
+  featureFlagsStore.isEnabled('disappearing_messages'),
+)
 
 const body = ref('')
 const sending = ref(false)
@@ -133,14 +140,14 @@ const isDragging = ref(false)
 const pendingImage = ref(null)
 const pendingPreview = ref(null)
 const fileInput = ref(null)
-// const destroyAfterRead = ref(false)
+const destroyAfterRead = ref(false)
 
 // Sve tri idu kroz funkciju, ne kroz pridruživanje u predlošku (@click="x = !x"):
 // tako je pisan i prekidač za vatru, pa se zastavica nije mijenjala i poruke su
 // odlazile kao obične. Drop zona je bila na istom obrascu.
-// function toggleDestroyAfterRead() {
-//   destroyAfterRead.value = !destroyAfterRead.value
-// }
+function toggleDestroyAfterRead() {
+  destroyAfterRead.value = !destroyAfterRead.value
+}
 
 function startDragging() {
   isDragging.value = true
@@ -245,11 +252,13 @@ async function send() {
       attachmentType,
       attachmentName,
       replyToId: props.replyTo?.id ?? null,
-      // destroyAfterRead: destroyAfterRead.value,
+      // Flag isključen mid-session ne smije poslati stariju true vrijednost
+      // koju korisnik više ni ne vidi na ekranu.
+      destroyAfterRead: disappearingMessagesEnabled.value && destroyAfterRead.value,
     })
 
     body.value = ''
-    // destroyAfterRead.value = false
+    destroyAfterRead.value = false
     clearPending()
     if (props.replyTo) emit('cancel-reply')
 
