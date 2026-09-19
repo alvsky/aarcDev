@@ -345,6 +345,14 @@ let orgTapCount = 0
 let orgTapTimer = null
 
 function onOrgNameTap() {
+  // TODO privremeni debug — makni čim nađemo uzrok "dijalog se ne pali"
+  console.log('[org-tap]', {
+    isAdmin: orgsStore.isAdmin,
+    currentRole: orgsStore.currentRole,
+    orgId: org.value?.id,
+    expected: AARC_ORG_ID,
+    match: org.value?.id === AARC_ORG_ID,
+  })
   if (!orgsStore.isAdmin || org.value?.id !== AARC_ORG_ID) return
   orgTapCount++
   clearTimeout(orgTapTimer)
