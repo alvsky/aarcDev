@@ -52,10 +52,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onActivated, watch, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, onActivated, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useChatStore } from 'src/stores/chat'
 import { useNotificationsStore } from 'src/stores/notifications'
+import { useNetwork } from 'src/composables/useNetwork'
+import { useAppResume } from 'src/composables/useAppResume'
 import ChatPanel from 'src/components/chat/ChatPanel.vue'
 
 const props = defineProps({ projectId: String })
@@ -64,6 +66,8 @@ const router = useRouter()
 const route = useRoute()
 const chatStore = useChatStore()
 const notifStore = useNotificationsStore()
+const { onReconnect } = useNetwork()
+const { onResume } = useAppResume()
 // I1/I2: ?channel=... u adresi (npr. iz push notifikacije) bira početni
 // kanal umjesto uvijek 'main'; query se odmah čisti da se refresh/dijeljeni
 // link ne otvara stalno na istom mjestu.
@@ -124,6 +128,17 @@ watch(
     await loadChannel(channel.value)
   },
 )
+
+// Realtime socket može ispasti dok je app u pozadini ili mreža nakratko
+// padne (vidi ProjectPage.vue) — osvježi otvoreni kanal umjesto da korisnik
+// mora ručno izaći i vratiti se da bi vidio poslane/primljene poruke.
+const offReconnect = onReconnect(() => loadChannel(channel.value))
+const offResume = onResume(() => loadChannel(channel.value))
+
+onUnmounted(() => {
+  offReconnect()
+  offResume()
+})
 </script>
 
 <style scoped>

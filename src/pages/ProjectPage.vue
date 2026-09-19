@@ -93,6 +93,8 @@ import { useItemsStore } from 'src/stores/items'
 import { useChatStore } from 'src/stores/chat'
 import { useNotificationsStore } from 'src/stores/notifications'
 import { useRealtime } from 'src/composables/useRealtime'
+import { useNetwork } from 'src/composables/useNetwork'
+import { useAppResume } from 'src/composables/useAppResume'
 import { supabase } from 'src/boot/supabase'
 import IdeasPage from './IdeasPage.vue'
 import BugsPage from './BugsPage.vue'
@@ -136,7 +138,10 @@ const projectsStore = useProjectsStore()
 const itemsStore = useItemsStore()
 const chatStore = useChatStore()
 let reactionsChannel = null
+let messagesUpdateChannel = null
 const notifStore = useNotificationsStore()
+const { onReconnect } = useNetwork()
+const { onResume } = useAppResume()
 
 const project = computed(() => projectsStore.projects.find((p) => p.id === projectId))
 const notFound = computed(() => !loading.value && !project.value)
@@ -163,24 +168,60 @@ const { setup, teardown } = useRealtime(
   'project',
 )
 
-const messagesUpdateChannel = supabase
-  .channel(`msg-update:${projectId}`)
-  .on(
-    'postgres_changes',
-    {
-      event: 'UPDATE',
-      schema: 'public',
-      table: 'messages',
-      // D3: bez ovoga svaki klijent prima UPDATE evente za SVAKI projekt na
-      // koji je itko pretplaćen, ne samo za ovaj.
-      filter: `project_id=eq.${projectId}`,
-    },
-    async (payload) => {
-      console.log('Message UPDATE:', payload.new?.id, payload.new?.body)
-      await chatStore.handleIncoming({ event: 'UPDATE', payload })
-    },
-  )
-  .subscribe()
+// Izdvojeno iz onMounted da se može ponovno pozvati na resume/reconnect —
+// vidi resubscribeRealtime niže. D3 filter na project_id ostaje isti razlog
+// kao i prije (svi klijenti bi inače dobivali UPDATE evente za SVAKI projekt).
+function subscribeMessagesUpdate() {
+  messagesUpdateChannel = supabase
+    .channel(`msg-update:${projectId}`)
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'messages', filter: `project_id=eq.${projectId}` },
+      async (payload) => {
+        console.log('Message UPDATE:', payload.new?.id, payload.new?.body)
+        await chatStore.handleIncoming({ event: 'UPDATE', payload })
+      },
+    )
+    .subscribe()
+}
+
+// D3: message_reactions nema project_id (samo message_id) pa Realtime filter
+// ovdje ne može ograničiti po projektu bez denormalizacije sheme (poznato
+// ograničenje, ostavljeno — messages UPDATE gore je popravljen).
+function subscribeReactions() {
+  reactionsChannel = supabase
+    .channel(`reactions:${projectId}`)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'message_reactions' },
+      async (payload) => {
+        const msgId = payload.new?.message_id || payload.old?.message_id
+        if (!msgId) return
+        const reactions = await chatStore.fetchReactions([msgId])
+        for (const key of Object.keys(chatStore.threads)) {
+          const msg = chatStore.threads[key]?.find((m) => m.id === msgId)
+          if (msg) {
+            msg.reactions = reactions[msgId] ?? []
+            break
+          }
+        }
+      },
+    )
+    .subscribe()
+}
+
+function unsubscribeExtra() {
+  if (reactionsChannel) {
+    supabase.removeChannel(reactionsChannel)
+    reactionsChannel = null
+  }
+  if (messagesUpdateChannel) {
+    supabase.removeChannel(messagesUpdateChannel)
+    messagesUpdateChannel = null
+  }
+}
+
+subscribeMessagesUpdate()
 
 onMounted(async () => {
   // Dubinski link preskače Home, pa popis projekata nikad nije dohvaćen — bez
@@ -201,39 +242,32 @@ onMounted(async () => {
     chatStore.fetchMessages({ projectId, channel: 'main' }),
   ])
   setup()
-
-  // D3: message_reactions nema project_id (samo message_id) pa Realtime
-  // filter ovdje ne može ograničiti po projektu bez denormalizacije sheme
-  // (poznato ograničenje, ostavljeno — messages UPDATE gore je popravljen).
-  reactionsChannel = supabase
-    .channel(`reactions:${projectId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'message_reactions',
-      },
-      async (payload) => {
-        const msgId = payload.new?.message_id || payload.old?.message_id
-        if (!msgId) return
-        const reactions = await chatStore.fetchReactions([msgId])
-        for (const key of Object.keys(chatStore.threads)) {
-          const msg = chatStore.threads[key]?.find((m) => m.id === msgId)
-          if (msg) {
-            msg.reactions = reactions[msgId] ?? []
-            break
-          }
-        }
-      },
-    )
-    .subscribe()
+  subscribeReactions()
 })
 
-onUnmounted(() => {
+// Realtime socket može ispasti dok je app u pozadini ili mreža nakratko
+// padne, i ništa ga dosad nije oživljavalo — otud "poruka se pojavi tek kad
+// izađem i vratim se". Ponovno uspostavi sve kanale i osvježi ono što je
+// moglo promašiti dok je veza bila mrtva. Ne dira put slanja poruke
+// (invarijanta #2) — samo automatizira ono što ručni izlazak-povratak već
+// radi.
+async function resubscribeRealtime() {
   teardown()
-  if (reactionsChannel) supabase.removeChannel(reactionsChannel)
-  if (messagesUpdateChannel) supabase.removeChannel(messagesUpdateChannel)
+  unsubscribeExtra()
+  setup()
+  subscribeMessagesUpdate()
+  subscribeReactions()
+  await Promise.all([itemsStore.fetchItems(projectId), notifStore.fetchUnread()])
+}
+
+const offReconnect = onReconnect(resubscribeRealtime)
+const offResume = onResume(resubscribeRealtime)
+
+onUnmounted(() => {
+  offReconnect()
+  offResume()
+  teardown()
+  unsubscribeExtra()
 })
 </script>
 

@@ -63,8 +63,15 @@ export function isOnline() {
 export function useNetwork() {
   ensureInit()
 
+  // Vraća unsubscribe funkciju — pozivatelji koji se montiraju/demontiraju
+  // (ne samo App.vue, koji živi cijeli lifetime) moraju je zvati u
+  // onUnmounted, inače se callbackovi gomilaju pri svakoj novoj montaži.
   function onReconnect(cb) {
     reconnectCallbacks.push(cb)
+    return () => {
+      const idx = reconnectCallbacks.indexOf(cb)
+      if (idx !== -1) reconnectCallbacks.splice(idx, 1)
+    }
   }
 
   return { online, onReconnect }
