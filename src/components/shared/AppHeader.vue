@@ -89,7 +89,13 @@ function onLogoClick() {
 
 function celebrate() {
   showConfetti.value = true
-  $q.notify({ message: t('common.easterEgg'), icon: 'celebration', color: 'primary', timeout: 3000 })
+  $q.notify({
+    message: t('common.easterEgg'),
+    icon: 'celebration',
+    color: 'primary',
+    timeout: 3000,
+    position: 'center',
+  })
   // Malo dulje od najduže moguće animacije pojedinog komada konfetija
   // (1.8s + 1.2s trajanje + 0.3s kašnjenje, vidi ConfettiBurst.vue) da nijedan
   // komad ne nestane rezanjem prije nego stigne skroz pasti.
