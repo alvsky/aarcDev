@@ -61,12 +61,22 @@ Ideas, bugs and tasks in one table — see `docs/item-model.md` for the reasonin
 - `stage` — `new` | `confirmed` | `accepted` | `in_progress` | `testing` | `done` | `rejected`.
   The three middle ones are "active work" and make up the TBI board.
 - `priority` — `low` | `med` | `high` (default `med`), applies to every kind.
-- `assignee_id`, optional screenshot columns.
+- `assignee_id`.
 - Authorship pairs: `created_by`/`created_at` (the original author, never overwritten),
   `accepted_by`/`accepted_at`, `rejected_by`/`rejected_at`, `completed_by`/`completed_at`.
 
 `kind`, `stage` and `priority` carry CHECK constraints — the only enum-like columns in the
 schema that do.
+
+### item_screenshots
+
+Zero or more screenshots per item (2026-09-20 — replaced the old single
+`screenshot_url`/`screenshot_type`/`screenshot_name` columns on `items`). `item_id` FK
+`ON DELETE CASCADE`, `created_by` references `auth.users`. RLS mirrors `message_reactions`:
+visibility rides on an `EXISTS` join back to `items` (so `items_select`'s own
+`can_access_project` check applies transparently), insert requires `created_by = auth.uid()`
+plus `can_access_project`, delete allows the uploader or whoever could delete the item itself
+(author or org admin).
 
 Accepting an idea is `stage: new → accepted`: one column, same row, same thread. There is no
 separate work-item row and therefore nothing to keep in sync.
@@ -174,10 +184,10 @@ Two private buckets (B16, 2026-08-10 — policies live in
 
 Images are compressed client-side to JPEG before upload (`useImageUpload.js`). The DB stores the
 **path**, not a URL; the client fetches 1-hour signed URLs on display (`getSignedUrl(path,
-bucket)`). Deleting a chat message, an idea/bug/TBI item, or replacing an avatar removes its
-storage object and its local IndexedDB image-cache blob (client-side) — delete policy only
-allows removing your own subfolder, so an org admin deleting someone else's item leaves their
-screenshot orphaned (known, see BACKLOG E3).
+bucket)`). Deleting a chat message, an idea/bug/TBI item (all its screenshots, one storage object each), or
+replacing an avatar removes the storage object(s) and their local IndexedDB image-cache blobs
+(client-side) — delete policy only allows removing your own subfolder, so an org admin deleting
+someone else's item leaves their screenshot(s) orphaned (known, see BACKLOG E3).
 
 ## Conventions for schema changes
 

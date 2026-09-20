@@ -170,6 +170,7 @@ export default {
     screenshot: 'Screenshot',
     addScreenshot: 'Add image',
     pasteScreenshot: 'Paste',
+    screenshotMax: 'Up to {max} images.',
   },
   tbi: {
     title: 'TODO',

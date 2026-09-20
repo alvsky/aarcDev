@@ -105,12 +105,15 @@
           <div class="text-body2 multiline-text">{{ item.steps }}</div>
         </div>
 
-        <ChatImage
-          v-if="item.screenshot_url"
-          :path="item.screenshot_url"
-          :alt="item.title"
-          class="q-mb-sm"
-        />
+        <div v-if="item.screenshots?.length" class="row q-gutter-sm q-mb-sm">
+          <ChatImage
+            v-for="shot in item.screenshots"
+            :key="shot.id"
+            :path="shot.url"
+            :alt="item.title"
+            class="item-screenshot-thumb"
+          />
+        </div>
 
         <!-- Faza, prioritet, izvršitelj -->
         <div class="row q-col-gutter-sm q-mb-sm">
@@ -404,5 +407,16 @@ async function onOpen() {
   background: var(--aarc-accent);
   color: #fff;
   opacity: 1;
+}
+
+/* !important nadjačava ChatImage.vue's vlastiti scoped .chat-img
+   (max-width:280px/max-height:200px) — više thumbnaila u nizu ne smiju
+   svaki potezati toliko prostora, isti razlog kao u ScreenshotUpload.vue. */
+.item-screenshot-thumb :deep(img) {
+  width: 72px !important;
+  height: 72px !important;
+  max-width: 72px !important;
+  max-height: 72px !important;
+  object-fit: cover !important;
 }
 </style>

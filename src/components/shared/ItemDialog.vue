@@ -73,8 +73,12 @@
           </template>
         </q-field>
 
-        <!-- Screenshot -->
-        <ScreenshotUpload v-model="pendingImage" />
+        <!-- Screenshotovi -->
+        <ScreenshotUpload
+          v-model="pendingImages"
+          :existing="existingScreenshots"
+          @remove-existing="removeExisting"
+        />
 
         <!-- Prioritet vrijedi za sve vrste, ne samo bugove (docs/item-model.md).
              Faza se ne mijenja ovdje nego inline na kartici, jer prijelazi moraju
@@ -139,7 +143,11 @@ const itemsStore = useItemsStore()
 const { uploadImage } = useImageUpload()
 
 const saving = ref(false)
-const pendingImage = ref(null)
+const pendingImages = ref([])
+// Kopija — uklanjanje ide odmah kroz store (izravno brisanje, ne čeka Spremi),
+// pa se popis ovdje mora sam ažurirati da nestali screenshot odmah nestane
+// iz dijaloga bez čekanja na sljedeći fetchItems.
+const existingScreenshots = ref([])
 
 const open = computed({
   get: () => props.modelValue,
@@ -159,7 +167,8 @@ watch(
     if (val) {
       // Uvijek, i pri uređivanju: inače bi slika odabrana u prošlom otvaranju
       // dijaloga ostala visjeti i bila uploadana na sljedeću stavku.
-      pendingImage.value = null
+      pendingImages.value = []
+      existingScreenshots.value = props.item?.screenshots ? [...props.item.screenshots] : []
       form.value = {
         title: props.item?.title ?? '',
         description: props.item?.description ?? '',
@@ -186,35 +195,32 @@ const platformOptions = computed(() =>
   ['ios', 'android', 'web'].map((p) => ({ label: t(`bugs.platformName.${p}`), value: p })),
 )
 
-// Upload screenshot ako postoji. Vraća isti podatak u dva oblika: `create` prati
-// potpise create akcija (camelCase), `update` ide ravno u supabase .update() pa mora
-// koristiti nazive stupaca. Ako slike nema, oba su prazna i postojeća se ne dira.
-async function uploadScreenshot() {
-  if (!pendingImage.value) return { create: {}, update: {} }
-  const uploaded = await uploadImage(pendingImage.value, {
-    maxWidth: 1280,
-    quality: 0.6,
-    pathPrefix: props.projectId,
-  })
-  return {
-    create: {
-      screenshotUrl: uploaded.path,
-      screenshotType: uploaded.type,
-      screenshotName: uploaded.name,
-    },
-    update: {
-      screenshot_url: uploaded.path,
-      screenshot_type: uploaded.type,
-      screenshot_name: uploaded.name,
-    },
+// Uklanjanje postojećeg screenshota ide odmah, ne čeka Spremi — isti obrazac
+// kao revokeInvite/removeMember (izravna akcija, ne dio forme).
+async function removeExisting(shot) {
+  try {
+    await itemsStore.removeItemScreenshot(shot)
+    existingScreenshots.value = existingScreenshots.value.filter((s) => s.id !== shot.id)
+  } catch (e) {
+    $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
   }
 }
+
+// Uploada sve tek odabrane slike (nema ih na editu dok se ne dodaju) i vraća
+// podatke za addItemScreenshots — poziva se TEK kad stavka ima id (nova
+// stavka ga dobije iz createItem, postojeća ga već ima).
+async function uploadPendingScreenshots() {
+  const uploads = []
+  for (const file of pendingImages.value) {
+    uploads.push(await uploadImage(file, { maxWidth: 1280, quality: 0.6, pathPrefix: props.projectId }))
+  }
+  return uploads
+}
+
 async function save() {
   if (!form.value.title.trim()) return
   saving.value = true
   try {
-    const screenshot = await uploadScreenshot()
-
     // platform vrijedi samo za bugove — ostale vrste ga jednostavno nemaju.
     const platform = props.kind === 'bug' ? form.value.platform : null
     // Prazan textarea daje '' — u bazu ide null, da "nije upisano" i
@@ -222,17 +228,17 @@ async function save() {
     const steps = props.kind === 'bug' ? (form.value.steps?.trim() || null) : null
 
     // Jedna putanja za sve vrste — prije tri gotovo iste grane.
-    if (props.item?.id) {
-      await itemsStore.updateItem(props.item.id, {
+    let itemId = props.item?.id
+    if (itemId) {
+      await itemsStore.updateItem(itemId, {
         title: form.value.title,
         description: form.value.description,
         priority: form.value.priority,
         platform,
         steps,
-        ...screenshot.update,
       })
     } else {
-      await itemsStore.createItem({
+      itemId = await itemsStore.createItem({
         projectId: props.projectId,
         kind: props.kind,
         title: form.value.title,
@@ -240,9 +246,11 @@ async function save() {
         priority: form.value.priority,
         platform,
         steps,
-        ...screenshot.create,
       })
     }
+
+    const uploaded = await uploadPendingScreenshots()
+    await itemsStore.addItemScreenshots(itemId, uploaded)
 
     open.value = false
     $q.notify({ type: 'positive', message: t('settings.saved') })

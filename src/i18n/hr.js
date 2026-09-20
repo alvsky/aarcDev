@@ -170,6 +170,7 @@ export default {
     screenshot: 'Screenshot',
     addScreenshot: 'Dodaj sliku',
     pasteScreenshot: 'Zalijepi',
+    screenshotMax: 'Najviše {max} slika.',
   },
   tbi: {
     title: 'TODO',

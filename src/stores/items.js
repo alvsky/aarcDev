@@ -3,7 +3,6 @@ import { supabase } from 'src/boot/supabase'
 import { useAuthStore } from './auth'
 import { isOnline } from 'src/composables/useNetwork'
 import { removeCachedImage } from 'src/utils/imageCache'
-import { discardReplacedScreenshot } from 'src/utils/screenshots'
 
 // Jedan store za ideje, bugove i zadatke — vidi docs/item-model.md.
 // Zamjenjuje ideas/bugs/tbi storove; oni se brišu u M6, kad se stranice prebace.
@@ -94,21 +93,32 @@ export const useItemsStore = defineStore('items', {
 
       // FK-ovi pokazuju na auth.users, ne na profiles — spajanje ide ručno
       // (invarijanta 1).
-      const [{ data: profiles }, { data: counts }, { data: states }] = await Promise.all([
-        userIds.length
-          ? supabase.from('profiles').select('id, full_name, avatar_url').in('id', userIds)
-          : Promise.resolve({ data: [] }),
-        supabase.from('item_message_counts').select('item_id, message_count').in('item_id', ids),
-        supabase
-          .from('item_user_state')
-          .select('item_id, read_at, watching_at')
-          .eq('user_id', auth.user.id)
-          .in('item_id', ids),
-      ])
+      const [{ data: profiles }, { data: counts }, { data: states }, { data: screenshots }] =
+        await Promise.all([
+          userIds.length
+            ? supabase.from('profiles').select('id, full_name, avatar_url').in('id', userIds)
+            : Promise.resolve({ data: [] }),
+          supabase.from('item_message_counts').select('item_id, message_count').in('item_id', ids),
+          supabase
+            .from('item_user_state')
+            .select('item_id, read_at, watching_at')
+            .eq('user_id', auth.user.id)
+            .in('item_id', ids),
+          supabase
+            .from('item_screenshots')
+            .select('id, item_id, url, type, name, created_at')
+            .in('item_id', ids)
+            .order('created_at', { ascending: true }),
+        ])
 
       const profileById = new Map((profiles ?? []).map((p) => [p.id, p]))
       const countById = new Map((counts ?? []).map((c) => [c.item_id, Number(c.message_count)]))
       const stateById = new Map((states ?? []).map((s) => [s.item_id, s]))
+      const screenshotsByItem = new Map()
+      for (const s of screenshots ?? []) {
+        if (!screenshotsByItem.has(s.item_id)) screenshotsByItem.set(s.item_id, [])
+        screenshotsByItem.get(s.item_id).push(s)
+      }
 
       const mapped = data.map((i) => {
         const st = stateById.get(i.id)
@@ -118,6 +128,7 @@ export const useItemsStore = defineStore('items', {
           assignee: profileById.get(i.assignee_id) ?? null,
           accepted_profile: profileById.get(i.accepted_by) ?? null,
           message_count: countById.get(i.id) ?? 0,
+          screenshots: screenshotsByItem.get(i.id) ?? [],
           watching: !!st?.watching_at,
           is_new:
             !st?.read_at && i.created_by !== auth.user.id && !TERMINAL_STAGES.includes(i.stage),
@@ -128,6 +139,9 @@ export const useItemsStore = defineStore('items', {
       this.loadingProjects[projectId] = false
     },
 
+    // Vraća novi id — pozivatelj ga treba da odmah zatim doda screenshotove
+    // preko addItemScreenshots (ti idu u zaseban upit, screenshoti nisu dio
+    // ovog inserta otkad items ima više od jednog, vidi item_screenshots).
     async createItem({
       projectId,
       kind,
@@ -136,33 +150,32 @@ export const useItemsStore = defineStore('items', {
       priority = 'med',
       // Zadatak se rađa već prihvaćen — nitko ga ne predlaže, unesen je kao posao.
       stage = kind === 'task' ? 'accepted' : 'new',
-      screenshotUrl = null,
-      screenshotType = null,
-      screenshotName = null,
       platform = null,
       steps = null,
     }) {
       const auth = useAuthStore()
       const now = new Date().toISOString()
 
-      const { error } = await supabase.from('items').insert({
-        project_id: projectId,
-        kind,
-        stage,
-        title,
-        description,
-        priority,
-        created_by: auth.user.id,
-        accepted_by: stage === 'accepted' ? auth.user.id : null,
-        accepted_at: stage === 'accepted' ? now : null,
-        screenshot_url: screenshotUrl,
-        screenshot_type: screenshotType,
-        screenshot_name: screenshotName,
-        platform,
-        steps,
-      })
+      const { data, error } = await supabase
+        .from('items')
+        .insert({
+          project_id: projectId,
+          kind,
+          stage,
+          title,
+          description,
+          priority,
+          created_by: auth.user.id,
+          accepted_by: stage === 'accepted' ? auth.user.id : null,
+          accepted_at: stage === 'accepted' ? now : null,
+          platform,
+          steps,
+        })
+        .select('id')
+        .single()
       if (error) throw error
       await this.fetchItems(projectId)
+      return data.id
     },
 
     async updateItem(id, updates) {
@@ -177,24 +190,66 @@ export const useItemsStore = defineStore('items', {
         if (previous) this.items[idx] = previous
         throw error
       }
+    },
 
-      await discardReplacedScreenshot(previous?.screenshot_url, updates.screenshot_url)
+    // Poziva se NAKON uploada (komponenta uploada preko useImageUpload, isti
+    // obrazac kao MessageInput/ChatPanel) — store ovdje samo upisuje retke.
+    async addItemScreenshots(itemId, uploaded) {
+      if (!uploaded?.length) return
+      const auth = useAuthStore()
+      const rows = uploaded.map((u) => ({
+        item_id: itemId,
+        url: u.path,
+        type: u.type,
+        name: u.name,
+        created_by: auth.user.id,
+      }))
+      const { data, error } = await supabase.from('item_screenshots').insert(rows).select()
+      if (error) throw error
+
+      const idx = this.items.findIndex((i) => i.id === itemId)
+      if (idx !== -1) {
+        this.items[idx] = {
+          ...this.items[idx],
+          screenshots: [...(this.items[idx].screenshots ?? []), ...(data ?? [])],
+        }
+      }
+    },
+
+    async removeItemScreenshot(screenshot) {
+      // E3: ne provjeriti error ovdje znači da bi admin koji briše tuđi
+      // screenshot (dozvoljeno, RLS) mislio da je obrisan dok storage tiho
+      // odbija (vlastita mapa, vidi storage_policies) — barem se vidi u konzoli.
+      const { error: storageError } = await supabase.storage
+        .from('chat-attachments')
+        .remove([screenshot.url])
+      if (storageError) console.error('[storage] brisanje screenshota stavke:', storageError)
+      await removeCachedImage(screenshot.url)
+
+      const { error } = await supabase.from('item_screenshots').delete().eq('id', screenshot.id)
+      if (error) throw error
+
+      const idx = this.items.findIndex((i) => i.id === screenshot.item_id)
+      if (idx !== -1) {
+        this.items[idx] = {
+          ...this.items[idx],
+          screenshots: (this.items[idx].screenshots ?? []).filter((s) => s.id !== screenshot.id),
+        }
+      }
     },
 
     async deleteItem(id) {
       const item = this.items.find((i) => i.id === id)
       const projectId = item?.project_id
-      if (item?.screenshot_url) {
-        // E3: ne provjeriti error ovdje znači da bi admin koji briše tuđu
-        // stavku (dozvoljeno, B24) mislio da je screenshot obrisan dok RLS
-        // tiho odbija (vlastita mapa, vidi storage_policies) — sad se to
-        // barem vidi u konzoli umjesto potpune tišine.
+      for (const shot of item?.screenshots ?? []) {
         const { error: storageError } = await supabase.storage
           .from('chat-attachments')
-          .remove([item.screenshot_url])
+          .remove([shot.url])
         if (storageError) console.error('[storage] brisanje screenshota stavke:', storageError)
-        await removeCachedImage(item.screenshot_url)
+        await removeCachedImage(shot.url)
       }
+      // item_screenshots redci se brišu sami (on delete cascade) — gornja
+      // petlja čisti samo storage objekte i lokalni keš slika.
       const { error } = await supabase.from('items').delete().eq('id', id)
       if (error) throw error
       if (projectId) await this.fetchItems(projectId)
