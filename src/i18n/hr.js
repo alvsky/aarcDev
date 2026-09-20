@@ -78,6 +78,8 @@ export default {
     orgVisibleInfo: 'Vidljivo cijeloj organizaciji — svi članovi imaju pristup ovom projektu.',
     pickMember: 'Odaberi člana organizacije',
     noMoreMembers: 'Svi članovi organizacije su već dodani.',
+    errorDuplicateName: 'Projekt s tim nazivom već postoji.',
+    errorNoOrg: 'Nema odabrane organizacije.',
     makeProjectOwner: 'Postavi za vlasnika projekta',
     makeProjectMember: 'Postavi za člana',
     removeMemberTitle: 'Ukloni s projekta',
@@ -122,6 +124,8 @@ export default {
     revokeInvite: 'Povuci pozivnicu',
     revokeInviteConfirm: 'Povući pozivnicu za "{email}"?',
     inviteExpires: 'Ističe {date}',
+    errorPendingInvite: 'Već postoji neprihvaćena pozivnica na tu adresu.',
+    errorRenameFailed: 'Preimenovanje nije uspjelo — provjeri jesi li admin ove organizacije.',
   },
   ideas: {
     title: 'Ideje',

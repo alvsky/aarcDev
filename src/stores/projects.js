@@ -1,7 +1,14 @@
 import { defineStore, acceptHMRUpdate } from 'pinia'
 import { supabase } from 'src/boot/supabase'
 import { isOnline } from 'src/composables/useNetwork'
+import { i18n } from 'src/boot/i18n'
 import { useAuthStore } from './auth'
+
+// Store nije komponenta pa nema pristup useI18n()'s t() — i18n.global.t radi
+// isto izvan setup konteksta (composition mode, vidi boot/i18n.js). Poruke
+// koje SAMI biramo (ne sirove Postgres/Supabase greške) prevode se ovdje,
+// izravno, umjesto da komponenta koja hvata grešku nagađa značenje po tekstu.
+const t = i18n.global.t
 
 export const useProjectsStore = defineStore('projects', {
   persist: ['projects'],
@@ -128,7 +135,7 @@ export const useProjectsStore = defineStore('projects', {
       if (!orgs.current) await orgs.fetchOrgs()
 
       const orgId = orgs.current?.id
-      if (!orgId) throw new Error('Nema odabrane organizacije')
+      if (!orgId) throw new Error(t('projects.errorNoOrg'))
 
       const { data: newId, error } = await supabase.rpc('create_project', {
         p_org: orgId,
@@ -141,7 +148,7 @@ export const useProjectsStore = defineStore('projects', {
         // organizacija već ima projekt tog naziva — pretvoreno u čitljivu
         // poruku umjesto sirove Postgres greške.
         if (error.code === '23505') {
-          throw new Error('Projekt s tim nazivom već postoji.')
+          throw new Error(t('projects.errorDuplicateName'))
         }
         throw error
       }
@@ -154,7 +161,7 @@ export const useProjectsStore = defineStore('projects', {
       const { error } = await supabase.from('projects').update(updates).eq('id', id)
       if (error) {
         if (error.code === '23505') {
-          throw new Error('Projekt s tim nazivom već postoji.')
+          throw new Error(t('projects.errorDuplicateName'))
         }
         throw error
       }

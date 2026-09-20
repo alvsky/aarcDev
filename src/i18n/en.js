@@ -78,6 +78,8 @@ export default {
     orgVisibleInfo: 'Visible to the whole organization — every member has access to this project.',
     pickMember: 'Pick an organization member',
     noMoreMembers: 'Every organization member has already been added.',
+    errorDuplicateName: 'A project with that name already exists.',
+    errorNoOrg: 'No organization selected.',
     makeProjectOwner: 'Make project owner',
     makeProjectMember: 'Make member',
     removeMemberTitle: 'Remove from project',
@@ -122,6 +124,8 @@ export default {
     revokeInvite: 'Revoke invitation',
     revokeInviteConfirm: 'Revoke the invitation for "{email}"?',
     inviteExpires: 'Expires {date}',
+    errorPendingInvite: 'There is already a pending invitation for that address.',
+    errorRenameFailed: "Rename failed — check that you're an admin of this organization.",
   },
   ideas: {
     title: 'Ideas',

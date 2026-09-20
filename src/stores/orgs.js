@@ -2,6 +2,12 @@ import { defineStore, acceptHMRUpdate } from 'pinia'
 import { supabase } from 'src/boot/supabase'
 import { useAuthStore } from './auth'
 import { isOnline } from 'src/composables/useNetwork'
+import { i18n } from 'src/boot/i18n'
+
+// Store nije komponenta pa nema pristup useI18n()'s t() — i18n.global.t radi
+// isto izvan setup konteksta (composition mode, vidi boot/i18n.js). Poruke
+// koje SAMI biramo (ne sirove Postgres/Supabase greške) prevode se ovdje.
+const t = i18n.global.t
 
 // Organizacije: prebacivač, ekran organizacije (B20), pozivnice (B21).
 //
@@ -109,7 +115,7 @@ export const useOrgsStore = defineStore('orgs', {
         .single()
       if (error) {
         if (error.code === '23505') {
-          throw new Error('Već postoji neprihvaćena pozivnica na tu adresu.')
+          throw new Error(t('org.errorPendingInvite'))
         }
         throw error
       }
@@ -205,7 +211,7 @@ export const useOrgsStore = defineStore('orgs', {
         .select()
       if (error) throw error
       if (!data?.length) {
-        throw new Error('Preimenovanje nije uspjelo — provjeri jesi li admin ove organizacije.')
+        throw new Error(t('org.errorRenameFailed'))
       }
       const org = this.orgs.find((o) => o.id === orgId)
       if (org) org.name = name.trim()
