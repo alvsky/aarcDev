@@ -85,6 +85,7 @@ import { useProjectsStore } from 'src/stores/projects'
 import { useOrgsStore } from 'src/stores/orgs'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
+import { dbErrorMessage } from 'src/utils/dbErrorMessage'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -143,7 +144,7 @@ async function save() {
     open.value = false
     $q.notify({ type: 'positive', message: t('settings.saved') })
   } catch (e) {
-    $q.notify({ type: 'negative', message: e.message })
+    $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
   } finally {
     saving.value = false
   }

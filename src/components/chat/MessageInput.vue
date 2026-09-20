@@ -106,6 +106,7 @@
 import { ref, computed, onUnmounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
+import { dbErrorMessage } from 'src/utils/dbErrorMessage'
 import { Capacitor } from '@capacitor/core'
 import { useChatStore } from 'src/stores/chat'
 import { useProjectsStore } from 'src/stores/projects'
@@ -279,7 +280,7 @@ async function send() {
                 await projectsStore.unfollowProject(props.projectId)
                 $q.notify({ type: 'positive', message: t('projects.unfollowed') })
               } catch (e) {
-                $q.notify({ type: 'negative', message: e.message })
+                $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
               }
             },
           },
@@ -294,7 +295,7 @@ async function send() {
     const message =
       hadImage && !attachmentUploaded
         ? t('chat.attachmentFail')
-        : (err?.message ?? t('chat.sendFailed'))
+        : (dbErrorMessage(err, t) || t('chat.sendFailed'))
     $q.notify({ type: 'negative', message })
   } finally {
     sending.value = false

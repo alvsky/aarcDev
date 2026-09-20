@@ -154,6 +154,7 @@ import { useI18n } from 'vue-i18n'
 import { supabase } from 'src/boot/supabase'
 import { useOfflineGuard } from 'src/composables/useOfflineGuard'
 import { useConfirmDialog } from 'src/composables/useConfirmDialog'
+import { dbErrorMessage } from 'src/utils/dbErrorMessage'
 import UserAvatar from './UserAvatar.vue'
 
 const props = defineProps({
@@ -217,7 +218,7 @@ async function addMember(userId) {
     await projectsStore.addProjectMember(props.projectId, userId)
     $q.notify({ type: 'positive', message: t('projects.addMember') })
   } catch (e) {
-    $q.notify({ type: 'negative', message: e.message })
+    $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
   } finally {
     adding.value = false
   }
@@ -233,7 +234,7 @@ async function confirmRemove(member) {
   try {
     await projectsStore.removeMember(props.projectId, member.user_id)
   } catch (e) {
-    $q.notify({ type: 'negative', message: e.message })
+    $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
   }
 }
 
@@ -241,7 +242,7 @@ async function setRole(member, role) {
   try {
     await projectsStore.setProjectMemberRole(props.projectId, member.user_id, role)
   } catch (e) {
-    $q.notify({ type: 'negative', message: e.message })
+    $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
   }
 }
 

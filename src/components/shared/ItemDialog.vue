@@ -122,6 +122,7 @@ import { useI18n } from 'vue-i18n'
 import { Capacitor } from '@capacitor/core'
 import { useImageUpload } from 'src/composables/useImageUpload'
 import { useItemsStore } from 'src/stores/items'
+import { dbErrorMessage } from 'src/utils/dbErrorMessage'
 import ScreenshotUpload from './ScreenshotUpload.vue'
 
 const props = defineProps({
@@ -246,7 +247,7 @@ async function save() {
     open.value = false
     $q.notify({ type: 'positive', message: t('settings.saved') })
   } catch (e) {
-    $q.notify({ type: 'negative', message: e.message })
+    $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
   } finally {
     saving.value = false
   }

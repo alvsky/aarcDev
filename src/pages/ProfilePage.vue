@@ -289,6 +289,7 @@ import { useImageUpload } from 'src/composables/useImageUpload'
 import { useConfirmDialog } from 'src/composables/useConfirmDialog'
 import { discardReplacedScreenshot } from 'src/utils/screenshots'
 import { removeCachedImage } from 'src/utils/imageCache'
+import { dbErrorMessage } from 'src/utils/dbErrorMessage'
 import { supabase } from 'src/boot/supabase'
 
 const router = useRouter()
@@ -355,7 +356,7 @@ async function onAvatarSelected(e) {
     await discardReplacedScreenshot(previousPath, uploaded.path, 'avatars')
     $q.notify({ type: 'positive', message: t('settings.saved') })
   } catch (err) {
-    $q.notify({ type: 'negative', message: err.message })
+    $q.notify({ type: 'negative', message: dbErrorMessage(err, t) })
   } finally {
     uploadingAvatar.value = false
   }
@@ -373,7 +374,7 @@ async function removeAvatar() {
     await removeCachedImage(previousPath)
     $q.notify({ type: 'positive', message: t('settings.saved') })
   } catch (err) {
-    $q.notify({ type: 'negative', message: err.message })
+    $q.notify({ type: 'negative', message: dbErrorMessage(err, t) })
   } finally {
     uploadingAvatar.value = false
   }
@@ -385,7 +386,7 @@ async function saveProfile() {
     await authStore.updateProfile({ full_name: form.value.full_name })
     $q.notify({ type: 'positive', message: t('settings.saved') })
   } catch (e) {
-    $q.notify({ type: 'negative', message: e.message })
+    $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
   } finally {
     savingProfile.value = false
   }
@@ -450,7 +451,7 @@ async function confirmDelete() {
       // organizacije prođe taj predček, pa ga uhvati tek trigger na serveru.
       $q.notify({ type: 'warning', message: t('settings.deleteAccountLastOwner'), timeout: 5000 })
     } else {
-      $q.notify({ type: 'negative', message: e.message })
+      $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
     }
   } finally {
     deleting.value = false

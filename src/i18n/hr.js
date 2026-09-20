@@ -373,4 +373,30 @@ export default {
     required: 'Polje je obavezno',
     actions: 'Akcije',
   },
+  // Prijevodi za poruke koje bacaju DB RPC funkcije/okidači (supabase/schema.sql,
+  // uvijek na hrvatskom) — vidi src/utils/dbErrorMessage.js. Ne prikazuju se
+  // izravno; komponenta ih traži po ključu preko te funkcije.
+  dbErrors: {
+    unknownRole: 'Nepoznata uloga.',
+    orgNeedsOwner:
+      'Organizacija mora imati barem jednog vlasnika — prvo dodijeli vlasništvo nekom drugom.',
+    loginRequired: 'Potrebna je prijava.',
+    inviteNotFound: 'Pozivnica ne postoji ili je već iskorištena.',
+    inviteExpired: 'Pozivnica je istekla.',
+    inviteWrongEmail: 'Pozivnica je izdana na drugu e-mail adresu.',
+    orgNameRequired: 'Naziv organizacije je obavezan.',
+    projectNameRequired: 'Naziv projekta je obavezan.',
+    notOrgMember: 'Nisi član te organizacije.',
+    guestCannotCreateProjects: 'Gost ne može stvarati projekte.',
+    noProjectAccess: 'Nemaš pristup ovom projektu.',
+    onlyAdminCanChangeVisibility: 'Vidljivost projekta može mijenjati samo admin organizacije.',
+    onlyOwnerCanSeeStats: 'Samo vlasnik organizacije može vidjeti statistiku.',
+    personNotOrgMember: 'Osoba nije član ove organizacije.',
+    onlyAdminCanRemoveMembers: 'Samo admin ili vlasnik može uklanjati članove.',
+    onlyOwnerCanRemoveOwner: 'Vlasnika može ukloniti samo vlasnik.',
+    onlyAdminCanChangeRoles: 'Samo admin ili vlasnik može mijenjati uloge.',
+    onlyOwnerCanTransferOwnership: 'Vlasništvo može mijenjati samo vlasnik.',
+    noPermissionManageProjectMembers: 'Nemaš ovlasti za upravljanje članovima ovog projekta.',
+    personNotProjectMember: 'Osoba nije član ovog projekta.',
+  },
 }

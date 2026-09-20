@@ -280,6 +280,7 @@ import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useOrgsStore } from 'src/stores/orgs'
+import { dbErrorMessage } from 'src/utils/dbErrorMessage'
 import { useAuthStore } from 'src/stores/auth'
 import { useNotificationsStore } from 'src/stores/notifications'
 import { useFeatureFlagsStore } from 'src/stores/featureFlags'
@@ -327,7 +328,7 @@ function promptNewOrg() {
     try {
       await orgsStore.createOrg(name)
     } catch (e) {
-      $q.notify({ type: 'negative', message: e.message })
+      $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
     }
   })
 }
@@ -370,7 +371,7 @@ function openFeatureFlagsDialog() {
       await featureFlagsStore.setFlag('disappearing_messages', !enabled)
       $q.notify({ type: 'positive', message: t('settings.saved') })
     } catch (e) {
-      $q.notify({ type: 'negative', message: e.message })
+      $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
     }
   })
 }
@@ -394,7 +395,7 @@ async function toggleStats() {
     try {
       await orgsStore.fetchMemberStats(org.value.id)
     } catch (e) {
-      $q.notify({ type: 'negative', message: e.message })
+      $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
     }
   }
 }
@@ -422,14 +423,14 @@ function promptRename() {
       await orgsStore.renameOrg(org.value.id, name)
       $q.notify({ type: 'positive', message: t('settings.saved') })
     } catch (e) {
-      $q.notify({ type: 'negative', message: e.message })
+      $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
     }
   })
 }
 
 function changeRole(member, role) {
   orgsStore.setMemberRole(org.value.id, member.user_id, role).catch((e) => {
-    $q.notify({ type: 'negative', message: e.message })
+    $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
   })
 }
 
@@ -451,7 +452,7 @@ async function confirmRemove(member) {
   try {
     await orgsStore.removeMember(org.value.id, member.user_id)
   } catch (e) {
-    $q.notify({ type: 'negative', message: e.message })
+    $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
   }
 }
 
@@ -467,7 +468,7 @@ async function confirmLeave() {
     router.push('/')
   } catch (e) {
     // Najčešći uzrok: zadnji vlasnik (B13/B19) — poruka iz baze je već čitljiva.
-    $q.notify({ type: 'negative', message: e.message })
+    $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
   }
 }
 
@@ -481,7 +482,7 @@ async function confirmDeleteOrg() {
     await orgsStore.deleteOrg(org.value.id)
     router.push('/')
   } catch (e) {
-    $q.notify({ type: 'negative', message: e.message })
+    $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
   }
 }
 
@@ -494,7 +495,7 @@ async function sendInvite() {
     copyInviteLink(inv.token, false)
     $q.notify({ type: 'positive', message: t('org.inviteCreated') })
   } catch (e) {
-    $q.notify({ type: 'negative', message: e.message })
+    $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
   } finally {
     inviting.value = false
   }
@@ -519,7 +520,7 @@ async function confirmRevokeInvite(inv) {
   try {
     await orgsStore.revokeInvitation(inv.id)
   } catch (e) {
-    $q.notify({ type: 'negative', message: e.message })
+    $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
   }
 }
 

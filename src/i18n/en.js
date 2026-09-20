@@ -372,4 +372,30 @@ export default {
     required: 'Field is required',
     actions: 'Actions',
   },
+  // Translations for messages raised by DB RPC functions/triggers
+  // (supabase/schema.sql, always in Croatian) — see src/utils/dbErrorMessage.js.
+  // Not shown directly; a component looks these up by key through that function.
+  dbErrors: {
+    unknownRole: 'Unknown role.',
+    orgNeedsOwner:
+      'The organization must have at least one owner — transfer ownership to someone else first.',
+    loginRequired: 'You need to be signed in.',
+    inviteNotFound: "This invitation doesn't exist or has already been used.",
+    inviteExpired: 'This invitation has expired.',
+    inviteWrongEmail: 'This invitation was issued for a different email address.',
+    orgNameRequired: 'Organization name is required.',
+    projectNameRequired: 'Project name is required.',
+    notOrgMember: "You're not a member of that organization.",
+    guestCannotCreateProjects: "Guests can't create projects.",
+    noProjectAccess: "You don't have access to this project.",
+    onlyAdminCanChangeVisibility: 'Only an organization admin can change project visibility.',
+    onlyOwnerCanSeeStats: 'Only the organization owner can see statistics.',
+    personNotOrgMember: 'This person is not a member of this organization.',
+    onlyAdminCanRemoveMembers: 'Only an admin or owner can remove members.',
+    onlyOwnerCanRemoveOwner: 'Only the owner can remove another owner.',
+    onlyAdminCanChangeRoles: 'Only an admin or owner can change roles.',
+    onlyOwnerCanTransferOwnership: 'Only the owner can transfer ownership.',
+    noPermissionManageProjectMembers: "You don't have permission to manage this project's members.",
+    personNotProjectMember: 'This person is not a member of this project.',
+  },
 }

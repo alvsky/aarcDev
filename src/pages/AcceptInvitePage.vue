@@ -92,6 +92,7 @@ import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from 'src/stores/auth'
 import { useOrgsStore } from 'src/stores/orgs'
+import { dbErrorMessage } from 'src/utils/dbErrorMessage'
 
 const route = useRoute()
 const router = useRouter()
@@ -132,7 +133,7 @@ async function accept() {
     $q.notify({ type: 'positive', message: t('invite.accepted', { org: invite.value.org_name }) })
     router.push('/')
   } catch (e) {
-    $q.notify({ type: 'negative', message: e.message })
+    $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
   } finally {
     accepting.value = false
   }
@@ -143,7 +144,7 @@ onMounted(async () => {
     invite.value = await orgsStore.getInvitationPreview(route.params.token)
   } catch (e) {
     console.error('[invite] getInvitationPreview:', e)
-    loadError.value = e.message
+    loadError.value = dbErrorMessage(e, t)
   } finally {
     loading.value = false
   }
