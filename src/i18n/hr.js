@@ -355,6 +355,7 @@ export default {
 
   common: {
     all: 'Sve',
+    easterEgg: 'Tajna pronađena! 🎉',
     offline: 'Nema veze — prikazujem spremljene podatke',
     offlineTitle: 'Nema veze',
     offlineNoDelete: 'Dok ste offline nije moguće brisati.',

@@ -354,6 +354,7 @@ export default {
   },
   common: {
     all: 'All',
+    easterEgg: 'You found it! 🎉',
     offline: 'Offline — showing saved data',
     offlineTitle: 'Offline',
     offlineNoDelete: "You can't delete while offline.",
