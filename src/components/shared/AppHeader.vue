@@ -68,7 +68,7 @@ function onBack() {
 
 // Easter egg — logo je u zaglavlju koje koristi svaki ekran (AppHeader je
 // dijeljena komponenta), pa je ovo jedino mjesto potrebno za cijelu app.
-// 10 tapova u roku od 2s; klik i dalje normalno vodi na Home, brojanje je
+// 5 tapova u roku od 2s; klik i dalje normalno vodi na Home, brojanje je
 // samo dodatak.
 const showConfetti = ref(false)
 let logoTapCount = 0
@@ -81,7 +81,7 @@ function onLogoClick() {
   logoTapTimer = setTimeout(() => {
     logoTapCount = 0
   }, 2000)
-  if (logoTapCount >= 10) {
+  if (logoTapCount >= 5) {
     logoTapCount = 0
     celebrate()
   }
