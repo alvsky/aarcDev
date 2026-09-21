@@ -59,6 +59,30 @@ onUnmounted(() => timers.forEach(clearTimeout))
 </script>
 
 <style scoped>
+/* Patrick Hand (SIL OFL) — samostalno pohranjen (bez CDN-a, ostaje offline-first
+   kao i ostatak appa) umjesto sistemskog kurziva; "tiskani freehand" izgled,
+   čitljivo i na malom zaslonu. Dvije podskupine (latin + latin-ext) jer latin
+   sam ne pokriva č/ć/š/ž/đ — isti obrazac kojim ih Google Fonts sam poslužuje. */
+@font-face {
+  font-family: 'Patrick Hand';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../../assets/fonts/patrick-hand-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F,
+    U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215;
+}
+
+@font-face {
+  font-family: 'Patrick Hand';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../../assets/fonts/patrick-hand-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F,
+    U+2020, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 .polaroid-overlay {
   position: fixed;
   inset: 0;
@@ -159,12 +183,8 @@ onUnmounted(() => timers.forEach(clearTimeout))
 .polaroid-caption {
   margin-top: 12px;
   text-align: center;
-  /* Kurziv umjesto rukopisnog fonta — "Segoe Script"/"Brush Script MT" su
-     jedva čitljivi na malom zaslonu, ovo zadržava topao, ležeran dojam bez
-     mučenja oka. Sistemski font stack, bez novog web-fonta. */
-  font-style: italic;
-  font-weight: 500;
-  font-size: 15px;
+  font-family: 'Patrick Hand', sans-serif;
+  font-size: 20px;
   line-height: 1.35;
   color: #333;
 }
