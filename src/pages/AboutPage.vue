@@ -15,7 +15,7 @@
             <div class="about-value">{{ releasesStore.latest?.version ?? '—' }}</div>
           </q-card-section>
           <q-separator />
-          <q-card-section class="row items-center">
+          <q-card-section class="row items-center" @click="onBuildTap">
             <div class="col about-label">{{ $t('about.build') }}</div>
             <div class="about-value">{{ releasesStore.latest?.build ?? '—' }}</div>
           </q-card-section>
@@ -36,14 +36,17 @@
             </q-item>
           </q-list>
         </q-card>
+
+        <PolaroidReveal v-if="showPolaroid" @close="showPolaroid = false" />
       </q-page>
     </q-page-container>
   </q-layout>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import AppHeader from 'src/components/shared/AppHeader.vue'
+import PolaroidReveal from 'src/components/shared/PolaroidReveal.vue'
 import { useReleasesStore } from 'src/stores/releases'
 
 const releasesStore = useReleasesStore()
@@ -53,6 +56,26 @@ onMounted(() => {
   // sesije), pa stranica ima što prikazati odmah; ovo je samo osvježavanje.
   releasesStore.fetchReleases()
 })
+
+// Easter egg — 5 tapova na redak s brojem builda u roku od 2s (isti obrazac
+// kao logo u AppHeader.vue).
+const showPolaroid = ref(false)
+let buildTapCount = 0
+let buildTapTimer = null
+
+function onBuildTap() {
+  buildTapCount++
+  clearTimeout(buildTapTimer)
+  buildTapTimer = setTimeout(() => {
+    buildTapCount = 0
+  }, 2000)
+  if (buildTapCount >= 5) {
+    buildTapCount = 0
+    showPolaroid.value = true
+  }
+}
+
+onUnmounted(() => clearTimeout(buildTapTimer))
 </script>
 
 <style scoped>

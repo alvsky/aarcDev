@@ -328,6 +328,8 @@ export default {
     build: 'Build',
     privacyLink: 'Privacy policy',
     changelogLink: 'Changelog',
+    easterEggCaption: 'The team behind aarc',
+    easterEggCaptionSilly: 'This is us after the first production release 😅',
   },
   changelog: {
     title: 'Changelog',

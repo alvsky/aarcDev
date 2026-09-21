@@ -328,6 +328,8 @@ export default {
     build: 'Build',
     privacyLink: 'Pravila privatnosti',
     changelogLink: 'Popis promjena',
+    easterEggCaption: 'Tim iza aarc-a',
+    easterEggCaptionSilly: 'Ovako izgledamo nakon prvog produkcijskog releasea 😅',
   },
   changelog: {
     title: 'Popis promjena',
