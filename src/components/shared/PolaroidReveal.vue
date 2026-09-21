@@ -159,9 +159,13 @@ onUnmounted(() => timers.forEach(clearTimeout))
 .polaroid-caption {
   margin-top: 12px;
   text-align: center;
-  font-family: 'Segoe Script', 'Brush Script MT', cursive;
-  font-size: 16px;
-  line-height: 1.3;
+  /* Kurziv umjesto rukopisnog fonta — "Segoe Script"/"Brush Script MT" su
+     jedva čitljivi na malom zaslonu, ovo zadržava topao, ležeran dojam bez
+     mučenja oka. Sistemski font stack, bez novog web-fonta. */
+  font-style: italic;
+  font-weight: 500;
+  font-size: 15px;
+  line-height: 1.35;
   color: #333;
 }
 </style>
