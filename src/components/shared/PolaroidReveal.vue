@@ -42,14 +42,17 @@ const revealed = ref(false)
 const flashing = ref(false)
 const timers = []
 
+// Pauza prije okreta — koliko lijepa slika ostaje na ekranu prije zamjene.
+const REVEAL_DELAY = 3000
+
 onMounted(() => {
   // 1) "Razvijanje" prednje fotke — malo kašnjenje da se overlay stigne pojaviti prije animacije
   timers.push(setTimeout(() => (developed.value = true), 80))
   // 2) Pauza da se lijepa slika stigne prepoznati, pa okret
-  timers.push(setTimeout(() => (revealed.value = true), 1500))
+  timers.push(setTimeout(() => (revealed.value = true), REVEAL_DELAY))
   // 3) Bljesak točno na vrhuncu okreta (flip traje 0.6s, pola puta = kartica je "na rubu")
-  timers.push(setTimeout(() => (flashing.value = true), 1500 + 300))
-  timers.push(setTimeout(() => (flashing.value = false), 1500 + 460))
+  timers.push(setTimeout(() => (flashing.value = true), REVEAL_DELAY + 300))
+  timers.push(setTimeout(() => (flashing.value = false), REVEAL_DELAY + 460))
 })
 
 onUnmounted(() => timers.forEach(clearTimeout))
