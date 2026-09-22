@@ -14,13 +14,20 @@
       <q-btn flat round dense icon="close" size="sm" @click="$emit('cancel-reply')" />
     </div>
 
-    <!-- Preview slike prije slanja -->
-    <div v-if="pendingImage" class="row items-center q-pa-xs q-gutter-sm q-mb-xs">
-      <img :src="pendingPreview" class="preview-thumb" :alt="$t('chat.imageAlt')" />
-      <div class="col text-caption text-grey-6 ellipsis">
-        {{ pendingImage.name }}
+    <!-- Preview slika prije slanja — svaka postaje svoja poruka pri slanju -->
+    <div v-if="pendingImages.length" class="row items-center q-gutter-sm q-pa-xs q-mb-xs">
+      <div v-for="(file, i) in pendingImages" :key="i" class="preview-item">
+        <img :src="previews[i]" class="preview-thumb" :alt="$t('chat.imageAlt')" />
+        <q-btn
+          flat
+          round
+          dense
+          size="xs"
+          icon="close"
+          class="preview-remove"
+          @click="removePending(i)"
+        />
       </div>
-      <q-btn flat round dense icon="close" size="sm" @click="clearPending" />
     </div>
 
     <!-- Drop zona -->
@@ -52,13 +59,20 @@
         <q-tooltip>{{ $t('chat.pasteOrDrop') }}</q-tooltip>
       </q-btn>
 
-      <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFileSelected" />
+      <input
+        ref="fileInput"
+        type="file"
+        accept="image/*"
+        multiple
+        class="hidden"
+        @change="onFileSelected"
+      />
 
       <!-- Tekstualni input -->
       <q-input
         v-model="body"
         type="textarea"
-        :placeholder="pendingImage ? $t('chat.imageAlt') : $t('chat.placeholder')"
+        :placeholder="pendingImages.length ? $t('chat.imageAlt') : $t('chat.placeholder')"
         outlined
         dense
         autogrow
@@ -103,7 +117,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { dbErrorMessage } from 'src/utils/dbErrorMessage'
@@ -135,13 +149,20 @@ const disappearingMessagesEnabled = computed(() =>
   featureFlagsStore.isEnabled('disappearing_messages'),
 )
 
+const MAX_PENDING_IMAGES = 10
+
 const body = ref('')
 const sending = ref(false)
 const isDragging = ref(false)
-const pendingImage = ref(null)
-const pendingPreview = ref(null)
+const pendingImages = ref([]) // File[] — svaka postaje svoja poruka pri slanju
+const previews = ref([]) // objectURL po indeksu, isti obrazac kao ScreenshotUpload.vue
 const fileInput = ref(null)
 const destroyAfterRead = ref(false)
+
+watch(pendingImages, (files) => {
+  for (const url of previews.value) URL.revokeObjectURL(url)
+  previews.value = files.map((f) => URL.createObjectURL(f))
+})
 
 // Sve tri idu kroz funkciju, ne kroz pridruživanje u predlošku (@click="x = !x"):
 // tako je pisan i prekidač za vatru, pa se zastavica nije mijenjala i poruke su
@@ -158,7 +179,7 @@ function stopDragging() {
   isDragging.value = false
 }
 
-const canSend = computed(() => !!body.value.trim() || !!pendingImage.value)
+const canSend = computed(() => !!body.value.trim() || pendingImages.value.length > 0)
 const isNative = Capacitor.isNativePlatform()
 
 // Na mobitelu nema Shift za novi red, pa Enter na tipkovnici mora ostati
@@ -170,19 +191,21 @@ function onEnter(e) {
   send()
 }
 
+// Clipboard zna nositi više slika odjednom (npr. kopiran raspon iz file
+// managera) — uzmi ih sve, ne samo prvu.
 async function onPaste(e) {
   const items = Array.from(e.clipboardData?.items ?? [])
-  const imageItem = items.find((i) => i.type.startsWith('image/'))
-  if (!imageItem) return // ako nema slike, pusti normalni paste teksta
+  const imageFiles = items.filter((i) => i.type.startsWith('image/')).map((i) => i.getAsFile())
+  if (!imageFiles.length) return // ako nema slike, pusti normalni paste teksta
   e.preventDefault()
   if (!online.value) return // prilozi traže mrežu
-  setPending(imageItem.getAsFile())
+  addPending(imageFiles)
 }
 function onDrop(e) {
   isDragging.value = false
   if (!online.value) return // prilozi traže mrežu
-  const file = e.dataTransfer?.files?.[0]
-  if (file?.type.startsWith('image/')) setPending(file)
+  const files = Array.from(e.dataTransfer?.files ?? []).filter((f) => f.type.startsWith('image/'))
+  addPending(files)
 }
 
 function triggerFilePicker() {
@@ -190,29 +213,27 @@ function triggerFilePicker() {
 }
 
 function onFileSelected(e) {
-  setPending(e.target.files[0])
-}
-
-function setPending(file) {
-  if (!file) return
-  // Bez ovoga druga zaredom zalijepljena slika ostavlja prvi objectURL zauvijek
-  // u memoriji — revoke je dosad radio samo clearPending.
-  if (pendingPreview.value) URL.revokeObjectURL(pendingPreview.value)
-  pendingImage.value = file
-  pendingPreview.value = URL.createObjectURL(file)
-}
-
-function clearPending() {
-  if (pendingPreview.value) URL.revokeObjectURL(pendingPreview.value)
-  pendingImage.value = null
-  pendingPreview.value = null
+  addPending(Array.from(e.target.files ?? []))
   if (fileInput.value) fileInput.value.value = ''
 }
 
-// Napuštanje chata s pripremljenom slikom (promjena kanala, zatvaranje threada)
-// inače ostavi objectURL neopozvan.
+function addPending(files) {
+  const room = MAX_PENDING_IMAGES - pendingImages.value.length
+  if (room <= 0) return
+  const images = files.filter((f) => f?.type?.startsWith('image/')).slice(0, room)
+  if (!images.length) return
+  pendingImages.value = [...pendingImages.value, ...images]
+}
+
+function removePending(index) {
+  pendingImages.value = pendingImages.value.filter((_, i) => i !== index)
+}
+
+// Napuštanje chata s pripremljenim slikama (promjena kanala, zatvaranje threada)
+// inače ostavi objectURL-ove neopozvane — watch(pendingImages) revoke-a stare
+// tek pri SLJEDEĆOJ promjeni, ne pri unmountu.
 onUnmounted(() => {
-  if (pendingPreview.value) URL.revokeObjectURL(pendingPreview.value)
+  for (const url of previews.value) URL.revokeObjectURL(url)
 })
 
 async function send() {
@@ -224,44 +245,64 @@ async function send() {
   // (nakon slanja bi redak već postojao i izgledalo bi kao da je oduvijek).
   const wasFollowing = projectsStore.isFollowing(props.projectId)
 
-  const hadImage = !!pendingImage.value
-  let attachmentUploaded = false
+  const initialImageCount = pendingImages.value.length
+  let uploadedCount = 0
+  // Flag isključen mid-session ne smije poslati stariju true vrijednost koju
+  // korisnik više ni ne vidi na ekranu.
+  const flag = disappearingMessagesEnabled.value && destroyAfterRead.value
 
   try {
-    let attachmentUrl = null
-    let attachmentType = null
-    let attachmentName = null
-
-    if (pendingImage.value) {
-      const uploaded = await uploadImage(pendingImage.value, {
-        maxWidth: 1440,
-        quality: 0.65,
-        pathPrefix: props.projectId,
+    if (initialImageCount > 0) {
+      // Jedan attachment po retku u messages (invarijanta #4) — svaka slika
+      // ide kao zasebna poruka. Uvijek se uzima pendingImages[0] i briše tek
+      // NAKON uspješnog slanja: ako nešto usred niza padne, queue pamti točno
+      // što je ostalo za retry umjesto da se već poslano ponovi.
+      let isFirst = true
+      while (pendingImages.value.length > 0) {
+        const file = pendingImages.value[0]
+        const uploaded = await uploadImage(file, {
+          maxWidth: 1440,
+          quality: 0.65,
+          pathPrefix: props.projectId,
+        })
+        uploadedCount++
+        await chatStore.sendMessage({
+          projectId: props.projectId,
+          itemId: props.itemId,
+          channel: props.channel,
+          body: isFirst ? body.value.trim() : '',
+          attachmentUrl: uploaded.path,
+          attachmentType: uploaded.type,
+          attachmentName: uploaded.name,
+          replyToId: isFirst ? (props.replyTo?.id ?? null) : null,
+          destroyAfterRead: flag,
+        })
+        if (isFirst) {
+          // Titl/reply su potrošeni uz prvu — retry poslije eventualnog pada
+          // na drugoj slici ih ne smije ponoviti.
+          body.value = ''
+          if (props.replyTo) emit('cancel-reply')
+          isFirst = false
+        }
+        removePending(0)
+      }
+    } else {
+      await chatStore.sendMessage({
+        projectId: props.projectId,
+        itemId: props.itemId,
+        channel: props.channel,
+        body: body.value.trim(),
+        attachmentUrl: null,
+        attachmentType: null,
+        attachmentName: null,
+        replyToId: props.replyTo?.id ?? null,
+        destroyAfterRead: flag,
       })
-      attachmentUrl = uploaded.path
-      attachmentType = uploaded.type
-      attachmentName = uploaded.name
-      attachmentUploaded = true
+      body.value = ''
+      if (props.replyTo) emit('cancel-reply')
     }
 
-    await chatStore.sendMessage({
-      projectId: props.projectId,
-      itemId: props.itemId,
-      channel: props.channel,
-      body: body.value.trim(),
-      attachmentUrl,
-      attachmentType,
-      attachmentName,
-      replyToId: props.replyTo?.id ?? null,
-      // Flag isključen mid-session ne smije poslati stariju true vrijednost
-      // koju korisnik više ni ne vidi na ekranu.
-      destroyAfterRead: disappearingMessagesEnabled.value && destroyAfterRead.value,
-    })
-
-    body.value = ''
     destroyAfterRead.value = false
-    clearPending()
-    if (props.replyTo) emit('cancel-reply')
 
     if (!wasFollowing) {
       projectsStore.markFollowingLocally(props.projectId)
@@ -293,7 +334,7 @@ async function send() {
     // drugo (RLS, mreža...). Sad kriva samo ono što je stvarno palo.
     console.error('[chat] slanje poruke nije uspjelo:', err)
     const message =
-      hadImage && !attachmentUploaded
+      initialImageCount > 0 && uploadedCount < initialImageCount
         ? t('chat.attachmentFail')
         : (dbErrorMessage(err, t) || t('chat.sendFailed'))
     $q.notify({ type: 'negative', message })
@@ -332,6 +373,11 @@ async function send() {
   background: rgba(25, 118, 210, 0.06);
 }
 
+.preview-item {
+  position: relative;
+  flex-shrink: 0;
+}
+
 .preview-thumb {
   max-width: 64px;
   max-height: 64px;
@@ -340,6 +386,14 @@ async function send() {
   object-fit: contain;
   border-radius: 6px;
   border: 1px solid rgba(0, 0, 0, 0.08);
-  flex-shrink: 0;
+  display: block;
+}
+
+.preview-remove {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
 }
 </style>
