@@ -22,7 +22,7 @@
           dense
           size="sm"
           :icon="onlyWatching ? 'visibility' : 'visibility_off'"
-          :color="onlyWatching ? 'primary' : 'grey-6'"
+          :color="onlyWatching ? 'cyan' : 'grey-6'"
           :label="$t('items.onlyWatching')"
           @click="onlyWatching = !onlyWatching"
         />
@@ -40,7 +40,7 @@
           dense
           size="sm"
           icon="inventory_2"
-          :color="showClosed ? 'primary' : 'grey-6'"
+          :color="showClosed ? 'cyan' : 'grey-6'"
           :label="$t('items.showClosed')"
           @click="showClosed = !showClosed"
         />
