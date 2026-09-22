@@ -23,7 +23,7 @@
             <div class="text-subtitle2 q-mb-sm settings-label">{{ $t('settings.darkMode') }}</div>
             <q-toggle
               :model-value="authStore.darkMode"
-              :label="authStore.darkMode ? $t('settings.darkMode') : 'Light mode'"
+              :label="authStore.darkMode ? $t('settings.darkMode') : $t('settings.lightMode')"
               color="primary"
               @update:model-value="authStore.toggleDarkMode"
             />

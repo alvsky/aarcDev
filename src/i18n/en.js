@@ -311,6 +311,7 @@ export default {
       en: 'English',
     },
     darkMode: 'Dark mode',
+    lightMode: 'Light mode',
     fontSize: 'Font size',
     fontSizes: {
       small: 'Small',

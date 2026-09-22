@@ -311,6 +311,7 @@ export default {
       en: 'English',
     },
     darkMode: 'Tamna tema',
+    lightMode: 'Svijetla tema',
     fontSize: 'Veličina teksta',
     fontSizes: {
       small: 'Malo',
