@@ -57,6 +57,13 @@ body.body--dark {
   --aarc-text: #f4f7fa;
   --aarc-muted: #8e9bb0;
   --aarc-border: #2a3656;
+
+  // Quasarova VLASTITA boja za color="primary" (fiksna tamnoplava iz
+  // quasar.variables.scss, ne prati temu sama od sebe) — bez ovoga svaki
+  // Quasar element koji koristi ugrađeni "primary" prop (umjesto ručnog
+  // var(--aarc-primary)) ostaje tamnoplav na tamnoj pozadini i utopi se
+  // (npr. "SHOW CLOSED" toggle u ItemListPanel.vue kad je uključen).
+  --q-primary: var(--aarc-primary);
 }
 
 // ==========================================

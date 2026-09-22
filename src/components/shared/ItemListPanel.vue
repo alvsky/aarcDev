@@ -9,10 +9,14 @@
   <q-page class="column no-wrap" style="height: 0">
     <div class="col-auto q-px-md q-pt-md q-pb-sm">
       <!-- Dva zasebna reda umjesto jednog s q-space: tri filtera (svaki ikona+tekst)
-           ne stanu u jedan red na mobitelu, pa se "+" gumb prelamao u svoj red i
-           tamo ostajao POTPUNO LIJEVO (q-space samo gura unutar ISTOG flex reda,
-           ne preko prijeloma). Vlastiti red s justify-end drži ga desno uvijek. -->
-      <div class="row items-center q-gutter-xs">
+           ne stanu u jedan red na mobitelu, pa se q-space unutar zajedničkog reda
+           ne bi nosio preko prijeloma. "+" gumb u vlastitom gornjem redu, filteri
+           ispod — tako gumb ostaje na fiksnom mjestu bez obzira koliko se filteri
+           prelome. -->
+      <div class="row justify-end">
+        <q-btn dense color="primary" icon="add" :label="newLabel" @click="openDialog()" />
+      </div>
+      <div class="row items-center q-gutter-xs q-mt-xs">
         <q-btn
           flat
           dense
@@ -40,9 +44,6 @@
           :label="$t('items.showClosed')"
           @click="showClosed = !showClosed"
         />
-      </div>
-      <div class="row justify-end q-mt-xs">
-        <q-btn dense color="primary" icon="add" :label="newLabel" @click="openDialog()" />
       </div>
     </div>
 
