@@ -138,11 +138,11 @@
         <template v-if="orgsStore.isAdmin">
           <q-separator class="q-mx-md q-my-md" />
 
-          <div class="q-px-md q-mb-sm text-subtitle2 org-section-label">
+          <div class="q-px-md q-mb-lg text-subtitle2 org-section-label">
             {{ $t('org.invite') }}
           </div>
           <div class="q-px-md q-gutter-sm">
-            <div class="row q-gutter-sm">
+            <div class="row">
               <q-input
                 v-model="inviteEmail"
                 :label="$t('auth.email')"
@@ -150,7 +150,7 @@
                 outlined
                 dense
                 clearable
-                class="col"
+                class="col q-pr-sm"
                 @keydown.enter="sendInvite"
               />
               <q-select
@@ -255,12 +255,7 @@
         indicator-color="transparent"
       >
         <q-tab name="home" icon="home" :label="$t('nav.projects')" @click="router.push('/')" />
-        <q-tab
-          v-if="!orgsStore.isGuest"
-          name="org"
-          icon="domain"
-          :label="$t('org.title')"
-        >
+        <q-tab v-if="!orgsStore.isGuest" name="org" icon="domain" :label="$t('org.title')">
           <q-badge v-if="otherOrgsUnread" color="negative" floating rounded />
         </q-tab>
         <q-tab
