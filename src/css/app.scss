@@ -301,16 +301,31 @@ body.body--dark .q-dialog__inner .q-card {
   color: var(--aarc-text) !important;
 }
 
-// Badge
-.dark-mode .q-badge,
-body.body--dark .q-badge {
+// Badge — samo puna/obojena pozadina (color="negative" itd.), ne outline.
+// Outline bedževi (stanje/prioritet u ItemCard.vue) crtaju tekst/rub istom
+// currentColor bojom koju nose od svog color propa (negative/warning/
+// positive/purple) — nasilno bijeli tekst bi tu obrisao razliku bez da
+// dobijemo ista boja natrag na rub (currentColor bi bila bijela).
+.dark-mode .q-badge:not(.q-badge--outline),
+body.body--dark .q-badge:not(.q-badge--outline) {
   color: #ffffff !important;
 }
 
-.dark-mode .q-badge--outline,
-body.body--dark .q-badge--outline {
+// Suženo na .kind-badge (siva "vrsta" oznaka na TBI ploči) — bilo je na SVIM
+// outline oznakama, pa je gazilo obojene bedževe stanja/prioriteta (negative/
+// warning/positive/purple) u ItemCard.vue i sve su izgledale isto sivo.
+.dark-mode .q-badge--outline.kind-badge,
+body.body--dark .q-badge--outline.kind-badge {
   color: var(--aarc-text) !important;
   border-color: var(--aarc-border) !important;
+}
+
+// Zatvorene (done/rejected) kartice u ItemCard.vue: opacity-5 (50%) + siv
+// tekst je na tamnoj pozadini padao ispod čitljivog kontrasta — svijetlo je
+// bilo dovoljno prigušeno, tamno više nije. Malo manje prigušenja umjesto
+// potpunog gubitka blijeđenja kao signala "zatvoreno".
+body.body--dark .opacity-5 {
+  opacity: 0.75;
 }
 
 // Gumbi

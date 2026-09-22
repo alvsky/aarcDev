@@ -43,7 +43,7 @@
         </q-item-label>
         <q-item-label caption>
           <!-- Vrsta se prikazuje samo ondje gdje se miješaju (TBI ploča) -->
-          <q-badge v-if="showKind" color="grey-7" outline class="q-mr-xs">
+          <q-badge v-if="showKind" color="grey-7" outline class="q-mr-xs kind-badge">
             {{ $t(`items.kind.${item.kind}`) }}
           </q-badge>
           <q-badge :color="prioColor" outline class="q-mr-xs">

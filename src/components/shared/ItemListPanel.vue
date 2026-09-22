@@ -8,6 +8,10 @@
        zaglavlju već kaže gdje si (Bugovi/Ideje/TBI). -->
   <q-page class="column no-wrap" style="height: 0">
     <div class="col-auto q-px-md q-pt-md q-pb-sm">
+      <!-- Dva zasebna reda umjesto jednog s q-space: tri filtera (svaki ikona+tekst)
+           ne stanu u jedan red na mobitelu, pa se "+" gumb prelamao u svoj red i
+           tamo ostajao POTPUNO LIJEVO (q-space samo gura unutar ISTOG flex reda,
+           ne preko prijeloma). Vlastiti red s justify-end drži ga desno uvijek. -->
       <div class="row items-center q-gutter-xs">
         <q-btn
           flat
@@ -36,7 +40,8 @@
           :label="$t('items.showClosed')"
           @click="showClosed = !showClosed"
         />
-        <q-space />
+      </div>
+      <div class="row justify-end q-mt-xs">
         <q-btn dense color="primary" icon="add" :label="newLabel" @click="openDialog()" />
       </div>
     </div>
