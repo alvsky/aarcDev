@@ -9,6 +9,19 @@ svakim isporučenim buildom). Android `versionCode`/`versionName` i
 
 ---
 
+## v1.0 (build 39) — 2026-09-22
+
+- U chatu sad možeš zalijepiti, povući ili odabrati više slika odjednom —
+  svaka ide kao zasebna poruka.
+- Popravljen kontrast u tamnoj temi: oznake stanja/prioriteta na
+  idejama/bugovima/zadacima su ponovno u boji, zatvorene stavke su čitljivije,
+  a uključeni filteri (npr. "Prikaži zatvorene") su sad jasno vidljivi.
+- Sitni popravci izgleda: gumb za dodavanje nove stavke uvijek ostaje na
+  istom mjestu, natpis "Svijetla tema" više se ne prikazuje na engleskom kad
+  je odabran hrvatski jezik.
+
+---
+
 ## v1.0 (build 36) — 2026-09-20
 
 - Ideje, bugovi i zadaci sad mogu imati više screenshotova (do 5), ne samo
