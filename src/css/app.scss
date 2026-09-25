@@ -452,6 +452,25 @@ body.body--dark .msg-meta {
   color: var(--aarc-muted) !important;
 }
 
+// Citat odgovora — svijetla pozadina/tamnosivi tekst iz MessageList/MessageInput
+// su na tamnoj temi bili nečitljivi (bijelo na bijelom, sivo na tamnom)
+.dark-mode .reply-quote,
+body.body--dark .reply-quote {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark-mode .reply-quote-body,
+body.body--dark .reply-quote-body,
+.dark-mode .reply-preview-text .text-grey-7,
+body.body--dark .reply-preview-text .text-grey-7 {
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+
+.dark-mode .reply-preview,
+body.body--dark .reply-preview {
+  background: var(--aarc-surface2) !important;
+}
+
 // Home stranica
 .dark-mode .project-card-h,
 body.body--dark .project-card-h {
