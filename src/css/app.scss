@@ -63,7 +63,10 @@ body.body--dark {
   // Quasar element koji koristi ugrađeni "primary" prop (umjesto ručnog
   // var(--aarc-primary)) ostaje tamnoplav na tamnoj pozadini i utopi se
   // (npr. "SHOW CLOSED" toggle u ItemListPanel.vue kad je uključen).
-  --q-primary: var(--aarc-primary);
+  // !important je nužan: Quasar brand boju iz quasar.config.js upisuje kao
+  // inline stil na <body> (setCssVar), a inline stil pobjeđuje ovo pravilo —
+  // bez njega je npr. "Cancel" u $q.dialog ostajao tamnoplav na tamnom.
+  --q-primary: var(--aarc-primary) !important;
 }
 
 // ==========================================
