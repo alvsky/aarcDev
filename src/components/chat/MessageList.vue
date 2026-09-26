@@ -393,8 +393,11 @@ const messagesWithSeparators = computed(() => {
   for (const msg of props.messages) {
     const msgDate = new Date(msg.created_at)
     const msgDateKey = formatCroatianDate(msgDate)
+    // Potrošena disappearing poruka ostaje u listi (v-show), ali ne otvara
+    // separator — inače dan s njom kao jedinom porukom ostavi prazan datum.
+    const visible = !(msg.destroy_after_read && isConsumed(msg))
 
-    if (msgDateKey !== lastDate) {
+    if (visible && msgDateKey !== lastDate) {
       let label = msgDateKey
       if (isSameDay(msgDate, today)) {
         label = `Danas, ${msgDateKey}`
