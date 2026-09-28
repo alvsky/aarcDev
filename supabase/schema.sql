@@ -881,8 +881,10 @@ ALTER TABLE "public"."invitations" OWNER TO "postgres";
 CREATE OR REPLACE VIEW "public"."item_message_counts" WITH ("security_invoker"='true') AS
  SELECT "item_id",
     "count"(*) AS "message_count"
-   FROM "public"."messages"
-  WHERE ("item_id" IS NOT NULL)
+   FROM "public"."messages" "m"
+  WHERE (("item_id" IS NOT NULL) AND (NOT ("destroy_after_read" AND (("deleted_at" IS NOT NULL) OR (EXISTS ( SELECT 1
+           FROM "public"."message_user_state" "s"
+          WHERE (("s"."message_id" = "m"."id") AND ("s"."user_id" = "auth"."uid"()) AND ("s"."hidden_at" IS NOT NULL))))))))
   GROUP BY "item_id";
 
 
