@@ -91,11 +91,14 @@
         round
         dense
         icon="local_fire_department"
-        :color="destroyAfterRead ? 'deep-orange' : 'grey-5'"
-        :aria-pressed="destroyAfterRead"
+        :color="destroyAfterRead || isSticky ? 'deep-orange' : 'grey-5'"
+        :class="{ 'fire-sticky': isSticky }"
+        :aria-pressed="destroyAfterRead || isSticky"
+        v-touch-hold.mouse="enableSticky"
+        @pointerdown="heldJustNow = false"
         @click="toggleDestroyAfterRead"
       >
-        <q-tooltip>{{ $t('chat.destroyAfterRead') }}</q-tooltip>
+        <q-tooltip>{{ $t('chat.destroyAfterReadHint') }}</q-tooltip>
       </q-btn>
 
       <!-- Send gumb -->
@@ -115,6 +118,14 @@
     </div>
   </div>
 </template>
+
+<script>
+import { reactive } from 'vue'
+
+// Izvan <script setup>: dijeli se među svim instancama i preživi zatvaranje
+// threada, ali ne i gašenje aplikacije. Ključ = chatStore.threadKey.
+const stickyFireThreads = reactive(new Set())
+</script>
 
 <script setup>
 import { ref, computed, watch, onUnmounted } from 'vue'
@@ -168,7 +179,35 @@ watch(pendingImages, (files) => {
 // tako je pisan i prekidač za vatru, pa se zastavica nije mijenjala i poruke su
 // odlazile kao obične. Drop zona je bila na istom obrascu.
 function toggleDestroyAfterRead() {
+  // Klik koji dolazi odmah iza dugog pritiska (miš) ne smije ugasiti ono što
+  // je taj pritisak upravo upalio.
+  if (heldJustNow.value) {
+    heldJustNow.value = false
+    return
+  }
+  if (isSticky.value) {
+    stickyFireThreads.delete(threadKey.value)
+    destroyAfterRead.value = false
+    $q.notify({ message: t('chat.destroyAfterReadStickyOff'), timeout: 1500 })
+    return
+  }
   destroyAfterRead.value = !destroyAfterRead.value
+}
+
+// Dugi pritisak: vatra ostaje upaljena za sve poruke u ovom threadu dok se
+// aplikacija ne zatvori (ne sprema se na disk), umjesto samo za sljedeću.
+const heldJustNow = ref(false)
+const threadKey = computed(() =>
+  chatStore.threadKey({ projectId: props.projectId, itemId: props.itemId, channel: props.channel }),
+)
+const isSticky = computed(() => stickyFireThreads.has(threadKey.value))
+
+function enableSticky() {
+  heldJustNow.value = true
+  if (isSticky.value) return
+  stickyFireThreads.add(threadKey.value)
+  destroyAfterRead.value = false
+  $q.notify({ message: t('chat.destroyAfterReadStickyOn'), timeout: 2500 })
 }
 
 function startDragging() {
@@ -249,7 +288,7 @@ async function send() {
   let uploadedCount = 0
   // Flag isključen mid-session ne smije poslati stariju true vrijednost koju
   // korisnik više ni ne vidi na ekranu.
-  const flag = disappearingMessagesEnabled.value && destroyAfterRead.value
+  const flag = disappearingMessagesEnabled.value && (destroyAfterRead.value || isSticky.value)
 
   try {
     if (initialImageCount > 0) {
@@ -336,7 +375,7 @@ async function send() {
     const message =
       initialImageCount > 0 && uploadedCount < initialImageCount
         ? t('chat.attachmentFail')
-        : (dbErrorMessage(err, t) || t('chat.sendFailed'))
+        : dbErrorMessage(err, t) || t('chat.sendFailed')
     $q.notify({ type: 'negative', message })
   } finally {
     sending.value = false
@@ -348,6 +387,11 @@ async function send() {
 .message-input-wrap {
   min-width: 0;
   max-width: 100%;
+}
+
+/* Stalno upaljena vatra (dugi pritisak) — prsten da se razlikuje od jednokratne. */
+.fire-sticky {
+  box-shadow: inset 0 0 0 2px currentColor;
 }
 
 .reply-preview {

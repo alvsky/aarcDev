@@ -23,7 +23,8 @@ export default {
       'Poslali smo potvrdu na {email}. Otvori mail i klikni link da aktiviraš račun, pa se vrati ovamo i prijavi se.',
     backToLogin: 'Natrag na prijavu',
     forgotPassword: 'Zaboravljena lozinka?',
-    forgotPasswordHint: 'Upiši svoju e-mail adresu — poslat ćemo ti link za postavljanje nove lozinke.',
+    forgotPasswordHint:
+      'Upiši svoju e-mail adresu — poslat ćemo ti link za postavljanje nove lozinke.',
     resetLinkSent: 'Poslali smo link za resetiranje lozinke na {email}.',
     resetPassword: 'Nova lozinka',
     resetPasswordDone: 'Lozinka je promijenjena. Vraćamo te na početnu…',
@@ -261,6 +262,10 @@ export default {
     sendFailed: 'Slanje nije uspjelo',
     retry: 'Pokušaj ponovno',
     destroyAfterRead: 'Nestaje nakon čitanja',
+    destroyAfterReadHint: 'Nestaje nakon čitanja — drži za stalno u ovom razgovoru',
+    destroyAfterReadStickyOn:
+      'Nestajuće poruke uključene u ovom razgovoru do zatvaranja aplikacije',
+    destroyAfterReadStickyOff: 'Nestajuće poruke isključene',
     hiddenMessage: 'Skrivena poruka',
     messageOpened: 'Otvoreno',
     tapToReveal: 'Dodirni za prikaz — vidiš je samo jednom',

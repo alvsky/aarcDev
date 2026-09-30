@@ -261,6 +261,10 @@ export default {
     sendFailed: 'Send failed',
     retry: 'Retry',
     destroyAfterRead: 'Destroy after read',
+    destroyAfterReadHint: 'Destroy after read — hold to keep it on in this conversation',
+    destroyAfterReadStickyOn:
+      'Disappearing messages on in this conversation until the app is closed',
+    destroyAfterReadStickyOff: 'Disappearing messages off',
     hiddenMessage: 'Hidden message',
     messageOpened: 'Opened',
     tapToReveal: 'Tap to reveal — you only see it once',
@@ -345,10 +349,10 @@ export default {
     collect:
       'Account info you provide (email, full name, optional profile photo); the projects, chat messages, attachments, ideas, bugs and tasks you create or take part in; and a push token per device so the app can notify you.',
     useTitle: 'How we use it',
-    use: 'To run the app: showing your projects and conversations, sending you push notifications for activity you\'re subscribed to, and letting teammates recognize you (name, photo) inside shared projects.',
+    use: "To run the app: showing your projects and conversations, sending you push notifications for activity you're subscribed to, and letting teammates recognize you (name, photo) inside shared projects.",
     storageTitle: 'Where it lives',
     storage:
-      'Everything is stored in our Supabase project (database and file storage) and, for push delivery, in Firebase Cloud Messaging. We don\'t sell or share your data with advertisers.',
+      "Everything is stored in our Supabase project (database and file storage) and, for push delivery, in Firebase Cloud Messaging. We don't sell or share your data with advertisers.",
     retentionTitle: 'Deleting your data',
     retention:
       'You can delete your account any time from Profile → Delete account, which removes your profile, messages and uploaded files (projects you solely own need to be transferred or deleted first).',
