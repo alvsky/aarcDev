@@ -31,13 +31,9 @@
 
             <q-item-section>
               <q-item-label class="row items-center no-wrap q-gutter-xs">
-                <q-badge
-                  :color="member.role === 'owner' ? 'primary' : 'grey-5'"
-                  rounded
-                  class="role-badge"
-                >
-                  {{ member.role?.[0]?.toUpperCase() }}
-                  <q-tooltip>{{ member.role }}</q-tooltip>
+                <q-badge :color="roleColor(shownRole(member))" rounded class="role-badge">
+                  {{ shownRole(member)?.[0]?.toUpperCase() }}
+                  <q-tooltip>{{ $t(`org.role.${shownRole(member)}`) }}</q-tooltip>
                 </q-badge>
                 <span class="member-name">{{ member.profiles?.full_name }}</span>
               </q-item-label>
@@ -155,6 +151,7 @@ import { supabase } from 'src/boot/supabase'
 import { useOfflineGuard } from 'src/composables/useOfflineGuard'
 import { useConfirmDialog } from 'src/composables/useConfirmDialog'
 import { dbErrorMessage } from 'src/utils/dbErrorMessage'
+import { roleColor } from 'src/utils/roles'
 import UserAvatar from './UserAvatar.vue'
 
 const props = defineProps({
@@ -194,6 +191,16 @@ const canManage = computed(() => {
   if (project.value.created_by === authStore.user?.id) return true
   return myMembership.value?.role === 'owner'
 })
+
+// Uloga u organizaciji ima prednost (docs/multi-tenancy.md): admin organizacije
+// na projektu je admin, makar mu project_members.role kaže 'member'. Uloga na
+// projektu prikazuje se samo za obične članove, gdje znači vlasnik/član projekta.
+const orgRoleById = computed(() => new Map(orgsStore.members.map((m) => [m.user_id, m.role])))
+function shownRole(member) {
+  const orgRole = orgRoleById.value.get(member.user_id)
+  if (['owner', 'admin', 'guest'].includes(orgRole)) return orgRole
+  return member.role
+}
 
 const pickableMembers = computed(() => {
   const already = new Set(members.value.map((m) => m.user_id))

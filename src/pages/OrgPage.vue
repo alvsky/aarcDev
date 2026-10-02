@@ -281,6 +281,7 @@ import { useNotificationsStore } from 'src/stores/notifications'
 import { useFeatureFlagsStore } from 'src/stores/featureFlags'
 import { useFormatDate } from 'src/composables/useFormatDate'
 import { useConfirmDialog } from 'src/composables/useConfirmDialog'
+import { roleColor } from 'src/utils/roles'
 import AppHeader from 'src/components/shared/AppHeader.vue'
 import UserAvatar from 'src/components/shared/UserAvatar.vue'
 
@@ -393,10 +394,6 @@ async function toggleStats() {
       $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })
     }
   }
-}
-
-function roleColor(role) {
-  return { owner: 'primary', admin: 'accent', member: 'grey-6', guest: 'grey-4' }[role] ?? 'grey-6'
 }
 
 // Admin upravlja svima osim vlasnika (vlasništvo prenosi samo vlasnik, zasebna
