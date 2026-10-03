@@ -8,7 +8,12 @@
           {{ replyTo.profiles?.full_name }}
         </div>
         <div class="text-caption text-grey-7 ellipsis">
-          {{ replyTo.body || $t('chat.imageAlt') }}
+          <!-- Nestajuća se ne citira ni autoru (vidi isSealed u MessageList.vue) -->
+          {{
+            replyTo.destroy_after_read
+              ? $t('chat.sealedMessage')
+              : replyTo.body || $t('chat.imageAlt')
+          }}
         </div>
       </div>
       <q-btn flat round dense icon="close" size="sm" @click="$emit('cancel-reply')" />

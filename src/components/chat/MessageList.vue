@@ -110,6 +110,7 @@
                   'msg-bubble-own': isOwn(item),
                   'msg-pending': item.pending,
                   'msg-bubble-hidden': isHidden(item),
+                  'msg-bubble-sealed': isSealed(item),
                 }"
                 @click="onBubbleClick(item)"
                 @contextmenu.prevent="!isInert(item) && openActions(item, $event)"
@@ -127,7 +128,17 @@
                   </div>
                 </div>
 
-                <template v-else-if="!isHidden(item)">
+                <!-- Vlastita nestajuća poruka: autor je vidi samo dok je piše.
+                     Nakon slanja nema otkrivanja — samo trag da je poslana. -->
+                <div v-else-if="isSealed(item)" class="row items-center no-wrap msg-hidden-teaser">
+                  <q-icon name="local_fire_department" size="18px" class="q-mr-sm" />
+                  <div>
+                    <div class="msg-hidden-title">{{ $t('chat.sealedMessage') }}</div>
+                    <div class="msg-hidden-hint">{{ $t('chat.sealedHint') }}</div>
+                  </div>
+                </div>
+
+                <template v-else>
                   <div
                     v-if="item.reply_to_id"
                     class="reply-quote"
@@ -287,8 +298,12 @@
             <q-item-section>{{ $t('chat.reply') }}</q-item-section>
           </q-item>
           <template v-if="activeActionMsg && isOwn(activeActionMsg)">
-            <q-separator />
-            <q-item clickable @click="(startEdit(activeActionMsg), closeActions())">
+            <q-separator v-if="!isSealed(activeActionMsg)" />
+            <q-item
+              v-if="!isSealed(activeActionMsg)"
+              clickable
+              @click="(startEdit(activeActionMsg), closeActions())"
+            >
               <q-item-section side><q-icon name="edit" /></q-item-section>
               <q-item-section>{{ $t('common.edit') }}</q-item-section>
             </q-item>
@@ -481,16 +496,22 @@ function isConsumed(msg) {
 }
 
 // Skrivena je samo tuđa poruka koja je stvarno poslana i još nepročitana —
-// vlastita se autoru prikazuje normalno, a pending/failed još nema retka u bazi.
+// pending/failed još nema retka u bazi. Vlastitu pokriva isSealed.
 function isHidden(msg) {
   return !!msg?.destroy_after_read && !isOwn(msg) && !isConsumed(msg) && !msg.pending && !msg.failed
+}
+
+// Zapečaćena: vlastita nestajuća poruka, od trenutka slanja (i dok čeka u
+// outboxu). Autor je ne može ponovno pogledati — ni otkrivanjem ni urediti.
+function isSealed(msg) {
+  return !!msg?.destroy_after_read && isOwn(msg) && !isConsumed(msg)
 }
 
 // Bez sadržaja za prikaz: citat odgovora ne smije otkriti poruku koju korisnik
 // još nije otvorio, ni pasti na "Screenshot" kad je tijelo već ispražnjeno.
 function isMaskedQuote(item) {
   const source = replySource(item)
-  return isHidden(source) || isConsumed(source)
+  return isHidden(source) || isSealed(source) || isConsumed(source)
 }
 
 // Prazan ili još nepročitan mjehurić nema što ponuditi u izborniku akcija.
@@ -696,6 +717,13 @@ onActivated(async () => {
   background: #ece9f5;
   border: 1px dashed #9b8fc4;
   color: #4a3f6b;
+}
+
+/* Isti izgled kao skrivena, ali se ne otvara na dodir. */
+.msg-bubble-sealed {
+  cursor: default;
+  border: 1px dashed currentColor;
+  opacity: 0.85;
 }
 
 .msg-hidden-teaser {

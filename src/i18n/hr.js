@@ -267,6 +267,8 @@ export default {
       'Nestajuće poruke uključene u ovom razgovoru do zatvaranja aplikacije',
     destroyAfterReadStickyOff: 'Nestajuće poruke isključene',
     hiddenMessage: 'Skrivena poruka',
+    sealedMessage: 'Nestajuća poruka',
+    sealedHint: 'Poslano — sadržaj više ne možeš vidjeti',
     messageOpened: 'Otvoreno',
     tapToReveal: 'Dodirni za prikaz — vidiš je samo jednom',
     revealTitle: 'Poruka je obrisana',
