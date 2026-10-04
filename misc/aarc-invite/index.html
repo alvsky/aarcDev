@@ -295,10 +295,17 @@
           await render()
         } else {
           const fullName = el('fullNameInput').value.trim()
+          // Bez emailRedirectTo link za potvrdu vodi na Site URL (početna
+          // vitkadesign.com/?code=...), pa se korisnik nikad ne vrati ovamo da
+          // prihvati pozivnicu. Ova adresa mora biti na Supabase Redirect URLs
+          // listi (Auth → URL Configuration), inače Supabase tiho padne na Site URL.
           const { data, error } = await supabase.auth.signUp({
             email,
             password,
-            options: { data: { full_name: fullName } },
+            options: {
+              data: { full_name: fullName },
+              emailRedirectTo: window.location.origin + window.location.pathname,
+            },
           })
           if (error) throw error
           if (!data.session) {

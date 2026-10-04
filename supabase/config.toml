@@ -7,10 +7,11 @@ project_id = "uwtmnbliuuoqkmwjwzid"
 [auth]
 enabled = true
 site_url = "https://www.vitkadesign.com/aarc.html"
-# Prazno je namjerno — potvrdna stranica je statična ("gotovo je, vrati se u
-# app"), ne dio SPA-a koji bi trebao preuzeti sesiju iz linka, pa nema
-# potrebe za posebnim unosom po okolini (localhost/produkcija/mobitel).
-additional_redirect_urls = []
+# Stranica pozivnice (misc/aarc-invite) traži povratak na samu sebe nakon
+# potvrde e-maila (emailRedirectTo) da bi korisnik mogao prihvatiti pozivnicu —
+# bez ovog unosa Supabase tiho preusmjeri na Site URL (2026-10-04). Mora
+# postojati i u dashboardu (Auth → URL Configuration → Redirect URLs).
+additional_redirect_urls = ["https://vitkadesign.com/aarc-invite/**"]
 jwt_expiry = 3600
 enable_signup = true
 # ⚠️ Minimalna duljina lozinke i rate limiti NISU potvrđeni s dashboarda —
