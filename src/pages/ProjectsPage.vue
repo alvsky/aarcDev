@@ -362,7 +362,9 @@ onMounted(async () => {
   realtimeCleanups.value.forEach((fn) => fn())
   realtimeCleanups.value = []
 
-  await Promise.all([projectsStore.fetchProjects(), orgsStore.fetchOrgs()])
+  const [, joined] = await Promise.all([projectsStore.fetchProjects(), orgsStore.fetchOrgs()])
+  // Upravo prihvaćena pozivnica: projekti su dohvaćeni prije novog članstva.
+  if (joined) await projectsStore.fetchProjects()
 
   // Fetch za sve projekte
   await Promise.all(projectsStore.projects.map((p) => itemsStore.fetchItems(p.id)))

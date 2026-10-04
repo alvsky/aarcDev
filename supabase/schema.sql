@@ -145,6 +145,55 @@ $$;
 ALTER FUNCTION "public"."accept_invitation"("p_token" "uuid") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."accept_pending_invitations"() RETURNS integer
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+declare
+  v_email text;
+  v_count integer := 0;
+  inv     record;
+begin
+  if auth.uid() is null then
+    return 0;
+  end if;
+
+  select email into v_email
+    from auth.users
+   where id = auth.uid()
+     and email_confirmed_at is not null;
+
+  if v_email is null then
+    return 0;
+  end if;
+
+  for inv in
+    select *
+      from invitations
+     where lower(email) = lower(v_email)
+       and accepted_at is null
+       and expires_at >= now()
+     for update
+  loop
+    insert into org_members (org_id, user_id, role)
+    values (inv.org_id, auth.uid(), inv.role)
+    on conflict (org_id, user_id) do nothing;
+
+    update invitations
+       set accepted_at = now(), accepted_by = auth.uid()
+     where id = inv.id;
+
+    v_count := v_count + 1;
+  end loop;
+
+  return v_count;
+end
+$$;
+
+
+ALTER FUNCTION "public"."accept_pending_invitations"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."auto_follow_on_assign"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'

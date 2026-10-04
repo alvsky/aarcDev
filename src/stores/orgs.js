@@ -68,6 +68,14 @@ export const useOrgsStore = defineStore('orgs', {
       const auth = useAuthStore()
       if (!auth.user) return
 
+      // Otvorene pozivnice na potvrđenu adresu postaju članstvo prije dohvata —
+      // registracija s potvrdom e-maila gubi put do /invite/:token, pa bi
+      // pozivnica inače ostala zauvijek neprihvaćena (vidi migraciju
+      // 20261004110000_accept_pending_invitations.sql). Greška ovdje ne smije
+      // srušiti dohvat organizacija.
+      const { data: joined, error: joinError } = await supabase.rpc('accept_pending_invitations')
+      if (joinError) console.error('[orgs] accept_pending_invitations:', joinError)
+
       // org_members.org_id ima pravi strani ključ na organizations, pa PostgREST
       // ugnježđivanje ovdje RADI — za razliku od profila, čiji FK ide na
       // auth.users (invarijanta 1).
@@ -84,6 +92,10 @@ export const useOrgsStore = defineStore('orgs', {
       if (!this.orgs.some((o) => o.id === this.currentId)) {
         this.setCurrent(this.orgs[0]?.id ?? null)
       }
+
+      // Broj upravo prihvaćenih pozivnica — pozivatelj koji je paralelno
+      // dohvatio projekte zna da ih treba dohvatiti ponovno.
+      return joined ?? 0
     },
 
     // Pozivnice na čekanju za organizaciju — vidljivo samo adminu
