@@ -426,6 +426,28 @@ $$;
 ALTER FUNCTION "public"."get_unread_total"("p_user_id" "uuid") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."guard_disappearing_messages"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
+begin
+  if new.destroy_after_read and not exists (
+    select 1
+      from public.projects p
+      join public.organizations o on o.id = p.org_id
+     where p.id = new.project_id
+       and o.disappearing_messages
+  ) then
+    raise exception 'Nestajuće poruke nisu uključene u ovoj organizaciji';
+  end if;
+  return new;
+end
+$$;
+
+
+ALTER FUNCTION "public"."guard_disappearing_messages"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."guard_last_org_owner"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
@@ -975,7 +997,8 @@ CREATE TABLE IF NOT EXISTS "public"."organizations" (
     "slug" "text",
     "plan" "text" DEFAULT 'free'::"text" NOT NULL,
     "created_by" "uuid",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "disappearing_messages" boolean DEFAULT false NOT NULL
 );
 
 
@@ -1187,6 +1210,10 @@ CREATE OR REPLACE TRIGGER "auto_follow_on_assign" AFTER UPDATE OF "assignee_id" 
 
 
 CREATE OR REPLACE TRIGGER "auto_follow_on_message" AFTER INSERT ON "public"."messages" FOR EACH ROW EXECUTE FUNCTION "public"."auto_follow_on_message"();
+
+
+
+CREATE OR REPLACE TRIGGER "guard_disappearing_messages" BEFORE INSERT ON "public"."messages" FOR EACH ROW EXECUTE FUNCTION "public"."guard_disappearing_messages"();
 
 
 

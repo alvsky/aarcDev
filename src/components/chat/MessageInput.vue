@@ -87,9 +87,9 @@
         @dragenter.prevent="startDragging"
       />
 
-      <!-- Ugašena vatra = obična poruka; upaljena = nestaje nakon čitanja. Skriveno
-           iza feature flaga (vidi useFeatureFlagsStore) umjesto zakomentiranog koda —
-           prekidač se sad uključuje/isključuje iz OrgPage.vue bez novog builda. -->
+      <!-- Ugašena vatra = obična poruka; upaljena = nestaje nakon čitanja. Prikazuje
+           se samo ako organizacija projekta ima uključene nestajuće poruke
+           (organizations.disappearing_messages, skriveni prekidač u OrgPage.vue). -->
       <q-btn
         v-if="disappearingMessagesEnabled"
         flat
@@ -140,7 +140,7 @@ import { dbErrorMessage } from 'src/utils/dbErrorMessage'
 import { Capacitor } from '@capacitor/core'
 import { useChatStore } from 'src/stores/chat'
 import { useProjectsStore } from 'src/stores/projects'
-import { useFeatureFlagsStore } from 'src/stores/featureFlags'
+import { useOrgsStore } from 'src/stores/orgs'
 import { useImageUpload } from 'src/composables/useImageUpload'
 import { useNetwork } from 'src/composables/useNetwork'
 
@@ -157,12 +157,12 @@ const $q = useQuasar()
 const { t } = useI18n()
 const chatStore = useChatStore()
 const projectsStore = useProjectsStore()
-const featureFlagsStore = useFeatureFlagsStore()
+const orgsStore = useOrgsStore()
 const { uploading, uploadImage } = useImageUpload()
 const { online } = useNetwork()
 
 const disappearingMessagesEnabled = computed(() =>
-  featureFlagsStore.isEnabled('disappearing_messages'),
+  orgsStore.disappearingMessagesEnabled(projectsStore.getById(props.projectId)?.org_id),
 )
 
 const MAX_PENDING_IMAGES = 10

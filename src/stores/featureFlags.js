@@ -5,8 +5,9 @@ import { useAuthStore } from './auth'
 
 // Globalni prekidači za funkcije koje se žele uključivati/isključivati bez
 // punog deploy ciklusa — vidi migraciju 20260919100000_feature_flags.sql.
-// Čita svatko; piše (RLS) samo admin/owner organizacije aarc d.o.o., kroz
-// skriveni dijalog u OrgPage.vue (tapni 7x na naziv organizacije).
+// Čita svatko; piše (RLS) samo admin/owner organizacije aarc d.o.o. Trenutno
+// nema nijednog flaga — nestajuće poruke su 2026-10-04 prešle na postavku po
+// organizaciji (organizations.disappearing_messages).
 export const useFeatureFlagsStore = defineStore('featureFlags', {
   persist: ['flags'],
 

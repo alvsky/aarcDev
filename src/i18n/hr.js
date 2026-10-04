@@ -127,6 +127,7 @@ export default {
     inviteExpires: 'Ističe {date}',
     errorPendingInvite: 'Već postoji neprihvaćena pozivnica na tu adresu.',
     errorRenameFailed: 'Preimenovanje nije uspjelo — provjeri jesi li admin ove organizacije.',
+    errorSettingFailed: 'Spremanje nije uspjelo — provjeri jesi li admin ove organizacije.',
   },
   ideas: {
     title: 'Ideje',
@@ -410,5 +411,6 @@ export default {
     onlyOwnerCanTransferOwnership: 'Vlasništvo može mijenjati samo vlasnik.',
     noPermissionManageProjectMembers: 'Nemaš ovlasti za upravljanje članovima ovog projekta.',
     personNotProjectMember: 'Osoba nije član ovog projekta.',
+    disappearingDisabled: 'Nestajuće poruke nisu uključene u ovoj organizaciji.',
   },
 }

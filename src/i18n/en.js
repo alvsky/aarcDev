@@ -126,6 +126,7 @@ export default {
     inviteExpires: 'Expires {date}',
     errorPendingInvite: 'There is already a pending invitation for that address.',
     errorRenameFailed: "Rename failed — check that you're an admin of this organization.",
+    errorSettingFailed: "Saving failed — check that you're an admin of this organization.",
   },
   ideas: {
     title: 'Ideas',
@@ -408,5 +409,6 @@ export default {
     onlyOwnerCanTransferOwnership: 'Only the owner can transfer ownership.',
     noPermissionManageProjectMembers: "You don't have permission to manage this project's members.",
     personNotProjectMember: 'This person is not a member of this project.',
+    disappearingDisabled: 'Disappearing messages are not enabled in this organization.',
   },
 }

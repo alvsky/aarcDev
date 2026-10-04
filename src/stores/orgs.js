@@ -56,6 +56,10 @@ export const useOrgsStore = defineStore('orgs', {
     isGuest() {
       return this.currentRole === 'guest'
     },
+    // Po organizaciji projekta, ne po trenutno odabranoj — chat projekta iz
+    // druge organizacije mora slijediti njezinu postavku.
+    disappearingMessagesEnabled: (state) => (orgId) =>
+      !!state.orgs.find((o) => o.id === orgId)?.disappearing_messages,
   },
 
   actions: {
@@ -69,7 +73,7 @@ export const useOrgsStore = defineStore('orgs', {
       // auth.users (invarijanta 1).
       const { data, error } = await supabase
         .from('org_members')
-        .select('role, organizations(id, name, slug, plan)')
+        .select('role, organizations(id, name, slug, plan, disappearing_messages)')
         .eq('user_id', auth.user.id)
       if (error) throw error
 
@@ -215,6 +219,21 @@ export const useOrgsStore = defineStore('orgs', {
       }
       const org = this.orgs.find((o) => o.id === orgId)
       if (org) org.name = name.trim()
+    },
+
+    // Isti obrazac kao renameOrg: .select() otkriva tiho RLS odbijanje.
+    // Server (guard_disappearing_messages) svejedno odbija nestajuće poruke u
+    // organizaciji koja ih nema uključene — ovo samo mijenja postavku.
+    async setDisappearingMessages(orgId, enabled) {
+      const { data, error } = await supabase
+        .from('organizations')
+        .update({ disappearing_messages: enabled })
+        .eq('id', orgId)
+        .select('id')
+      if (error) throw error
+      if (!data?.length) throw new Error(t('org.errorSettingFailed'))
+      const org = this.orgs.find((o) => o.id === orgId)
+      if (org) org.disappearing_messages = enabled
     },
 
     // set_member_role / remove_org_member su RPC-evi iz B12 — provjeravaju

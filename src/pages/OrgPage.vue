@@ -278,7 +278,6 @@ import { useOrgsStore } from 'src/stores/orgs'
 import { dbErrorMessage } from 'src/utils/dbErrorMessage'
 import { useAuthStore } from 'src/stores/auth'
 import { useNotificationsStore } from 'src/stores/notifications'
-import { useFeatureFlagsStore } from 'src/stores/featureFlags'
 import { useFormatDate } from 'src/composables/useFormatDate'
 import { useConfirmDialog } from 'src/composables/useConfirmDialog'
 import { roleColor } from 'src/utils/roles'
@@ -292,7 +291,6 @@ const { confirmDestructive } = useConfirmDialog()
 const orgsStore = useOrgsStore()
 const authStore = useAuthStore()
 const notifStore = useNotificationsStore()
-const featureFlagsStore = useFeatureFlagsStore()
 const formatDate = useFormatDate()
 
 const activeTab = ref('org')
@@ -331,19 +329,15 @@ function promptNewOrg() {
 
 const org = computed(() => orgsStore.current)
 
-// Skriveni prekidač za feature flagove — 9 klikova na naziv organizacije u
-// roku od 2s. Tiho ne radi ništa izvan aarc d.o.o. ili za ne-admine: RLS
-// (feature_flags_update) bi svejedno odbio pisanje, ali gašenje već ovdje
-// znači da nitko slučajnim klikanjem ne otvori dijalog koji će mu samo
-// vratiti grešku. AARC_ORG_ID mora ostati usklađen s migracijom
-// 20260919100000_feature_flags.sql.
-const AARC_ORG_ID = 'c0f7214b-6d78-4b30-8685-d8cbb4c2ec26'
+// Skriveni prekidač za nestajuće poruke OVE organizacije — 9 klikova na naziv
+// u roku od 2s. Skriven dok ne odlučimo otvoriti postavku svima; tiho ne radi
+// ništa za ne-admine (RLS organizations_update bi svejedno odbio pisanje).
 const TAPS_REQUIRED = 9
 let orgTapCount = 0
 let orgTapTimer = null
 
 function onOrgNameTap() {
-  if (!orgsStore.isAdmin || org.value?.id !== AARC_ORG_ID) return
+  if (!orgsStore.isAdmin || !org.value) return
   orgTapCount++
   clearTimeout(orgTapTimer)
   orgTapTimer = setTimeout(() => {
@@ -351,20 +345,21 @@ function onOrgNameTap() {
   }, 2000)
   if (orgTapCount >= TAPS_REQUIRED) {
     orgTapCount = 0
-    openFeatureFlagsDialog()
+    openDisappearingDialog()
   }
 }
 
-function openFeatureFlagsDialog() {
-  const enabled = featureFlagsStore.isEnabled('disappearing_messages')
+function openDisappearingDialog() {
+  const orgId = org.value.id
+  const enabled = !!org.value.disappearing_messages
   $q.dialog({
-    title: 'Feature flags',
-    message: `Nestajuće poruke su trenutno ${enabled ? 'UKLJUČENE' : 'ISKLJUČENE'}.`,
+    title: org.value.name,
+    message: `Nestajuće poruke su u ovoj organizaciji ${enabled ? 'UKLJUČENE' : 'ISKLJUČENE'}.`,
     ok: { label: enabled ? 'Isključi' : 'Uključi' },
     cancel: t('common.cancel'),
   }).onOk(async () => {
     try {
-      await featureFlagsStore.setFlag('disappearing_messages', !enabled)
+      await orgsStore.setDisappearingMessages(orgId, !enabled)
       $q.notify({ type: 'positive', message: t('settings.saved') })
     } catch (e) {
       $q.notify({ type: 'negative', message: dbErrorMessage(e, t) })

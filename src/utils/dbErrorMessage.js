@@ -25,6 +25,7 @@ const KNOWN = [
   ['Vlasništvo može mijenjati samo vlasnik', 'dbErrors.onlyOwnerCanTransferOwnership'],
   ['Nemaš ovlasti za upravljanje članovima ovog projekta', 'dbErrors.noPermissionManageProjectMembers'],
   ['Osoba nije član ovog projekta', 'dbErrors.personNotProjectMember'],
+  ['Nestajuće poruke nisu uključene u ovoj organizaciji', 'dbErrors.disappearingDisabled'],
 ]
 
 export function dbErrorMessage(e, t) {
