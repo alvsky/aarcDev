@@ -11,7 +11,11 @@ site_url = "https://www.vitkadesign.com/aarc.html"
 # potvrde e-maila (emailRedirectTo) da bi korisnik mogao prihvatiti pozivnicu —
 # bez ovog unosa Supabase tiho preusmjeri na Site URL (2026-10-04). Mora
 # postojati i u dashboardu (Auth → URL Configuration → Redirect URLs).
-additional_redirect_urls = ["https://vitkadesign.com/aarc-invite/**"]
+additional_redirect_urls = [
+  "https://vitkadesign.com/*",
+  "https://localhost:9000/*",
+  "https://vitkadesign.com/aarc-invite/**",
+]
 jwt_expiry = 3600
 enable_signup = true
 # ⚠️ Minimalna duljina lozinke i rate limiti NISU potvrđeni s dashboarda —
