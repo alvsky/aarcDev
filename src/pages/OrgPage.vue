@@ -488,9 +488,12 @@ async function sendInvite() {
   }
 }
 
+// Isti javni link koji šalje mail (supabase/functions/send-invitation) —
+// window.location.origin je u nativnoj aplikaciji capacitor://localhost
+// (iOS) ili https://localhost (Android), što primatelju ne otvara ništa.
+// Mijenja li se adresa, mijenja se na oba mjesta.
 function inviteUrl(token) {
-  // History mode (2026-08-12, prešli s hash-routera) — čist put, nema #.
-  return `${window.location.origin}/invite/${token}`
+  return `https://vitkadesign.com/aarc-invite/${token}`
 }
 
 async function copyInviteLink(token, notify = true) {
