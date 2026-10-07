@@ -266,11 +266,9 @@ export default {
     destroyAfterReadStickyOn:
       'Disappearing messages on in this conversation until the app is closed',
     destroyAfterReadStickyOff: 'Disappearing messages off',
-    hiddenMessage: 'Hidden message',
     sealedMessage: 'Disappearing message',
-    sealedHint: 'Sent — you can no longer view it',
     messageOpened: 'Opened',
-    tapToReveal: 'Tap to reveal — you only see it once',
+    tapToReveal: 'Tap to reveal',
     revealTitle: 'Message deleted',
     revealHint: "This is the only time you'll see this message. Once you close it, it's gone.",
     revealConfirm: 'OK',

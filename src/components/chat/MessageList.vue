@@ -48,14 +48,6 @@
               >
                 ({{ $t('chat.edited') }})
               </span>
-              <q-icon
-                v-if="item.destroy_after_read"
-                name="local_fire_department"
-                size="12px"
-                class="q-ml-xs"
-              >
-                <q-tooltip>{{ $t('chat.destroyAfterRead') }}</q-tooltip>
-              </q-icon>
               <q-icon v-if="item.pending" name="schedule" size="12px" class="q-ml-xs">
                 <q-tooltip>{{ $t('chat.pendingSend') }}</q-tooltip>
               </q-icon>
@@ -110,7 +102,6 @@
                   'msg-bubble-own': isOwn(item),
                   'msg-pending': item.pending,
                   'msg-bubble-hidden': isHidden(item),
-                  'msg-bubble-sealed': isSealed(item),
                 }"
                 @click="onBubbleClick(item)"
                 @contextmenu.prevent="!isInert(item) && openActions(item, $event)"
@@ -118,24 +109,20 @@
                 @touchend="cancelLongPress"
                 @touchmove="cancelLongPress"
               >
-                <!-- Skrivena poruka: sadržaj se ne renderira dok je primatelj ne
-                     otkrije i potvrdi u dijalogu. -->
-                <div v-if="isHidden(item)" class="row items-center no-wrap msg-hidden-teaser">
-                  <q-icon name="visibility_off" size="18px" class="q-mr-sm" />
-                  <div>
-                    <div class="msg-hidden-title">{{ $t('chat.hiddenMessage') }}</div>
-                    <div class="msg-hidden-hint">{{ $t('chat.tapToReveal') }}</div>
-                  </div>
-                </div>
-
-                <!-- Vlastita nestajuća poruka: autor je vidi samo dok je piše.
-                     Nakon slanja nema otkrivanja — samo trag da je poslana. -->
-                <div v-else-if="isSealed(item)" class="row items-center no-wrap msg-hidden-teaser">
-                  <q-icon name="local_fire_department" size="18px" class="q-mr-sm" />
-                  <div>
-                    <div class="msg-hidden-title">{{ $t('chat.sealedMessage') }}</div>
-                    <div class="msg-hidden-hint">{{ $t('chat.sealedHint') }}</div>
-                  </div>
+                <!-- Nestajuća poruka, namjerno neupadljiva: običan mjehurić sa
+                     sitnom blijedom vatricom i "•••", bez ikakvog teksta.
+                     Primljena (isHidden) se otvara dodirom — sadržaj se ne
+                     renderira dok je primatelj ne otkrije u dijalogu, koji nosi
+                     i upozorenje "vidiš je samo jednom". Vlastita (isSealed) se
+                     nakon slanja više ne otvara. -->
+                <div
+                  v-if="isHidden(item) || isSealed(item)"
+                  class="row items-center no-wrap msg-ephemeral"
+                  :title="isHidden(item) ? $t('chat.tapToReveal') : $t('chat.sealedMessage')"
+                  :aria-label="isHidden(item) ? $t('chat.tapToReveal') : $t('chat.sealedMessage')"
+                >
+                  <q-icon name="local_fire_department" size="12px" class="q-mr-xs" />
+                  <span>•••</span>
                 </div>
 
                 <template v-else>
@@ -151,7 +138,7 @@
                       <div class="reply-quote-body" :class="{ 'text-italic': isMaskedQuote(item) }">
                         {{
                           isMaskedQuote(item)
-                            ? $t('chat.hiddenMessage')
+                            ? '•••'
                             : truncate(replySource(item).body) || $t('chat.imageAlt')
                         }}
                       </div>
@@ -714,30 +701,13 @@ onActivated(async () => {
 
 .msg-bubble-hidden {
   cursor: pointer;
-  background: #ece9f5;
-  border: 1px dashed #9b8fc4;
-  color: #4a3f6b;
 }
 
-/* Isti izgled kao skrivena, ali se ne otvara na dodir. */
-.msg-bubble-sealed {
-  cursor: default;
-  border: 1px dashed currentColor;
-  opacity: 0.85;
-}
-
-.msg-hidden-teaser {
-  min-width: 0;
-}
-
-.msg-hidden-title {
+/* Boja i oblik od običnog mjehurića — samo prigušen sadržaj. */
+.msg-ephemeral {
   font-size: 14px;
-  font-weight: 600;
-}
-
-.msg-hidden-hint {
-  font-size: 11px;
-  opacity: 0.7;
+  letter-spacing: 2px;
+  opacity: 0.5;
 }
 
 .msg-body {
