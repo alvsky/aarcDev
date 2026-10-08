@@ -121,7 +121,12 @@
                   :title="isHidden(item) ? $t('chat.tapToReveal') : $t('chat.sealedMessage')"
                   :aria-label="isHidden(item) ? $t('chat.tapToReveal') : $t('chat.sealedMessage')"
                 >
-                  <q-icon name="local_fire_department" size="12px" class="q-mr-xs" />
+                  <q-icon
+                    v-if="canSeeFire(item)"
+                    name="local_fire_department"
+                    size="12px"
+                    class="q-mr-xs"
+                  />
                   <span>•••</span>
                 </div>
 
@@ -191,7 +196,13 @@
     <q-dialog v-model="revealDialog" persistent>
       <q-card style="min-width: 300px; max-width: 90vw">
         <q-card-section class="row items-center q-pb-sm">
-          <q-icon name="local_fire_department" color="warning" size="20px" class="q-mr-sm" />
+          <q-icon
+            v-if="canSeeFire(revealMsg)"
+            name="local_fire_department"
+            color="warning"
+            size="20px"
+            class="q-mr-sm"
+          />
           <div class="text-subtitle2">{{ $t('chat.revealTitle') }}</div>
         </q-card-section>
 
@@ -311,6 +322,8 @@ import { ref, computed, watch, nextTick, onMounted, onActivated } from 'vue'
 import { useAuthStore } from 'src/stores/auth'
 import { useFormatDate } from 'src/composables/useFormatDate'
 import { useChatStore } from 'src/stores/chat'
+import { useOrgsStore } from 'src/stores/orgs'
+import { useProjectsStore } from 'src/stores/projects'
 import { useOfflineGuard } from 'src/composables/useOfflineGuard'
 import { useConfirmDialog } from 'src/composables/useConfirmDialog'
 import { useLinkify } from 'src/composables/useLinkify'
@@ -328,6 +341,8 @@ const { confirmDestructive } = useConfirmDialog()
 const authStore = useAuthStore()
 const formatDate = useFormatDate()
 const chatStore = useChatStore()
+const orgsStore = useOrgsStore()
+const projectsStore = useProjectsStore()
 const { blockedOffline } = useOfflineGuard()
 const { linkifyHtml } = useLinkify()
 const { t } = useI18n()
@@ -492,6 +507,12 @@ function isHidden(msg) {
 // outboxu). Autor je ne može ponovno pogledati — ni otkrivanjem ni urediti.
 function isSealed(msg) {
   return !!msg?.destroy_after_read && isOwn(msg) && !isConsumed(msg)
+}
+
+// Vatrica kao oznaka nestajuće poruke samo za vlasnika/admina organizacije
+// projekta — jedini koji ih smiju slati. Članovi i gosti vide samo "•••".
+function canSeeFire(msg) {
+  return orgsStore.isAdminOf(projectsStore.getById(msg?.project_id)?.org_id)
 }
 
 // Bez sadržaja za prikaz: citat odgovora ne smije otkriti poruku koju korisnik

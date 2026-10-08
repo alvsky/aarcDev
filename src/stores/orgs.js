@@ -58,6 +58,9 @@ export const useOrgsStore = defineStore('orgs', {
     },
     // Po organizaciji projekta, ne po trenutno odabranoj — chat projekta iz
     // druge organizacije mora slijediti njezinu postavku.
+    // Vlasnik ili admin ZADANE organizacije (ne trenutno odabrane).
+    isAdminOf: (state) => (orgId) =>
+      ADMIN_ROLES.includes(state.orgs.find((o) => o.id === orgId)?.role),
     // Slati smiju samo vlasnik i admin te organizacije — isto provjerava
     // okidač guard_disappearing_messages na poslužitelju.
     disappearingMessagesEnabled: (state) => (orgId) => {
