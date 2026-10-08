@@ -410,5 +410,6 @@ export default {
     noPermissionManageProjectMembers: 'Nemaš ovlasti za upravljanje članovima ovog projekta.',
     personNotProjectMember: 'Osoba nije član ovog projekta.',
     disappearingDisabled: 'Nestajuće poruke nisu uključene u ovoj organizaciji.',
+    disappearingAdminsOnly: 'Nestajuće poruke mogu slati samo vlasnik i admin organizacije.',
   },
 }

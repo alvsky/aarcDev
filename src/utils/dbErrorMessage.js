@@ -26,6 +26,7 @@ const KNOWN = [
   ['Nemaš ovlasti za upravljanje članovima ovog projekta', 'dbErrors.noPermissionManageProjectMembers'],
   ['Osoba nije član ovog projekta', 'dbErrors.personNotProjectMember'],
   ['Nestajuće poruke nisu uključene u ovoj organizaciji', 'dbErrors.disappearingDisabled'],
+  ['Nestajuće poruke mogu slati samo vlasnik i admin organizacije', 'dbErrors.disappearingAdminsOnly'],
 ]
 
 export function dbErrorMessage(e, t) {

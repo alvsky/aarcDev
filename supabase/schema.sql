@@ -479,16 +479,28 @@ CREATE OR REPLACE FUNCTION "public"."guard_disappearing_messages"() RETURNS "tri
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
+declare
+  v_org_id  uuid;
+  v_enabled boolean;
 begin
-  if new.destroy_after_read and not exists (
-    select 1
-      from public.projects p
-      join public.organizations o on o.id = p.org_id
-     where p.id = new.project_id
-       and o.disappearing_messages
-  ) then
+  if not new.destroy_after_read then
+    return new;
+  end if;
+
+  select o.id, o.disappearing_messages
+    into v_org_id, v_enabled
+    from public.projects p
+    join public.organizations o on o.id = p.org_id
+   where p.id = new.project_id;
+
+  if not coalesce(v_enabled, false) then
     raise exception 'Nestajuće poruke nisu uključene u ovoj organizaciji';
   end if;
+
+  if not public.is_org_admin(v_org_id) then
+    raise exception 'Nestajuće poruke mogu slati samo vlasnik i admin organizacije';
+  end if;
+
   return new;
 end
 $$;

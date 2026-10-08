@@ -408,5 +408,6 @@ export default {
     noPermissionManageProjectMembers: "You don't have permission to manage this project's members.",
     personNotProjectMember: 'This person is not a member of this project.',
     disappearingDisabled: 'Disappearing messages are not enabled in this organization.',
+    disappearingAdminsOnly: 'Only organization owners and admins can send disappearing messages.',
   },
 }

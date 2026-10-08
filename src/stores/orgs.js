@@ -58,8 +58,12 @@ export const useOrgsStore = defineStore('orgs', {
     },
     // Po organizaciji projekta, ne po trenutno odabranoj — chat projekta iz
     // druge organizacije mora slijediti njezinu postavku.
-    disappearingMessagesEnabled: (state) => (orgId) =>
-      !!state.orgs.find((o) => o.id === orgId)?.disappearing_messages,
+    // Slati smiju samo vlasnik i admin te organizacije — isto provjerava
+    // okidač guard_disappearing_messages na poslužitelju.
+    disappearingMessagesEnabled: (state) => (orgId) => {
+      const org = state.orgs.find((o) => o.id === orgId)
+      return !!org?.disappearing_messages && ADMIN_ROLES.includes(org.role)
+    },
   },
 
   actions: {
