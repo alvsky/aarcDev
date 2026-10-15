@@ -273,6 +273,7 @@ export default {
     revealTitle: 'Poruka je obrisana',
     revealHint: 'Ovo je jedini put da vidiš ovu poruku. Kad zatvoriš, nema je više.',
     revealConfirm: 'U redu',
+    hiddenWhileRecording: 'Sadržaj je skriven dok se snima ekran.',
     copy: 'Kopiraj',
     copySelection: 'Kopiraj označeno',
     copyAll: 'Kopiraj sve',

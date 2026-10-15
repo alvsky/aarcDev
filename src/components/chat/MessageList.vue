@@ -223,17 +223,24 @@
           <div class="text-caption text-grey-6 q-mb-xs">
             {{ revealMsg?.profiles?.full_name }}
           </div>
-          <div
-            v-if="revealMsg?.body"
-            class="msg-body no-copy"
-            v-html="linkifyHtml(revealMsg.body)"
-          />
-          <ChatImage
-            v-if="revealMsg?.attachment_url"
-            :path="revealMsg.attachment_url"
-            :alt="revealMsg.attachment_name || $t('chat.imageAlt')"
-            class="q-mt-sm no-copy"
-          />
+          <!-- iOS ne da spriječiti snimku, ali snimanje videa ekrana da otkriti —
+               dok traje, sadržaj se ne prikazuje (usePrivacyScreen). -->
+          <div v-if="screenRecording" class="text-caption text-italic text-grey-6">
+            {{ $t('chat.hiddenWhileRecording') }}
+          </div>
+          <template v-else>
+            <div
+              v-if="revealMsg?.body"
+              class="msg-body no-copy"
+              v-html="linkifyHtml(revealMsg.body)"
+            />
+            <ChatImage
+              v-if="revealMsg?.attachment_url"
+              :path="revealMsg.attachment_url"
+              :alt="revealMsg.attachment_name || $t('chat.imageAlt')"
+              class="q-mt-sm no-copy"
+            />
+          </template>
         </q-card-section>
 
         <q-card-section class="q-pt-none text-caption text-grey-6">
@@ -350,7 +357,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, nextTick, onMounted, onActivated } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onActivated, onBeforeUnmount } from 'vue'
 import { useAuthStore } from 'src/stores/auth'
 import { useFormatDate } from 'src/composables/useFormatDate'
 import { useChatStore } from 'src/stores/chat'
@@ -361,6 +368,7 @@ import { useConfirmDialog } from 'src/composables/useConfirmDialog'
 import { useLinkify } from 'src/composables/useLinkify'
 import { useI18n } from 'vue-i18n'
 import { useQuasar } from 'quasar'
+import { usePrivacyScreen } from 'src/composables/usePrivacyScreen'
 import ChatImage from './ChatImage.vue'
 import UserAvatar from 'src/components/shared/UserAvatar.vue'
 
@@ -380,12 +388,19 @@ const { blockedOffline } = useOfflineGuard()
 const { linkifyHtml } = useLinkify()
 const { t } = useI18n()
 const $q = useQuasar()
+const { screenRecording, setProtected } = usePrivacyScreen()
 const listEl = ref(null)
 const bottomEl = ref(null)
 const initialLoad = ref(true)
 const emojiDialog = ref(false)
 const revealDialog = ref(false)
 const revealMsg = ref(null)
+// Android: snimka ekrana i video su crni samo dok je nestajuća poruka otvorena.
+watch(revealDialog, (open) => setProtected(open))
+// Odlazak s ekrana dok je poruka otvorena ne smije ostaviti zaštitu upaljenu.
+onBeforeUnmount(() => {
+  if (revealDialog.value) setProtected(false)
+})
 const pendingPurgeId = ref(null)
 const activeMessage = ref(null)
 const editingId = ref(null)

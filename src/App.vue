@@ -12,10 +12,12 @@ import { useFeatureFlagsStore } from 'src/stores/featureFlags'
 import { useBadge } from 'src/composables/useBadge'
 import { usePush } from 'src/composables/usePush'
 import { useNetwork } from 'src/composables/useNetwork'
+import { usePrivacyScreen } from 'src/composables/usePrivacyScreen'
 
 const { clearBadge, requestPermission, setBadge } = useBadge()
 const { init, registerPendingToken } = usePush()
 const { onReconnect } = useNetwork()
+const { watchScreenRecording } = usePrivacyScreen()
 const authStore = useAuthStore()
 const notifStore = useNotificationsStore()
 const chatStore = useChatStore()
@@ -45,6 +47,7 @@ onReconnect(async () => {
 
 onMounted(async () => {
   await authStore.init()
+  await watchScreenRecording()
   await clearBadge()
   await requestPermission()
   await init()

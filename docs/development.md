@@ -43,11 +43,19 @@ There is no test suite.
 `quasar.config.js` → `build.extendViteConf` aliases these **only for web builds**
 (`!ctx.mode.capacitor`):
 
-| Package                         | Aliased to                     |
-| ------------------------------- | ------------------------------ |
-| `@capacitor/push-notifications` | `src/mocks/capacitor-push.js`  |
-| `@capacitor/app`                | `src/mocks/capacitor-app.js`   |
-| `@capawesome/capacitor-badge`   | `src/mocks/capacitor-badge.js` |
+| Package                               | Aliased to                              |
+| ------------------------------------- | --------------------------------------- |
+| `@capacitor/push-notifications`       | `src/mocks/capacitor-push.js`           |
+| `@capacitor/app`                      | `src/mocks/capacitor-app.js`            |
+| `@capawesome/capacitor-badge`         | `src/mocks/capacitor-badge.js`          |
+| `@capacitor/network`                  | `src/mocks/capacitor-network.js`        |
+| `@capacitor-community/privacy-screen` | `src/mocks/capacitor-privacy-screen.js` |
+
+`privacy-screen` (2026-10-15) guards disappearing messages: Android `FLAG_SECURE` and iOS
+screen-recording detection while the reveal dialog is open (`usePrivacyScreen`). It is
+configured in `src-capacitor/capacitor.config.js` with `enable: false` (not on from launch)
+and `preventScreenshots: false` — that iOS option re-parents the whole app window into a
+secure text field at launch, a fragile hack we deliberately avoid.
 
 The mocks are no-ops (permissions return `denied`), letting web builds compile without the
 native plugins. **Native builds must never get the mocks** — that silently kills push and

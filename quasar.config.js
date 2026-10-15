@@ -99,6 +99,7 @@ export default defineConfig((ctx) => {
                 '@capacitor/push-notifications': '/src/mocks/capacitor-push.js',
                 '@capacitor/app': '/src/mocks/capacitor-app.js',
                 '@capacitor/network': '/src/mocks/capacitor-network.js',
+                '@capacitor-community/privacy-screen': '/src/mocks/capacitor-privacy-screen.js',
               }),
         }
       },
