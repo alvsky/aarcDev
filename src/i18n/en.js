@@ -272,6 +272,13 @@ export default {
     revealTitle: 'Message deleted',
     revealHint: "This is the only time you'll see this message. Once you close it, it's gone.",
     revealConfirm: 'OK',
+    copy: 'Copy',
+    copySelection: 'Copy selection',
+    copyAll: 'Copy all',
+    selectText: 'Select text',
+    copied: 'Copied',
+    copyFailed: 'Copy failed',
+    close: 'Close',
   },
   notifications: {
     newMessage: 'New message',

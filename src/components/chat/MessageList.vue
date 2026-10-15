@@ -152,11 +152,7 @@
                       {{ $t('chat.originalUnavailable') }}
                     </div>
                   </div>
-                  <div
-                    v-if="item.body"
-                    class="msg-body"
-                    v-html="linkifyHtml(item.body)"
-                  />
+                  <div v-if="item.body" class="msg-body" v-html="linkifyHtml(item.body)" />
 
                   <ChatImage
                     v-if="item.attachment_url"
@@ -193,6 +189,23 @@
     <!-- Otkrivanje poruke koja nestaje nakon čitanja. Poruka je u trenutku
          otvaranja već uništena — dijalog je zadnji put da je korisnik vidi, pa
          je persistent (slučajan klik izvan ne smije je zatvoriti). -->
+    <!-- Odaberi tekst: običan tekst (bez linkova, da dugi pritisak ne otvori
+         pregled linka) koji se označava ugrađenim odabirom sustava. -->
+    <q-dialog v-model="selectDialog">
+      <q-card style="min-width: 300px; max-width: 90vw">
+        <q-card-section class="text-caption text-grey-6 q-pb-none">
+          {{ selectMsg?.profiles?.full_name }}
+        </q-card-section>
+        <q-card-section>
+          <div class="msg-body selectable-text">{{ selectMsg?.body }}</div>
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat :label="$t('chat.copyAll')" @click="copyText(selectMsg?.body)" />
+          <q-btn flat :label="$t('chat.close')" v-close-popup />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <q-dialog v-model="revealDialog" persistent>
       <q-card style="min-width: 300px; max-width: 90vw">
         <q-card-section class="row items-center q-pb-sm">
@@ -212,14 +225,14 @@
           </div>
           <div
             v-if="revealMsg?.body"
-            class="msg-body"
+            class="msg-body no-copy"
             v-html="linkifyHtml(revealMsg.body)"
           />
           <ChatImage
             v-if="revealMsg?.attachment_url"
             :path="revealMsg.attachment_url"
             :alt="revealMsg.attachment_name || $t('chat.imageAlt')"
-            class="q-mt-sm"
+            class="q-mt-sm no-copy"
           />
         </q-card-section>
 
@@ -295,6 +308,25 @@
             <q-item-section side><q-icon name="reply" /></q-item-section>
             <q-item-section>{{ $t('chat.reply') }}</q-item-section>
           </q-item>
+          <!-- Kopiranje kao u Telegramu: cijela poruka (ili ono što je već označeno
+               mišem), ili "Odaberi tekst" za dio — dugi pritisak na mobitelu je
+               zauzet ovim izbornikom, pa se dio teksta označava u zasebnom prozoru. -->
+          <template v-if="canCopy(activeActionMsg)">
+            <q-separator />
+            <q-item
+              clickable
+              @click="(copyText(selectedText || activeActionMsg.body), closeActions())"
+            >
+              <q-item-section side><q-icon name="content_copy" /></q-item-section>
+              <q-item-section>{{
+                selectedText ? $t('chat.copySelection') : $t('chat.copy')
+              }}</q-item-section>
+            </q-item>
+            <q-item clickable @click="(openSelectText(activeActionMsg), closeActions())">
+              <q-item-section side><q-icon name="text_fields" /></q-item-section>
+              <q-item-section>{{ $t('chat.selectText') }}</q-item-section>
+            </q-item>
+          </template>
           <template v-if="activeActionMsg && isOwn(activeActionMsg)">
             <q-separator v-if="!isSealed(activeActionMsg)" />
             <q-item
@@ -328,6 +360,7 @@ import { useOfflineGuard } from 'src/composables/useOfflineGuard'
 import { useConfirmDialog } from 'src/composables/useConfirmDialog'
 import { useLinkify } from 'src/composables/useLinkify'
 import { useI18n } from 'vue-i18n'
+import { useQuasar } from 'quasar'
 import ChatImage from './ChatImage.vue'
 import UserAvatar from 'src/components/shared/UserAvatar.vue'
 
@@ -346,6 +379,7 @@ const projectsStore = useProjectsStore()
 const { blockedOffline } = useOfflineGuard()
 const { linkifyHtml } = useLinkify()
 const { t } = useI18n()
+const $q = useQuasar()
 const listEl = ref(null)
 const bottomEl = ref(null)
 const initialLoad = ref(true)
@@ -382,6 +416,9 @@ const commonEmojis = [
 const actionsMenuRef = ref(null)
 const actionsMenu = ref(false)
 const activeActionMsg = ref(null)
+const selectedText = ref('')
+const selectDialog = ref(false)
+const selectMsg = ref(null)
 let longPressTimer = null
 let longPressEvt = null
 
@@ -399,7 +436,9 @@ const messagesWithSeparators = computed(() => {
   yesterday.setDate(today.getDate() - 1)
 
   const isSameDay = (d1, d2) =>
-    d1.getDate() === d2.getDate() && d1.getMonth() === d2.getMonth() && d1.getFullYear() === d2.getFullYear()
+    d1.getDate() === d2.getDate() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getFullYear() === d2.getFullYear()
 
   const formatCroatianDate = (d) => {
     const day = String(d.getDate()).padStart(2, '0')
@@ -483,8 +522,37 @@ function selectEmoji(emoji) {
 
 function openActions(msg, evt) {
   if (editingId.value) return
+  selectedText.value = selectionInside(msgRefs[msg.id])
   activeActionMsg.value = msg
   actionsMenuRef.value?.show(evt)
+}
+
+// Tekst koji je korisnik već označio unutar ove poruke (miš na računalu) —
+// tada "Kopiraj" kopira samo njega, kao u Telegramu.
+function selectionInside(el) {
+  const sel = window.getSelection?.()
+  if (!el || !sel || sel.isCollapsed || !el.contains(sel.anchorNode)) return ''
+  return sel.toString()
+}
+
+// Nestajuće se ne kopiraju — ni primljene, ni vlastite zapečaćene.
+function canCopy(msg) {
+  return !!msg?.body && !msg.destroy_after_read
+}
+
+async function copyText(text) {
+  if (!text) return
+  try {
+    await navigator.clipboard.writeText(text)
+    $q.notify({ message: t('chat.copied'), timeout: 1200 })
+  } catch {
+    $q.notify({ type: 'negative', message: t('chat.copyFailed') })
+  }
+}
+
+function openSelectText(msg) {
+  selectMsg.value = msg
+  selectDialog.value = true
 }
 
 function closeActions() {
@@ -718,6 +786,21 @@ onActivated(async () => {
   background: #d4f6ff;
   color: #011c3a;
   border-radius: 12px 0 12px 12px;
+}
+
+/* Nestajuća poruka u dijalogu za otkrivanje: bez označavanja i kopiranja
+   (i bez iOS izbornika "Kopiraj/Spremi sliku" na dugi pritisak). */
+.no-copy {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.selectable-text {
+  user-select: text;
+  -webkit-user-select: text;
+  max-height: 60vh;
+  overflow-y: auto;
 }
 
 .msg-bubble-hidden {

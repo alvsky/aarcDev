@@ -273,6 +273,13 @@ export default {
     revealTitle: 'Poruka je obrisana',
     revealHint: 'Ovo je jedini put da vidiš ovu poruku. Kad zatvoriš, nema je više.',
     revealConfirm: 'U redu',
+    copy: 'Kopiraj',
+    copySelection: 'Kopiraj označeno',
+    copyAll: 'Kopiraj sve',
+    selectText: 'Odaberi tekst',
+    copied: 'Kopirano',
+    copyFailed: 'Kopiranje nije uspjelo',
+    close: 'Zatvori',
   },
   notifications: {
     newMessage: 'Nova poruka',
