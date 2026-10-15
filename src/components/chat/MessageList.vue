@@ -388,7 +388,7 @@ const { blockedOffline } = useOfflineGuard()
 const { linkifyHtml } = useLinkify()
 const { t } = useI18n()
 const $q = useQuasar()
-const { screenRecording, setProtected } = usePrivacyScreen()
+const { screenRecording, setProtected, onScreenshotTaken } = usePrivacyScreen()
 const listEl = ref(null)
 const bottomEl = ref(null)
 const initialLoad = ref(true)
@@ -397,8 +397,13 @@ const revealDialog = ref(false)
 const revealMsg = ref(null)
 // Android: snimka ekrana i video su crni samo dok je nestajuća poruka otvorena.
 watch(revealDialog, (open) => setProtected(open))
+// iOS: snimka zaslona dok je nestajuća poruka otvorena — javi autoru.
+const stopScreenshotWatch = onScreenshotTaken(() => {
+  if (revealDialog.value && revealMsg.value) chatStore.reportScreenshot(revealMsg.value.id)
+})
 // Odlazak s ekrana dok je poruka otvorena ne smije ostaviti zaštitu upaljenu.
 onBeforeUnmount(() => {
+  stopScreenshotWatch()
   if (revealDialog.value) setProtected(false)
 })
 const pendingPurgeId = ref(null)

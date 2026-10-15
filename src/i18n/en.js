@@ -273,6 +273,7 @@ export default {
     revealHint: "This is the only time you'll see this message. Once you close it, it's gone.",
     revealConfirm: 'OK',
     hiddenWhileRecording: 'Content is hidden while the screen is being recorded.',
+    screenshotReported: '{name} took a screenshot of your disappearing message',
     copy: 'Copy',
     copySelection: 'Copy selection',
     copyAll: 'Copy all',

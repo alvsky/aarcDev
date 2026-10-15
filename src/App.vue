@@ -4,6 +4,8 @@
 
 <script setup>
 import { onMounted, watch } from 'vue'
+import { useQuasar } from 'quasar'
+import { useI18n } from 'vue-i18n'
 import { Capacitor } from '@capacitor/core'
 import { useAuthStore } from './stores/auth'
 import { useNotificationsStore } from 'src/stores/notifications'
@@ -22,13 +24,28 @@ const authStore = useAuthStore()
 const notifStore = useNotificationsStore()
 const chatStore = useChatStore()
 const featureFlagsStore = useFeatureFlagsStore()
+const $q = useQuasar()
+const { t } = useI18n()
+
+// Netko je snimio zaslon moje nestajuće poruke — obavijest dok je app otvoren
+// (push stiže i kad nije, preko push-on-message).
+let stopScreenshotReports = null
 
 // Token koji je stigao prije prijave registriraj čim se korisnik prijavi;
 // usput pošalji poruke koje čekaju u outboxu
 watch(
   () => authStore.user?.id,
   async (userId) => {
+    stopScreenshotReports?.()
+    stopScreenshotReports = null
     if (userId) {
+      stopScreenshotReports = chatStore.subscribeScreenshotReports(userId, ({ takerName }) =>
+        $q.notify({
+          icon: 'photo_camera',
+          message: t('chat.screenshotReported', { name: takerName }),
+          timeout: 5000,
+        }),
+      )
       await registerPendingToken()
       await chatStore.flushOutbox()
       await notifStore.fetchUnread()

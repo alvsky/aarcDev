@@ -118,7 +118,33 @@ async function sendPushToMembers(
   console.log('Members found:', members?.length)
   if (!members?.length) return
 
-  const userIds = members.map((m: any) => m.user_id)
+  await sendPushToUsers(supabase, fcmProjectId, accessToken, {
+    userIds: members.map((m: any) => m.user_id),
+    title,
+    body,
+    data,
+  })
+}
+
+// Slanje zadanim korisnicima, bez provjere postavki obavijesti — pozivatelj
+// bira primatelje (sendPushToMembers preko push_recipients, snimka zaslona
+// izravno autoru poruke).
+async function sendPushToUsers(
+  supabase: any,
+  fcmProjectId: string,
+  accessToken: string,
+  {
+    userIds,
+    title,
+    body,
+    data,
+  }: {
+    userIds: string[]
+    title: string
+    body: string
+    data: Record<string, string>
+  }
+) {
   const { data: tokens } = await supabase
     .from('push_tokens')
     .select('user_id, token, platform')
@@ -247,6 +273,36 @@ serve(async (req) => {
         body: record.destroy_after_read
           ? `${author?.full_name}: 🔥`
           : `${author?.full_name}: ${record.body?.slice(0, 80) || '📎 Screenshot'}`,
+        data,
+      })
+    } else if (payload.table === 'message_screenshots') {
+      // Snimka zaslona nestajuće poruke (iOS) — samo autoru poruke, bez obzira
+      // na notif_* postavke: to je sigurnosna obavijest, ne aktivnost.
+      const { data: taker } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', record.taken_by)
+        .single()
+      const { data: msg } = await supabase
+        .from('messages')
+        .select('item_id, channel')
+        .eq('id', record.message_id)
+        .single()
+
+      let data: Record<string, string> = { projectId: record.project_id, channel: msg?.channel ?? 'main' }
+      if (msg?.item_id) {
+        const { data: item } = await supabase
+          .from('items')
+          .select('kind')
+          .eq('id', msg.item_id)
+          .single()
+        if (item) data = { projectId: record.project_id, itemId: msg.item_id, kind: item.kind }
+      }
+
+      await sendPushToUsers(supabase, fcmProjectId, accessToken, {
+        userIds: [record.author_id],
+        title,
+        body: `📸 ${taker?.full_name ?? 'Netko'}: snimka zaslona tvoje nestajuće poruke`,
         data,
       })
     } else if (payload.table === 'items') {

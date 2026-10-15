@@ -30,6 +30,40 @@ export const useChatStore = defineStore('chat', {
   },
 
   actions: {
+    // Primatelj je snimio zaslon otvorene nestajuće poruke (iOS) — autor dobiva
+    // push i obavijest (message_screenshots, 20261015100000). Greška se samo
+    // bilježi: snimka je ionako već napravljena.
+    async reportScreenshot(messageId) {
+      const { error } = await supabase.rpc('report_screenshot', { p_message_id: messageId })
+      if (error) console.error('[chat] report_screenshot:', error)
+    },
+
+    // Prijave snimki MOJIH poruka dok je aplikacija otvorena. RLS
+    // (message_screenshots_select) svejedno propušta samo autoru. Vraća odjavu.
+    subscribeScreenshotReports(userId, onReport) {
+      const channel = supabase
+        .channel(`screenshots:${userId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'message_screenshots',
+            filter: `author_id=eq.${userId}`,
+          },
+          async (payload) => {
+            const { data: taker } = await supabase
+              .from('profiles')
+              .select('full_name')
+              .eq('id', payload.new.taken_by)
+              .maybeSingle()
+            onReport({ ...payload.new, takerName: taker?.full_name ?? '' })
+          },
+        )
+        .subscribe()
+      return () => supabase.removeChannel(channel)
+    },
+
     // Thread = jedna stavka (item_id) ili jedan kanal. Prije su bila tri odvojena
     // id-a, pa je promovirana ideja imala dva threada — vidi docs/item-model.md.
     threadKey({ projectId, itemId = null, channel = 'main' }) {

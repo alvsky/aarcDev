@@ -274,6 +274,7 @@ export default {
     revealHint: 'Ovo je jedini put da vidiš ovu poruku. Kad zatvoriš, nema je više.',
     revealConfirm: 'U redu',
     hiddenWhileRecording: 'Sadržaj je skriven dok se snima ekran.',
+    screenshotReported: '{name}: snimka zaslona tvoje nestajuće poruke',
     copy: 'Kopiraj',
     copySelection: 'Kopiraj označeno',
     copyAll: 'Kopiraj sve',

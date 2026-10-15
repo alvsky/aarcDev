@@ -12,6 +12,7 @@ import { Capacitor } from '@capacitor/core'
 // pokretanja aplikacije (App.vue), ne tek kad se otvori poruka. Snimanje
 // započeto prije pokretanja aplikacije se ne vidi.
 const screenRecording = ref(false)
+const screenshotHandlers = new Set()
 let listening = false
 
 async function plugin() {
@@ -28,6 +29,14 @@ export function usePrivacyScreen() {
     listening = true
     await p.addListener('screenRecordingStarted', () => (screenRecording.value = true))
     await p.addListener('screenRecordingStopped', () => (screenRecording.value = false))
+    // iOS: snimka je već napravljena kad ovo stigne — može se samo prijaviti.
+    await p.addListener('screenshotTaken', () => screenshotHandlers.forEach((fn) => fn()))
+  }
+
+  // Vraća funkciju za odjavu.
+  function onScreenshotTaken(fn) {
+    screenshotHandlers.add(fn)
+    return () => screenshotHandlers.delete(fn)
   }
 
   async function setProtected(on) {
@@ -40,5 +49,5 @@ export function usePrivacyScreen() {
     }
   }
 
-  return { screenRecording, watchScreenRecording, setProtected }
+  return { screenRecording, watchScreenRecording, setProtected, onScreenshotTaken }
 }
