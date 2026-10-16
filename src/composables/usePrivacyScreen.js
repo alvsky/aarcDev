@@ -15,10 +15,21 @@ const screenRecording = ref(false)
 const screenshotHandlers = new Set()
 let listening = false
 
-async function plugin() {
-  if (!Capacitor.isNativePlatform()) return null
-  const { PrivacyScreen } = await import('@capacitor-community/privacy-screen')
-  return PrivacyScreen
+// ⚠️ Capacitor dodatak (Proxy) se NE SMIJE vratiti iz async funkcije niti njime
+// razriješiti Promise: Proxy na svako svojstvo, pa i `then`, vraća funkciju, pa
+// ga JS tretira kao Promise i zove nepostojeću nativnu metodu `then` — await
+// tada nikad ne završi, bez greške i bez loga (2026-10-16: zbog toga nije radio
+// ni FLAG_SECURE ni prijava snimke). Zato se drži u varijabli, a async
+// funkcija vraća samo true/false.
+let PrivacyScreen = null
+
+async function loadPlugin() {
+  if (!Capacitor.isNativePlatform()) return false
+  if (!PrivacyScreen) {
+    const mod = await import('@capacitor-community/privacy-screen')
+    PrivacyScreen = mod.PrivacyScreen
+  }
+  return true
 }
 
 export function usePrivacyScreen() {
@@ -28,12 +39,17 @@ export function usePrivacyScreen() {
     if (listening) return
     listening = true
     try {
-      const p = await plugin()
-      if (!p) return
-      await p.addListener('screenRecordingStarted', () => (screenRecording.value = true))
-      await p.addListener('screenRecordingStopped', () => (screenRecording.value = false))
+      if (!(await loadPlugin())) return
+      await PrivacyScreen.addListener(
+        'screenRecordingStarted',
+        () => (screenRecording.value = true),
+      )
+      await PrivacyScreen.addListener(
+        'screenRecordingStopped',
+        () => (screenRecording.value = false),
+      )
       // iOS: snimka je već napravljena kad ovo stigne — može se samo prijaviti.
-      await p.addListener('screenshotTaken', () => {
+      await PrivacyScreen.addListener('screenshotTaken', () => {
         console.log('[privacy-screen] screenshotTaken')
         screenshotHandlers.forEach((fn) => fn())
       })
@@ -51,10 +67,9 @@ export function usePrivacyScreen() {
   }
 
   async function setProtected(on) {
-    const p = await plugin()
-    if (!p) return
     try {
-      await (on ? p.enable() : p.disable())
+      if (!(await loadPlugin())) return
+      await (on ? PrivacyScreen.enable() : PrivacyScreen.disable())
     } catch (e) {
       console.error('[privacy-screen]', e)
     }
