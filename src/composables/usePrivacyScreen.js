@@ -22,15 +22,26 @@ async function plugin() {
 }
 
 export function usePrivacyScreen() {
+  // Nikad ne baca — poziva se pri pokretanju aplikacije i ne smije srušiti
+  // ništa što dolazi iza (vidi App.vue).
   async function watchScreenRecording() {
     if (listening) return
-    const p = await plugin()
-    if (!p) return
     listening = true
-    await p.addListener('screenRecordingStarted', () => (screenRecording.value = true))
-    await p.addListener('screenRecordingStopped', () => (screenRecording.value = false))
-    // iOS: snimka je već napravljena kad ovo stigne — može se samo prijaviti.
-    await p.addListener('screenshotTaken', () => screenshotHandlers.forEach((fn) => fn()))
+    try {
+      const p = await plugin()
+      if (!p) return
+      await p.addListener('screenRecordingStarted', () => (screenRecording.value = true))
+      await p.addListener('screenRecordingStopped', () => (screenRecording.value = false))
+      // iOS: snimka je već napravljena kad ovo stigne — može se samo prijaviti.
+      await p.addListener('screenshotTaken', () => {
+        console.log('[privacy-screen] screenshotTaken')
+        screenshotHandlers.forEach((fn) => fn())
+      })
+      console.log('[privacy-screen] listeners registered')
+    } catch (e) {
+      listening = false
+      console.error('[privacy-screen] addListener failed:', e)
+    }
   }
 
   // Vraća funkciju za odjavu.

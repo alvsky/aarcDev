@@ -64,10 +64,13 @@ onReconnect(async () => {
 
 onMounted(async () => {
   await authStore.init()
-  await watchScreenRecording()
   await clearBadge()
   await requestPermission()
   await init()
+  // Namjerno NAKON push init() i bez await: kad je stajalo ispred, greška
+  // dodatka na iOS-u prekinula je cijeli onMounted — push init se nije
+  // izvršio pa klik na obavijest više nije otvarao thread (2026-10-16).
+  watchScreenRecording()
 
   if (Capacitor.isNativePlatform()) {
     const { App: CapApp } = await import('@capacitor/app')
