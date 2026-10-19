@@ -4,7 +4,7 @@
          nevidljiva) — pojačava dojam da se upravo nešto snimilo. -->
     <div class="polaroid-flash" :class="{ 'polaroid-flash-active': flashing }" />
 
-    <div class="polaroid-stage">
+    <div class="polaroid-stage" :class="{ 'polaroid-landscape': showSillier }">
       <div
         class="polaroid-flip"
         :class="{
@@ -78,10 +78,12 @@ onMounted(() => {
   timers.push(setTimeout(() => (stage.value = 1), REVEAL_DELAY))
   flash(REVEAL_DELAY)
   if (!sillierPhoto) return
-  // 3) Dok je prednja strana okrenuta od gledatelja, zamijeni je sillier fotkom,
-  //    pa nakon iste pauze okret dalje u ISTOM smjeru (180° → 360°)
-  timers.push(setTimeout(() => (showSillier.value = true), REVEAL_DELAY + FLIP_MS + 50))
+  // 3) Nakon iste pauze okret dalje u ISTOM smjeru (180° → 360°). Fotka se
+  //    mijenja točno na pola okreta, kad je kartica bokom i nevidljiva — tada
+  //    i okvir prelazi u položeni (sillier je landscape), pa se skok u
+  //    veličini ne vidi (a pokriva ga i bljesak).
   timers.push(setTimeout(() => (stage.value = 2), REVEAL_DELAY * 2))
+  timers.push(setTimeout(() => (showSillier.value = true), REVEAL_DELAY * 2 + FLIP_MS / 2))
   flash(REVEAL_DELAY * 2)
 })
 
@@ -152,6 +154,14 @@ onUnmounted(() => timers.forEach(clearTimeout))
 .polaroid-stage {
   perspective: 1200px;
   width: 260px;
+}
+
+.polaroid-stage.polaroid-landscape {
+  width: min(380px, 90vw);
+}
+
+.polaroid-landscape .polaroid-photo {
+  aspect-ratio: 3 / 2;
 }
 
 .polaroid-flip {
