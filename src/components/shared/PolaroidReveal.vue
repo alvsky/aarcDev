@@ -5,13 +5,22 @@
     <div class="polaroid-flash" :class="{ 'polaroid-flash-active': flashing }" />
 
     <div class="polaroid-stage">
-      <div class="polaroid-flip" :class="{ 'polaroid-flip-revealed': revealed }">
-        <!-- Prednja strana: fotka koju očekuješ -->
+      <div
+        class="polaroid-flip"
+        :class="{
+          'polaroid-flip-revealed': stage === 1,
+          'polaroid-flip-bonus': stage === 2,
+        }"
+      >
+        <!-- Prednja strana: fotka koju očekuješ — a u trećem koraku, dok je
+             okrenuta od gledatelja, potiho postaje bonus fotka. -->
         <div class="polaroid-card polaroid-front">
           <div class="polaroid-photo" :class="{ 'polaroid-developed': developed }">
-            <img :src="nicePhoto" alt="" />
+            <img :src="showBonus ? bonusPhoto : nicePhoto" alt="" />
           </div>
-          <div class="polaroid-caption">{{ $t('about.easterEggCaption') }}</div>
+          <div class="polaroid-caption">
+            {{ showBonus ? $t('about.easterEggCaptionBonus') : $t('about.easterEggCaption') }}
+          </div>
         </div>
 
         <!-- Stražnja strana: ono što stvarno dobiješ -->
@@ -35,24 +44,45 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import nicePhoto from 'src/assets/easter-egg/nice.jpg'
 import sillyPhoto from 'src/assets/easter-egg/silly.jpg'
 
+// Treća, bonus fotka (src/assets/easter-egg/bonus.jpg|jpeg|png) — glob umjesto
+// importa da build ne pukne dok datoteke još nema; bez nje nema trećeg koraka.
+const bonusModules = import.meta.glob('../../assets/easter-egg/bonus.{jpg,jpeg,png}', {
+  eager: true,
+  import: 'default',
+})
+const bonusPhoto = Object.values(bonusModules)[0] ?? null
+
 defineEmits(['close'])
 
 const developed = ref(false)
-const revealed = ref(false)
+// 0 = lijepa (prednja), 1 = blesava (stražnja), 2 = bonus (opet prednja)
+const stage = ref(0)
+const showBonus = ref(false)
 const flashing = ref(false)
 const timers = []
 
-// Pauza prije okreta — koliko lijepa slika ostaje na ekranu prije zamjene.
+// Pauza prije okreta — koliko svaka slika ostaje na ekranu prije sljedeće.
 const REVEAL_DELAY = 3000
+const FLIP_MS = 600
+
+function flash(at) {
+  timers.push(setTimeout(() => (flashing.value = true), at + FLIP_MS / 2))
+  timers.push(setTimeout(() => (flashing.value = false), at + FLIP_MS / 2 + 160))
+}
 
 onMounted(() => {
   // 1) "Razvijanje" prednje fotke — malo kašnjenje da se overlay stigne pojaviti prije animacije
   timers.push(setTimeout(() => (developed.value = true), 80))
-  // 2) Pauza da se lijepa slika stigne prepoznati, pa okret
-  timers.push(setTimeout(() => (revealed.value = true), REVEAL_DELAY))
-  // 3) Bljesak točno na vrhuncu okreta (flip traje 0.6s, pola puta = kartica je "na rubu")
-  timers.push(setTimeout(() => (flashing.value = true), REVEAL_DELAY + 300))
-  timers.push(setTimeout(() => (flashing.value = false), REVEAL_DELAY + 460))
+  // 2) Pauza da se lijepa slika stigne prepoznati, pa okret na blesavu,
+  //    s bljeskom točno na vrhuncu okreta (kartica je tada "na rubu")
+  timers.push(setTimeout(() => (stage.value = 1), REVEAL_DELAY))
+  flash(REVEAL_DELAY)
+  if (!bonusPhoto) return
+  // 3) Dok je prednja strana okrenuta od gledatelja, zamijeni je bonus fotkom,
+  //    pa nakon iste pauze okret dalje u ISTOM smjeru (180° → 360°)
+  timers.push(setTimeout(() => (showBonus.value = true), REVEAL_DELAY + FLIP_MS + 50))
+  timers.push(setTimeout(() => (stage.value = 2), REVEAL_DELAY * 2))
+  flash(REVEAL_DELAY * 2)
 })
 
 onUnmounted(() => timers.forEach(clearTimeout))
@@ -69,8 +99,9 @@ onUnmounted(() => timers.forEach(clearTimeout))
   font-weight: 400;
   font-display: swap;
   src: url('../../assets/fonts/patrick-hand-latin.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F,
-    U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC,
+    U+2122, U+2191, U+2193, U+2212, U+2215;
 }
 
 @font-face {
@@ -79,8 +110,9 @@ onUnmounted(() => timers.forEach(clearTimeout))
   font-weight: 400;
   font-display: swap;
   src: url('../../assets/fonts/patrick-hand-latin-ext.woff2') format('woff2');
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F,
-    U+2020, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+2020, U+2113,
+    U+2C60-2C7F, U+A720-A7FF;
 }
 
 .polaroid-overlay {
@@ -135,6 +167,10 @@ onUnmounted(() => timers.forEach(clearTimeout))
 
 .polaroid-flip-revealed {
   transform: rotateY(180deg);
+}
+
+.polaroid-flip-bonus {
+  transform: rotateY(360deg);
 }
 
 .polaroid-card {
