@@ -345,7 +345,7 @@ export default {
     changelogLink: 'Changelog',
     easterEggCaption: 'The team behind aarc',
     easterEggCaptionSilly: 'This is us after the first production release 😅',
-    easterEggCaptionBonus: "And this is us when nobody's looking 🙈",
+    easterEggCaptionSillier: "And this is us when nobody's looking 🙈",
   },
   changelog: {
     title: 'Changelog',

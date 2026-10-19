@@ -346,7 +346,7 @@ export default {
     changelogLink: 'Popis promjena',
     easterEggCaption: 'Tim iza aarc-a',
     easterEggCaptionSilly: 'Ovako izgledamo nakon prvog produkcijskog releasea 😅',
-    easterEggCaptionBonus: 'A ovo smo mi kad nitko ne gleda 🙈',
+    easterEggCaptionSillier: 'A ovo smo mi kad nitko ne gleda 🙈',
   },
   changelog: {
     title: 'Popis promjena',

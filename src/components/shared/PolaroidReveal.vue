@@ -9,17 +9,17 @@
         class="polaroid-flip"
         :class="{
           'polaroid-flip-revealed': stage === 1,
-          'polaroid-flip-bonus': stage === 2,
+          'polaroid-flip-sillier': stage === 2,
         }"
       >
         <!-- Prednja strana: fotka koju očekuješ — a u trećem koraku, dok je
-             okrenuta od gledatelja, potiho postaje bonus fotka. -->
+             okrenuta od gledatelja, potiho postaje sillier fotka. -->
         <div class="polaroid-card polaroid-front">
           <div class="polaroid-photo" :class="{ 'polaroid-developed': developed }">
-            <img :src="showBonus ? bonusPhoto : nicePhoto" alt="" />
+            <img :src="showSillier ? sillierPhoto : nicePhoto" alt="" />
           </div>
           <div class="polaroid-caption">
-            {{ showBonus ? $t('about.easterEggCaptionBonus') : $t('about.easterEggCaption') }}
+            {{ showSillier ? $t('about.easterEggCaptionSillier') : $t('about.easterEggCaption') }}
           </div>
         </div>
 
@@ -44,20 +44,20 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import nicePhoto from 'src/assets/easter-egg/nice.jpg'
 import sillyPhoto from 'src/assets/easter-egg/silly.jpg'
 
-// Treća, bonus fotka (src/assets/easter-egg/bonus.jpg|jpeg|png) — glob umjesto
+// Treća, "sillier" fotka (src/assets/easter-egg/sillier.jpg|jpeg|png) — glob umjesto
 // importa da build ne pukne dok datoteke još nema; bez nje nema trećeg koraka.
-const bonusModules = import.meta.glob('../../assets/easter-egg/bonus.{jpg,jpeg,png}', {
+const sillierModules = import.meta.glob('../../assets/easter-egg/sillier.{jpg,jpeg,png}', {
   eager: true,
   import: 'default',
 })
-const bonusPhoto = Object.values(bonusModules)[0] ?? null
+const sillierPhoto = Object.values(sillierModules)[0] ?? null
 
 defineEmits(['close'])
 
 const developed = ref(false)
-// 0 = lijepa (prednja), 1 = blesava (stražnja), 2 = bonus (opet prednja)
+// 0 = lijepa (prednja), 1 = blesava (stražnja), 2 = sillier (opet prednja)
 const stage = ref(0)
-const showBonus = ref(false)
+const showSillier = ref(false)
 const flashing = ref(false)
 const timers = []
 
@@ -77,10 +77,10 @@ onMounted(() => {
   //    s bljeskom točno na vrhuncu okreta (kartica je tada "na rubu")
   timers.push(setTimeout(() => (stage.value = 1), REVEAL_DELAY))
   flash(REVEAL_DELAY)
-  if (!bonusPhoto) return
-  // 3) Dok je prednja strana okrenuta od gledatelja, zamijeni je bonus fotkom,
+  if (!sillierPhoto) return
+  // 3) Dok je prednja strana okrenuta od gledatelja, zamijeni je sillier fotkom,
   //    pa nakon iste pauze okret dalje u ISTOM smjeru (180° → 360°)
-  timers.push(setTimeout(() => (showBonus.value = true), REVEAL_DELAY + FLIP_MS + 50))
+  timers.push(setTimeout(() => (showSillier.value = true), REVEAL_DELAY + FLIP_MS + 50))
   timers.push(setTimeout(() => (stage.value = 2), REVEAL_DELAY * 2))
   flash(REVEAL_DELAY * 2)
 })
@@ -169,7 +169,7 @@ onUnmounted(() => timers.forEach(clearTimeout))
   transform: rotateY(180deg);
 }
 
-.polaroid-flip-bonus {
+.polaroid-flip-sillier {
   transform: rotateY(360deg);
 }
 
