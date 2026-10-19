@@ -165,11 +165,11 @@ onUnmounted(() => timers.forEach(clearTimeout))
 }
 
 .polaroid-flip {
-  position: relative;
+  /* Obje strane u istoj ćeliji grida: kartica je visoka koliko VIŠA strana.
+     Dok je stražnja bila position:absolute; inset:0, preuzimala je visinu
+     prednje, pa joj je natpis u dva reda (silly) ispadao ispod kartice. */
+  display: grid;
   width: 100%;
-  /* .polaroid-back je position:absolute; inset:0 — bez eksplicitnog position
-     ovdje bi se pozicionirao prema .polaroid-stage umjesto prema visini koju
-     određuje .polaroid-front (jedini element u tijeku dokumenta). */
   transform-style: preserve-3d;
   transition: transform 0.6s cubic-bezier(0.4, 0.1, 0.2, 1);
   transform: rotateY(0deg);
@@ -184,6 +184,7 @@ onUnmounted(() => timers.forEach(clearTimeout))
 }
 
 .polaroid-card {
+  grid-area: 1 / 1;
   backface-visibility: hidden;
   background: #fff;
   padding: 14px 14px 20px;
@@ -192,13 +193,10 @@ onUnmounted(() => timers.forEach(clearTimeout))
 }
 
 .polaroid-front {
-  position: relative;
   transform: rotate(-3deg);
 }
 
 .polaroid-back {
-  position: absolute;
-  inset: 0;
   transform: rotate(-3deg) rotateY(180deg);
 }
 
