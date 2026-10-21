@@ -189,7 +189,7 @@ function toggleDestroyAfterRead() {
   if (isSticky.value) {
     stickyFireThreads.delete(threadKey.value)
     destroyAfterRead.value = false
-    $q.notify({ message: t('chat.destroyAfterReadStickyOff'), timeout: 1500 })
+    $q.notify({ message: t('chat.destroyAfterReadStickyOff'), timeout: 1500, position: 'top' })
     return
   }
   destroyAfterRead.value = !destroyAfterRead.value
@@ -208,7 +208,7 @@ function enableSticky() {
   if (isSticky.value) return
   stickyFireThreads.add(threadKey.value)
   destroyAfterRead.value = false
-  $q.notify({ message: t('chat.destroyAfterReadStickyOn'), timeout: 2500 })
+  $q.notify({ message: t('chat.destroyAfterReadStickyOn'), timeout: 2500, position: 'top' })
 }
 
 function startDragging() {
