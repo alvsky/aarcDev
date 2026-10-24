@@ -5,7 +5,12 @@
     <q-page-container>
       <q-page padding class="about-page">
         <div class="column items-center q-pt-lg q-pb-xl">
-          <img src="/logos/aarc_t_225-75.png" alt="aarc" class="about-logo" />
+          <!-- Bijeli logo (aarc_t) je za tamnu pozadinu; na svijetloj temi tamni (aarc_td). -->
+          <img
+            :src="authStore.darkMode ? '/logos/aarc_t_225-75.png' : '/logos/aarc_td_225-75.png'"
+            alt="aarc"
+            class="about-logo"
+          />
           <div class="text-caption about-muted q-mt-md text-center">{{ $t('about.tagline') }}</div>
         </div>
 
@@ -48,8 +53,10 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import AppHeader from 'src/components/shared/AppHeader.vue'
 import PolaroidReveal from 'src/components/shared/PolaroidReveal.vue'
 import { useReleasesStore } from 'src/stores/releases'
+import { useAuthStore } from 'src/stores/auth'
 
 const releasesStore = useReleasesStore()
+const authStore = useAuthStore()
 
 onMounted(() => {
   // Ne await-a se — releasesStore.latest je perzistiran (keš iz prošle
