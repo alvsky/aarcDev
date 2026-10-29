@@ -63,39 +63,8 @@
             </div>
 
             <div class="row items-end msg-bubble-row">
-              <!-- Edit mode -->
-              <div v-if="editingId === item.id" :key="'edit-' + item.id" class="col">
-                <q-input
-                  v-model="editBody"
-                  outlined
-                  dense
-                  autogrow
-                  @keydown.enter.exact.prevent="saveEdit(item.id)"
-                  @keydown.escape="cancelEdit"
-                />
-                <div class="row q-gutter-xs q-mt-xs">
-                  <q-btn
-                    flat
-                    dense
-                    size="sm"
-                    color="accent"
-                    :label="$t('common.save')"
-                    @click="saveEdit(item.id)"
-                  />
-                  <q-btn
-                    flat
-                    dense
-                    size="sm"
-                    color="grey-5"
-                    :label="$t('common.cancel')"
-                    @click="cancelEdit"
-                  />
-                </div>
-              </div>
-
               <!-- Normal mode -->
               <div
-                v-else
                 :key="'view-' + item.id"
                 class="msg-bubble"
                 :class="{
@@ -189,6 +158,37 @@
     <!-- Otkrivanje poruke koja nestaje nakon čitanja. Poruka je u trenutku
          otvaranja već uništena — dijalog je zadnji put da je korisnik vidi, pa
          je persistent (slučajan klik izvan ne smije je zatvoriti). -->
+    <!-- Uređivanje u zasebnom prozoru preko cijele širine: u mjehuriću (75 %
+         širine, rastao bez granice, Enter je odmah spremao) duga poruka se
+         nije dala udobno urediti. Enter = novi red, Ctrl/Cmd+Enter = spremi. -->
+    <q-dialog :model-value="!!editingId" @update:model-value="(v) => !v && cancelEdit()">
+      <q-card class="edit-card">
+        <q-card-section class="text-subtitle2 q-pb-none">{{ $t('common.edit') }}</q-card-section>
+        <q-card-section>
+          <q-input
+            v-model="editBody"
+            type="textarea"
+            outlined
+            autogrow
+            autofocus
+            class="edit-input"
+            @keydown.enter.ctrl.prevent="saveEdit(editingId)"
+            @keydown.enter.meta.prevent="saveEdit(editingId)"
+          />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn flat color="grey-6" :label="$t('common.cancel')" @click="cancelEdit" />
+          <q-btn
+            unelevated
+            color="primary"
+            :label="$t('common.save')"
+            :disable="!editBody.trim()"
+            @click="saveEdit(editingId)"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <!-- Odaberi tekst: običan tekst (bez linkova, da dugi pritisak ne otvori
          pregled linka) koji se označava ugrađenim odabirom sustava. -->
     <q-dialog v-model="selectDialog">
@@ -821,6 +821,17 @@ onActivated(async () => {
   -webkit-user-select: text;
   max-height: 60vh;
   overflow-y: auto;
+}
+
+.edit-card {
+  width: 600px;
+  max-width: 94vw;
+}
+
+/* Dugi tekst se pomiče unutar polja umjesto da raste preko ekrana. */
+.edit-input :deep(textarea) {
+  max-height: 55vh;
+  overflow-y: auto !important;
 }
 
 .msg-bubble-hidden {
