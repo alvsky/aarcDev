@@ -133,6 +133,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
     }
 
+    // MARK: - UIScene (iOS 27+)
+
+    // Od iOS-a 27 aplikacija izgrađena novim SDK-om bez UIScene lifecyclea pada
+    // odmah pri pokretanju (assert u UIKitu — TestFlight build 56, 2026-11-15).
+    // Isto kao službeni Capacitor 8.5 predložak (ios-spm-template); Info.plist
+    // ima odgovarajući UIApplicationSceneManifest.
+    func application(_ application: UIApplication,
+                     configurationForConnecting connectingSceneSession: UISceneSession,
+                     options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        let config = UISceneConfiguration(name: "Default Configuration",
+                                          sessionRole: connectingSceneSession.role)
+        config.delegateClass = SceneDelegate.self
+        return config
+    }
+
     // MARK: - Standard lifecycle
 
     func applicationWillResignActive(_ application: UIApplication) {}
@@ -140,4 +155,30 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     func applicationWillEnterForeground(_ application: UIApplication) {}
     func applicationDidBecomeActive(_ application: UIApplication) {}
     func applicationWillTerminate(_ application: UIApplication) {}
+}
+
+// Prozor aplikacije sada pripada sceni, ne AppDelegateu. U istoj datoteci kao
+// AppDelegate da ne treba ručno dodavati novu datoteku u project.pbxproj.
+// Otvaranje linkova (URL / universal link) ide kroz scenu umjesto kroz
+// AppDelegate, pa se prosljeđuje Capacitoru preko SceneDelegateProxy.
+class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+    var window: UIWindow?
+
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+        guard let windowScene = scene as? UIWindowScene else { return }
+
+        window = UIWindow(windowScene: windowScene)
+        window?.rootViewController = CAPBridgeViewController()
+        window?.makeKeyAndVisible()
+
+        SceneDelegateProxy.shared.scene(scene, willConnectTo: session, options: connectionOptions)
+    }
+
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        SceneDelegateProxy.shared.scene(scene, openURLContexts: URLContexts)
+    }
+
+    func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
+        SceneDelegateProxy.shared.scene(scene, continue: userActivity)
+    }
 }

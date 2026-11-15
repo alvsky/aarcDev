@@ -75,6 +75,13 @@ Also in `extendViteConf`: the `src` → `/src` alias — imports use `src/...` p
   and bridges the FCM token to the web view through `localStorage.setItem('fcmToken', …)` —
   `usePush` polls for it. Don't remove that bridge; the standard Capacitor `registration`
   event is only used on Android.
+- **iOS UIScene lifecycle (required since iOS 27):** an app built with the iOS 27 SDK that
+  still uses the old app-delegate window crashes on launch (UIKit assert — TestFlight build
+  56, 2026-11-15). `Info.plist` has `UIApplicationSceneManifest`, and `AppDelegate.swift`
+  returns a scene configuration plus a `SceneDelegate` class (kept in the same file so
+  `project.pbxproj` needed no new file). It mirrors Capacitor 8.5's `ios-spm-template`; URL
+  and universal-link opens arrive through the scene and are forwarded via
+  `SceneDelegateProxy`. Plugins reading `UIApplication.shared.delegate?.window` now get nil.
 - **Android:** standard FCM setup; token comes through the Capacitor `registration` listener.
 - App-icon badge uses `@capawesome/capacitor-badge`; badge count = total unread across
   projects, cleared and recomputed on app resume (`App.vue`).
