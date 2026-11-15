@@ -270,8 +270,10 @@ serve(async (req) => {
         title,
         // Poruka koja nestaje nakon čitanja ne smije se vidjeti u banneru na
         // zaključanom ekranu — inače je "skriveno dok ne otvoriš" besmisleno.
+        // Namjerno generički: bez autora i bez vatrice, da banner ne otkriva
+        // ni tko ni da je riječ o nestajućoj poruci (diskretno, kao u appu).
         body: record.destroy_after_read
-          ? `${author?.full_name}: 🔥`
+          ? 'Nova poruka'
           : `${author?.full_name}: ${record.body?.slice(0, 80) || '📎 Screenshot'}`,
         data,
       })
