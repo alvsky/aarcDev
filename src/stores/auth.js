@@ -30,6 +30,15 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
+    // Bilježi otvaranje easter egga (easter_egg_opens, 20261115100000) —
+    // brojač i zadnje vrijeme. Ne čeka se i ne baca: zabava ne smije ovisiti
+    // o mreži, a neuspjeh se samo zapiše u konzolu.
+    async recordEasterEgg(egg) {
+      if (!this.user) return
+      const { error } = await supabase.rpc('record_easter_egg', { p_egg: egg })
+      if (error) console.error('[easter-egg] record failed:', error)
+    },
+
     async init() {
       const {
         data: { session },

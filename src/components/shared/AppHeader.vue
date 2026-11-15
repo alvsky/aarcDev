@@ -47,6 +47,7 @@ import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useI18n } from 'vue-i18n'
 import { useNetwork } from 'src/composables/useNetwork'
+import { useAuthStore } from 'src/stores/auth'
 import ConfettiBurst from './ConfettiBurst.vue'
 
 const props = defineProps({
@@ -60,6 +61,7 @@ const router = useRouter()
 const $q = useQuasar()
 const { t } = useI18n()
 const { online } = useNetwork()
+const authStore = useAuthStore()
 
 function onBack() {
   if (props.backTo) router.push(props.backTo)
@@ -88,6 +90,7 @@ function onLogoClick() {
 }
 
 function celebrate() {
+  authStore.recordEasterEgg('logo_confetti')
   showConfetti.value = true
   $q.notify({
     message: t('common.easterEgg'),

@@ -79,6 +79,7 @@ function onBuildTap() {
   if (buildTapCount >= 5) {
     buildTapCount = 0
     showPolaroid.value = true
+    authStore.recordEasterEgg('about_polaroid')
   }
 }
 
