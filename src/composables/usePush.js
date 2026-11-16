@@ -121,6 +121,9 @@ export function usePush() {
       // foregroundu prošao potpuno nezamijećeno osim tihog rasta brojača.
       const data = notification.data ?? {}
       if (!data.projectId) return
+      // Poruke u chatu stižu kao push samo s brojem na ikoni (push-on-message,
+      // badgeOnly) — bez naslova i teksta, pa ni banner u aplikaciji ne treba.
+      if (!notification.title && !notification.body) return
       // Već si unutar tog projekta: bedž/točkice na tabovima to već pokazuju,
       // a ako baš gledaš taj kanal poruka je već stigla uživo (invarijanta 2)
       // — banner bi ovdje bio samo dupli šum.

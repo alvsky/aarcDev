@@ -91,6 +91,7 @@ async function sendPushToMembers(
     title,
     body,
     data,
+    badgeOnly = false,
   }: {
     projectId: string
     excludeUserId: string
@@ -98,6 +99,7 @@ async function sendPushToMembers(
     title: string
     body: string
     data: Record<string, string>
+    badgeOnly?: boolean
   }
 ) {
   // Ne čita project_members izravno: taj redak za člana organizacije ne mora ni
@@ -123,6 +125,7 @@ async function sendPushToMembers(
     title,
     body,
     data,
+    badgeOnly,
   })
 }
 
@@ -138,11 +141,14 @@ async function sendPushToUsers(
     title,
     body,
     data,
+    badgeOnly = false,
   }: {
     userIds: string[]
     title: string
     body: string
     data: Record<string, string>
+    // Bez bannera i zvuka — samo broj na ikoni (poruke u chatu, 2026-11-16).
+    badgeOnly?: boolean
   }
 ) {
   const { data: tokens } = await supabase
@@ -170,6 +176,30 @@ async function sendPushToUsers(
   for (const { user_id, token, platform } of tokens) {
     console.log('Sending to platform:', platform)
 
+    const badge = badgeCounts.get(user_id) ?? 1
+
+    if (badgeOnly) {
+      // Bez `notification` bloka: FCM tada ne prikazuje ništa sam.
+      // - iOS: APNs s aps.badge i bez alert/sound tiho promijeni broj na ikoni
+      //   (push-type 'alert' vrijedi i za badge-only; prioritet 10 smije jer
+      //   badge mijenja ono što korisnik vidi).
+      // - Android: ostaje data-only poruka — nema sistemskog "samo bedž" pusha,
+      //   pa se u pozadini realno ne vidi ništa dok se aplikacija ne otvori
+      //   (svjesno prihvaćeno, Android ćemo riješiti naknadno).
+      const message: any = { token, data }
+      if (platform === 'ios') {
+        message.apns = {
+          headers: { 'apns-push-type': 'alert', 'apns-priority': '10' },
+          payload: { aps: { badge } },
+        }
+      }
+      if (platform === 'android') {
+        message.android = { priority: 'normal' }
+      }
+      await sendFcm(fcmProjectId, accessToken, message)
+      continue
+    }
+
     const message: any = {
       token,
       notification: { title, body },
@@ -183,7 +213,7 @@ async function sendPushToUsers(
           aps: {
             alert: { title, body },
             sound: 'default',
-            badge: badgeCounts.get(user_id) ?? 1,
+            badge,
           },
         },
       }
@@ -196,21 +226,25 @@ async function sendPushToUsers(
       }
     }
 
-    const fcmResponse = await fetch(
-      `https://fcm.googleapis.com/v1/projects/${fcmProjectId}/messages:send`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message }),
-      }
-    )
-
-    const fcmResult = await fcmResponse.json()
-    console.log('FCM v1 result:', JSON.stringify(fcmResult))
+    await sendFcm(fcmProjectId, accessToken, message)
   }
+}
+
+async function sendFcm(fcmProjectId: string, accessToken: string, message: any) {
+  const fcmResponse = await fetch(
+    `https://fcm.googleapis.com/v1/projects/${fcmProjectId}/messages:send`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message }),
+    }
+  )
+
+  const fcmResult = await fcmResponse.json()
+  console.log('FCM v1 result:', JSON.stringify(fcmResult))
 }
 
 serve(async (req) => {
@@ -267,6 +301,9 @@ serve(async (req) => {
         projectId: record.project_id,
         excludeUserId: record.author_id,
         notifField: 'notif_messages',
+        // Poruke u chatu: samo broj na ikoni, bez bannera i zvuka. Tekst ispod
+        // se tada nigdje ne prikazuje, ali ostaje za slučaj da se vratimo.
+        badgeOnly: true,
         title,
         // Poruka koja nestaje nakon čitanja ne smije se vidjeti u banneru na
         // zaključanom ekranu — inače je "skriveno dok ne otvoriš" besmisleno.
